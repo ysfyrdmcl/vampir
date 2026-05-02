@@ -42,9 +42,12 @@ export const uiStandard = {
   },
   button: {
     height: 66,
+    compactHeight: 46,
     radius: 12,
     iconSize: 24,
+    compactIconSize: 18,
     labelSize: 22,
+    compactLabelSize: 14,
     shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffsetY: 10

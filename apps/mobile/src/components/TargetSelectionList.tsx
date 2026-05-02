@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "../theme/colors";
@@ -7,6 +8,7 @@ export interface TargetSelectionItem {
   id: string;
   label: string;
   initials: string;
+  isAlive: boolean;
   isSelectable: boolean;
   isSelected: boolean;
   statusText: string;
@@ -20,9 +22,14 @@ interface TargetSelectionListProps {
 }
 
 export function TargetSelectionList({ items, onSelect }: TargetSelectionListProps) {
+  const [graveyardOpen, setGraveyardOpen] = useState(false);
+  const aliveItems = items.filter((item) => item.isAlive);
+  const deadItems = items.filter((item) => !item.isAlive);
+
   return (
-    <View style={styles.grid}>
-      {items.map((item) => (
+    <View style={styles.section}>
+      <View style={styles.grid}>
+        {aliveItems.map((item) => (
         <Pressable
           key={item.id}
           style={[styles.card, item.isSelected ? styles.cardSelected : null]}
@@ -38,24 +45,43 @@ export function TargetSelectionList({ items, onSelect }: TargetSelectionListProp
               <Text style={styles.badgeText}>{item.badgeText}</Text>
             </View>
           ) : null}
-          <Text style={[styles.statusText, item.isSelectable ? styles.statusSelectable : styles.statusDisabled]}>
-            {item.isSelectable ? (item.isSelected ? "● HEDEF SEÇİLDİ" : "● SEÇİLEBİLİR") : `● ${item.disabledReason ?? "Seçilemez"}`}
-          </Text>
           <View style={styles.selectRow}>
             {item.isSelectable ? (
               <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
             ) : (
               <Ionicons name="close-circle-outline" size={16} color={colors.textDim} />
             )}
-            <Text style={styles.selectText}>{item.statusText}</Text>
+            <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Seçilemez"}</Text>
           </View>
         </Pressable>
-      ))}
+        ))}
+      </View>
+      {deadItems.length ? (
+        <View style={styles.graveyard}>
+          <Pressable style={styles.graveyardHeader} onPress={() => setGraveyardOpen((value) => !value)}>
+            <Text style={styles.graveyardTitle}>{`🪦 Mezarlık (${deadItems.length})`}</Text>
+            <Ionicons name={graveyardOpen ? "chevron-up-outline" : "chevron-down-outline"} size={16} color={colors.textDim} />
+          </Pressable>
+          {graveyardOpen ? (
+            <View style={styles.graveyardList}>
+              {deadItems.map((item) => (
+                <View key={item.id} style={styles.graveyardRow}>
+                  <Text style={styles.graveyardName}>{item.label}</Text>
+                  <Text style={styles.graveyardBadge}>ELENDİ</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  section: {
+    gap: 10
+  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -64,7 +90,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48.4%",
-    minHeight: 188,
+    minHeight: 168,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.24)",
@@ -119,17 +145,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansBold,
     fontSize: 10
   },
-  statusText: {
-    textAlign: "center",
-    fontFamily: typography.sansMedium,
-    fontSize: 11
-  },
-  statusSelectable: {
-    color: colors.primaryBright
-  },
-  statusDisabled: {
-    color: colors.textDim
-  },
   selectRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,5 +154,48 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: typography.sansMedium,
     fontSize: 11
+  },
+  graveyard: {
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)",
+    borderRadius: 12,
+    backgroundColor: "rgba(12,12,14,0.45)"
+  },
+  graveyardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10
+  },
+  graveyardTitle: {
+    color: colors.textMuted,
+    fontFamily: typography.sansBold,
+    fontSize: 12,
+    letterSpacing: 0.8
+  },
+  graveyardList: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(170,137,132,0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6
+  },
+  graveyardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    opacity: 0.72
+  },
+  graveyardName: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
+  },
+  graveyardBadge: {
+    color: colors.danger,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 0.8
   }
 });

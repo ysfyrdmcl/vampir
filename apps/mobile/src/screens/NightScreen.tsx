@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
 import { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseBanner } from "../components/PhaseBanner";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -116,6 +117,7 @@ function initialsFromName(name: string): string {
 }
 
 export function NightScreen(_: Props) {
+  const insets = useSafeAreaInsets();
   const submittedActionKeyRef = useRef<string | null>(null);
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
@@ -167,6 +169,7 @@ export function NightScreen(_: Props) {
       id: player.playerId,
       label: player.nickname,
       initials: initialsFromName(player.nickname),
+      isAlive: player.isAlive,
       isSelectable,
       isSelected: selectedTargetPlayerId === player.playerId,
       statusText: player.isAlive ? "Hayatta" : "Elendi",
@@ -203,15 +206,7 @@ export function NightScreen(_: Props) {
         />
         <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
 
-        {canAct ? (
-          <PrimaryButton
-            label={selectedTargetName ? `${selectedTargetName} için seçimi kilitle` : actionConfig.buttonLabel}
-            iconName="checkmark-circle-outline"
-            variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
-            onPress={submitAction}
-            disabled={!selectedTargetPlayerId || alreadySubmittedThisPhase}
-          />
-        ) : (
+        {canAct ? null : (
           <View style={styles.waitingBox}>
             <Ionicons name={meAlive ? "eye-off-outline" : "skull-outline"} size={20} color={colors.textMuted} />
             <Text style={styles.waitingText}>
@@ -273,6 +268,23 @@ export function NightScreen(_: Props) {
         ) : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
       </ScrollView>
+      {canAct ? (
+        <View style={[styles.stickyAction, { bottom: 84 + insets.bottom }]}>
+          <View style={styles.actionSummary}>
+            <Text style={styles.actionSummaryLabel}>Hedef</Text>
+            <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedTargetName ?? "Seçilmedi"}</Text>
+          </View>
+          <PrimaryButton
+            label="Seçimi Kilitle"
+            iconName="lock-closed-outline"
+            variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
+            onPress={submitAction}
+            disabled={!selectedTargetPlayerId || alreadySubmittedThisPhase}
+            compact
+            style={styles.actionButton}
+          />
+        </View>
+      ) : null}
     </ScreenShell>
   );
 }
@@ -287,8 +299,48 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: 132,
     gap: 14
+  },
+  stickyAction: {
+    position: "absolute",
+    left: spacing.safe,
+    right: spacing.safe,
+    minHeight: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 16,
+    backgroundColor: "rgba(12,12,14,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8
+  },
+  actionSummary: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2
+  },
+  actionSummaryLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textTransform: "uppercase"
+  },
+  actionSummaryValue: {
+    color: colors.secondary,
+    fontFamily: typography.serifSemi,
+    fontSize: 16
+  },
+  actionButton: {
+    width: 146
   },
   hero: {
     borderWidth: 1,

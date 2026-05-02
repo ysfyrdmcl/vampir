@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PhaseBanner } from "../components/PhaseBanner";
@@ -26,6 +27,7 @@ function initialsFromName(name: string): string {
 }
 
 export function VoteScreen(_: Props) {
+  const insets = useSafeAreaInsets();
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const playerId = useGameStore((s) => s.playerId);
@@ -64,6 +66,7 @@ export function VoteScreen(_: Props) {
             id: "__NO_LYNCH__",
             label: "Kimseyi Gonderme",
             initials: "Ø",
+            isAlive: true,
             isSelectable: meAlive,
             isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
             statusText: "Bos oy",
@@ -75,6 +78,7 @@ export function VoteScreen(_: Props) {
       id: player.playerId,
       label: player.nickname,
       initials: initialsFromName(player.nickname),
+      isAlive: player.isAlive,
       isSelectable: meAlive,
       isSelected: selectedTargetPlayerId === player.playerId,
       statusText: player.playerId === mayorPlayerId ? "Baskan adayi" : "Aday",
@@ -121,20 +125,6 @@ export function VoteScreen(_: Props) {
         </View>
         <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
 
-        <PrimaryButton
-          label={
-            selectedName
-              ? isMayorElection
-                ? `${selectedName} için oyu kilitle`
-                : `${selectedName} için oyumu kilitle`
-              : isMayorElection
-                ? "Başkanı Onayla"
-                : "Oylamayı Tamamla"
-          }
-          iconName="checkmark-done-outline"
-          onPress={() => setConfirmOpen(true)}
-          disabled={!meAlive || !selectedTargetPlayerId}
-        />
         <Text style={styles.help}>
           {!meAlive
             ? "Elendin. Bu oylamaya katılamazsın, sonucu izleyebilirsin."
@@ -145,6 +135,20 @@ export function VoteScreen(_: Props) {
         {privateResultText ? <Text style={styles.result}>{privateResultText}</Text> : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
       </ScrollView>
+      <View style={[styles.stickyAction, { bottom: 84 + insets.bottom }]}>
+        <View style={styles.actionSummary}>
+          <Text style={styles.actionSummaryLabel}>Hedef</Text>
+          <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedName ?? "Seçilmedi"}</Text>
+        </View>
+        <PrimaryButton
+          label={isMayorElection ? "Başkanı Onayla" : "Oylamayı Tamamla"}
+          iconName="checkmark-done-outline"
+          onPress={() => setConfirmOpen(true)}
+          disabled={!meAlive || !selectedTargetPlayerId}
+          compact
+          style={styles.actionButton}
+        />
+      </View>
       <ConfirmActionSheet
         visible={confirmOpen}
         title={isMayorElection ? "Baskan Oyu Kilitlensin mi?" : "Oyunu Kilitlemek Istiyor musun?"}
@@ -167,8 +171,48 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: 132,
     gap: 14
+  },
+  stickyAction: {
+    position: "absolute",
+    left: spacing.safe,
+    right: spacing.safe,
+    minHeight: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 16,
+    backgroundColor: "rgba(12,12,14,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8
+  },
+  actionSummary: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2
+  },
+  actionSummaryLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textTransform: "uppercase"
+  },
+  actionSummaryValue: {
+    color: colors.secondary,
+    fontFamily: typography.serifSemi,
+    fontSize: 16
+  },
+  actionButton: {
+    width: 150
   },
   mayorInfo: {
     color: colors.secondary,

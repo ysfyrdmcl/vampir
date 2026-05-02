@@ -2,7 +2,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseCountdown } from "../components/PhaseCountdown";
-import { PrimaryButton } from "../components/PrimaryButton";
 import { RoleRevealCard } from "../components/RoleRevealCard";
 import { ScreenShell } from "../components/ScreenShell";
 import { useGameStore } from "../store/game-store";
@@ -24,7 +23,6 @@ export function RoleRevealScreen(_: Props) {
 
         <RoleRevealCard role={role} />
 
-        <PrimaryButton label="Rolümü Gördüm" iconName="checkmark-circle-outline" variant="gold" onPress={() => undefined} />
         <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} />
       </View>
     </ScreenShell>

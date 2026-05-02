@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
 import { GameToast } from "../components/GameToast";
-import { PhaseTransitionOverlay } from "../components/PhaseTransitionOverlay";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -147,7 +146,6 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
 
         <Animated.View style={[styles.content, { opacity: contentOpacity, transform: [{ translateY: contentY }] }]}>{children}</Animated.View>
         <GameToast message={privateResultText} />
-        <PhaseTransitionOverlay phase={phase} />
 
         {shouldShowBottomNav ? (
           <View style={[styles.bottomNav, { height: 74 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }]}>
