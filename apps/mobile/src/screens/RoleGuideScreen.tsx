@@ -47,23 +47,23 @@ export function RoleGuideScreen({ navigation, route }: Props) {
           </Text>
         </View>
 
-        <View style={styles.activeBox}>
-          <Text style={styles.activeTitle}>Bu Odada Aktif Roller</Text>
-          <View style={styles.activeWrap}>
-            {activeRoleIds.map((roleId) => {
-              const role = ROLE_GUIDE.find((item) => item.id === roleId);
-              if (!role) return null;
-              return (
-                <View key={roleId} style={styles.activeChip}>
-                  <Text style={styles.activeChipText}>{role.name}</Text>
-                </View>
-              );
-            })}
+        {isFromLobby ? (
+          <View style={styles.activeBox}>
+            <Text style={styles.activeTitle}>Bu Odada Aktif Roller</Text>
+            <View style={styles.activeWrap}>
+              {activeRoleIds.map((roleId) => {
+                const role = ROLE_GUIDE.find((item) => item.id === roleId);
+                if (!role) return null;
+                return (
+                  <View key={roleId} style={styles.activeChip}>
+                    <Text style={styles.activeChipText}>{role.name}</Text>
+                  </View>
+                );
+              })}
+            </View>
+            <Text style={styles.activeHint}>{`Oyuncu sayısı: ${playerCount}.`}</Text>
           </View>
-          <Text style={styles.activeHint}>
-            {roomState ? `Oyuncu sayısı: ${playerCount}.` : "Lobide değilsin, örnek rol seti gösteriliyor."}
-          </Text>
-        </View>
+        ) : null}
 
         <View style={styles.list}>
           {roles.map((role) => (
@@ -71,6 +71,7 @@ export function RoleGuideScreen({ navigation, route }: Props) {
               key={role.id}
               role={role}
               isActive={activeRoleIds.includes(role.id)}
+              showActiveState={isFromLobby}
               onPress={() => navigation.navigate("RoleCard", { roleId: role.id, source: isFromLobby ? "lobby" : "menu" })}
             />
           ))}
@@ -86,7 +87,17 @@ export function RoleGuideScreen({ navigation, route }: Props) {
   );
 }
 
-function RoleRow({ role, isActive, onPress }: { role: RoleGuideDefinition; isActive: boolean; onPress: () => void }) {
+function RoleRow({
+  role,
+  isActive,
+  showActiveState,
+  onPress
+}: {
+  role: RoleGuideDefinition;
+  isActive: boolean;
+  showActiveState: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <Image source={ROLE_ART[role.id]} style={styles.thumb} />
@@ -106,9 +117,11 @@ function RoleRow({ role, isActive, onPress }: { role: RoleGuideDefinition; isAct
           {role.shortDescription}
         </Text>
         <View style={styles.statusRow}>
-          <Text style={[styles.statusPill, isActive ? styles.statusOn : styles.statusOff]}>
-            {isActive ? "Bu odada aktif" : "Bu odada aktif değil"}
-          </Text>
+          {showActiveState ? (
+            <Text style={[styles.statusPill, isActive ? styles.statusOn : styles.statusOff]}>
+              {isActive ? "Bu odada aktif" : "Bu odada aktif değil"}
+            </Text>
+          ) : null}
           <Ionicons name="chevron-forward-outline" size={16} color={colors.textDim} />
         </View>
       </View>

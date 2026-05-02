@@ -64,6 +64,7 @@ export interface RoomPlayerView {
 export interface RoomStateSnapshot {
   roomCode: string;
   status: "Lobby" | "InGame" | "GameOver";
+  hostPlayerId?: string;
   players: RoomPlayerView[];
   minPlayers: number;
   maxPlayers: number;

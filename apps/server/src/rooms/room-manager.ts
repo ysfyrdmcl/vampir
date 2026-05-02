@@ -21,6 +21,7 @@ export class RoomManager {
     const room: RoomState = {
       roomCode,
       status: "Lobby",
+      hostPlayerId: player.playerId,
       players: [player],
       game: {
         phase: "Lobby",
@@ -165,6 +166,17 @@ export class RoomManager {
     }
     room.lastActivityAt = Date.now();
     return room;
+  }
+
+  assertHost(room: RoomState, deviceId: string): PlayerState {
+    const actor = room.players.find((p) => p.deviceId === deviceId);
+    if (!actor || !actor.isConnected) {
+      throw new Error("PLAYER_NOT_FOUND");
+    }
+    if (actor.playerId !== room.hostPlayerId) {
+      throw new Error("ONLY_HOST_CAN_CHANGE_ROOM");
+    }
+    return actor;
   }
 
   setPlayerReady(roomCode: string, deviceId: string, isReady: boolean): RoomState {

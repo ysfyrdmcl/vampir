@@ -9,6 +9,7 @@ import {
   createRoomSchema,
   joinRoomSchema,
   leaveRoomSchema,
+  roomConfigSchema,
   readyToggleSchema,
   startRoomSchema
 } from "./socket-schema.js";
@@ -26,6 +27,7 @@ export class SocketRuntime {
     socket.on(SOCKET_EVENTS.ROOM_JOIN, (payload) => this.safe(socket, () => this.onJoin(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_LEAVE, (payload) => this.safe(socket, () => this.onLeave(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_READY_TOGGLE, (payload) => this.safe(socket, () => this.onReadyToggle(socket, payload)));
+    socket.on(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, (payload) => this.safe(socket, () => this.onConfigUpdate(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_START, (payload) => this.safe(socket, () => this.onStart(socket, payload)));
     socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload)));
 
@@ -125,18 +127,29 @@ export class SocketRuntime {
     this.broadcastRoomState(room);
   }
 
+  private onConfigUpdate(_socket: Socket, raw: unknown): void {
+    const payload = roomConfigSchema.parse(raw);
+    const room = this.roomManager.requireRoom(payload.roomCode);
+    this.roomManager.assertHost(room, payload.identity.deviceId);
+    const updated = this.roomManager.updateGameConfig(payload.roomCode, {
+      phaseDurations: payload.phaseDurations,
+      gameMode: payload.gameMode,
+      rolePreset: payload.rolePreset,
+      rules: payload.rules
+    });
+    this.broadcastRoomState(updated);
+  }
+
   private onStart(_socket: Socket, raw: unknown): void {
     const payload = startRoomSchema.parse(raw);
+    const existingRoom = this.roomManager.requireRoom(payload.roomCode);
+    this.roomManager.assertHost(existingRoom, payload.identity.deviceId);
     const room = this.roomManager.updateGameConfig(payload.roomCode, {
       phaseDurations: payload.phaseDurations,
       gameMode: payload.gameMode,
       rolePreset: payload.rolePreset,
       rules: payload.rules
     });
-    const actor = room.players.find((p) => p.deviceId === payload.identity.deviceId);
-    if (!actor || !actor.isConnected) {
-      throw new Error("PLAYER_NOT_FOUND");
-    }
     if (!this.roomManager.areAllConnectedPlayersReady(payload.roomCode)) {
       throw new Error("PLAYERS_NOT_READY");
     }
@@ -199,6 +212,7 @@ export class SocketRuntime {
     return {
       roomCode: room.roomCode,
       status: room.status,
+      hostPlayerId: room.hostPlayerId,
       players: room.players.map((p) => ({
         playerId: p.playerId,
         nickname: p.nickname,

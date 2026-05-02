@@ -1,8 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ScreenShell } from "../components/ScreenShell";
 import { buildGameAnalysis } from "../logging/game-analysis";
@@ -41,6 +41,10 @@ export function GameLogScreen(_: Props) {
   const [tab, setTab] = useState<Tab>("general");
   const [generalFilter, setGeneralFilter] = useState<GeneralFilter>("all");
   const [playerNotes, setPlayerNotes] = useState<PlayerNotesById>({});
+  const [entryToast, setEntryToast] = useState<string | null>(null);
+  const toastY = useRef(new Animated.Value(-20)).current;
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const previousTopEntryRef = useRef<string | null>(null);
   const filtered = useMemo(
     () => entries.filter((e) => shouldShowLogEntry(e, tab)).filter((e) => matchesGeneralFilter(e, tab, generalFilter)),
     [entries, generalFilter, tab]
@@ -62,6 +66,30 @@ export function GameLogScreen(_: Props) {
     };
   }, [roomCode]);
 
+  useEffect(() => {
+    const top = filtered[filtered.length - 1];
+    const currentKey = top ? `${top.ts}:${top.event}` : null;
+    if (!currentKey) return;
+    if (!previousTopEntryRef.current) {
+      previousTopEntryRef.current = currentKey;
+      return;
+    }
+    if (previousTopEntryRef.current === currentKey) return;
+    previousTopEntryRef.current = currentKey;
+    setEntryToast(`Yeni günlük kaydı: ${eventHeadline(top.event)}`);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(toastOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        Animated.timing(toastY, { toValue: 0, duration: 180, useNativeDriver: true })
+      ]),
+      Animated.delay(1200),
+      Animated.parallel([
+        Animated.timing(toastOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
+        Animated.timing(toastY, { toValue: -20, duration: 220, useNativeDriver: true })
+      ])
+    ]).start(() => setEntryToast(null));
+  }, [filtered, toastOpacity, toastY]);
+
   const updatePlayerNote = (playerId: string, patch: { tag?: PlayerNoteTag; note?: string }) => {
     if (!roomCode) return;
     const current = getPlayerNote(playerNotes, playerId);
@@ -79,6 +107,12 @@ export function GameLogScreen(_: Props) {
   return (
     <ScreenShell scene="day" headerTitle="GÜNLÜK">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {entryToast ? (
+          <Animated.View style={[styles.entryToast, { opacity: toastOpacity, transform: [{ translateY: toastY }] }]}>
+            <Ionicons name="document-text-outline" size={15} color={colors.secondary} />
+            <Text style={styles.entryToastText}>{entryToast}</Text>
+          </Animated.View>
+        ) : null}
         <Text style={styles.title}>Günlük</Text>
         {tab === "personal" ? (
           <View style={styles.roleCard}>
@@ -137,11 +171,16 @@ export function GameLogScreen(_: Props) {
               <View style={styles.rowTop}>
                 <View style={styles.eventMeta}>
                   <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
-                  <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
+                  <Text style={styles.headline}>{eventHeadline(entry.event)}</Text>
                 </View>
                 <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event)}</Text>
               </View>
-              <Text style={styles.event}>{toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}</Text>
+              <View style={styles.rowTop}>
+                <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
+              </View>
+              <Text style={styles.event}>
+                {toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}
+              </Text>
             </View>
           ))}
         {tab === "personal" ? (
@@ -275,6 +314,23 @@ const styles = StyleSheet.create({
   filterTextActive: {
     color: colors.parchmentText
   },
+  entryToast: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.35)",
+    borderRadius: 999,
+    backgroundColor: "rgba(33,29,16,0.82)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  entryToastText: {
+    color: colors.text,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
+  },
   empty: {
     color: colors.textDim,
     textAlign: "center",
@@ -314,6 +370,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6
+  },
+  headline: {
+    color: colors.text,
+    fontFamily: typography.sansBold,
+    fontSize: 12
   },
   time: {
     color: colors.secondary,
@@ -443,6 +504,19 @@ function eventTag(event: string): string {
   if (event.startsWith("personal.") || event.startsWith("game.private_result") || event.startsWith("game.role")) return "Kişisel";
   if (event === "game.over") return "Bitiş";
   return "Oyun";
+}
+
+function eventHeadline(event: string): string {
+  if (event === "phase.night_started") return "Gece Basladi";
+  if (event === "phase.day_started") return "Gunduz Basladi";
+  if (event === "summary.night_no_elimination") return "Kimse Elenmedi";
+  if (event.startsWith("vote.tie")) return "Beraberlik";
+  if (event.startsWith("vote.")) return "Oylama";
+  if (event.startsWith("summary.")) return "Gun Sonucu";
+  if (event === "game.over") return "Oyun Bitti";
+  if (event.startsWith("personal.")) return "Kisisel Bilgi";
+  if (event.startsWith("role.")) return "Rol Bilgisi";
+  return "Oyun Olayi";
 }
 
 function matchesGeneralFilter(entry: LogFeedEntry, tab: Tab, filter: GeneralFilter): boolean {

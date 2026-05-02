@@ -230,6 +230,7 @@ class TestSimulator {
     return {
       roomCode: this.roomCode,
       status,
+      hostPlayerId: "test-me",
       minPlayers: 4,
       maxPlayers: 20,
       players: this.players.map((p) => ({

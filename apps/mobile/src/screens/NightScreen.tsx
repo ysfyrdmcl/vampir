@@ -3,9 +3,10 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
-import { PhaseCountdown } from "../components/PhaseCountdown";
+import { PhaseBanner } from "../components/PhaseBanner";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
+import { TargetSelectionList, type TargetSelectionItem } from "../components/TargetSelectionList";
 import { emitGameAction } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
@@ -134,12 +135,34 @@ export function NightScreen(_: Props) {
   const mePlayer = players.find((p) => p.playerId === playerId);
   const meAlive = mePlayer?.isAlive ?? true;
   const canAct = !!actionConfig && role === actionConfig.role && (meAlive || actionConfig.actionType === "hunter-shot");
-  const alivePlayers = players.filter((p) => p.isAlive);
-  const selectablePlayers =
-    actionConfig?.actionType === "doctor-protect"
-      ? alivePlayers
-      : alivePlayers.filter((player) => player.playerId !== playerId);
   const playerNameById = new Map(players.map((p) => [p.playerId, p.nickname] as const));
+  const selectedTargetName = selectedTargetPlayerId ? playerNameById.get(selectedTargetPlayerId) ?? "hedef" : null;
+  const targetItems: TargetSelectionItem[] = players.map((player) => {
+    const isSelectable =
+      !!actionConfig &&
+      canAct &&
+      player.isAlive &&
+      (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId);
+    const disabledReason = !player.isAlive
+      ? "Elendi"
+      : !canAct
+        ? "Bu fazda aksiyon hakkın yok"
+        : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
+          ? "Kendini secemezsin"
+          : actionConfig?.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire"
+            ? "Vampir baska vampiri hedefleyemez"
+            : null;
+    return {
+      id: player.playerId,
+      label: player.nickname,
+      initials: initialsFromName(player.nickname),
+      isSelectable,
+      isSelected: selectedTargetPlayerId === player.playerId,
+      statusText: player.isAlive ? "Hayatta" : "Elendi",
+      disabledReason,
+      badgeText: player.playerId === playerId ? "SEN" : null
+    };
+  });
 
   const submitAction = () => {
     if (!actionConfig || !selectedTargetPlayerId) {
@@ -161,49 +184,18 @@ export function NightScreen(_: Props) {
   return (
     <ScreenShell scene={sceneForPhase(phase, role, tieCount)} headerTitle={phase.startsWith("Day") || phase === "HunterLastBreath" || phase === "GuardProtect" ? "GÜNDÜZ FAZI" : "GECE FAZI"}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <Text style={styles.phaseTitle}>{phaseTitle(phase)}</Text>
-          <Text style={styles.phaseText}>{phaseDescription(phase, tieCount)}</Text>
-        </View>
-        <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} />
-
-        <View style={styles.playerGrid}>
-          {players.map((player) => {
-            const isSelectable = selectablePlayers.some((item) => item.playerId === player.playerId);
-            const isSelected = selectedTargetPlayerId === player.playerId;
-            return (
-              <View
-                key={player.playerId}
-                style={[
-                  styles.playerCard,
-                  player.isAlive ? styles.playerAlive : styles.playerDead,
-                  isSelectable && isSelected ? styles.playerSelected : null
-                ]}
-              >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{initialsFromName(player.nickname)}</Text>
-                </View>
-                <Text style={styles.playerName}>{player.nickname}</Text>
-                <Text style={[styles.playerState, player.isAlive ? styles.stateAlive : styles.stateDead]}>
-                  {player.isAlive ? "● HAYATTA" : "✕ ELENDİ"}
-                </Text>
-                {canAct && isSelectable ? (
-                  <PrimaryButton
-                    label={isSelected ? "Hedef Seçildi" : "Seç"}
-                    variant={isSelected ? "blood" : "charcoal"}
-                    onPress={() => setSelectedTargetPlayerId(player.playerId)}
-                    style={styles.selectButton}
-                  />
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
+        <PhaseBanner
+          title={phaseTitle(phase)}
+          description={phaseDescription(phase, tieCount)}
+          phaseEndsAt={gameState?.phaseEndsAt ?? null}
+        />
+        <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
 
         {canAct ? (
           <PrimaryButton
-            label={actionConfig.buttonLabel}
+            label={selectedTargetName ? `${selectedTargetName} için seçimi kilitle` : actionConfig.buttonLabel}
             iconName="checkmark-circle-outline"
+            variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
             onPress={submitAction}
             disabled={!selectedTargetPlayerId}
           />
@@ -358,6 +350,11 @@ const styles = StyleSheet.create({
   playerState: {
     fontFamily: typography.sansMedium,
     fontSize: 13
+  },
+  disabledHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11
   },
   stateAlive: {
     color: colors.success

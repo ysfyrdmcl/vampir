@@ -1,9 +1,12 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
-import { PhaseCountdown } from "../components/PhaseCountdown";
+import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
+import { PhaseBanner } from "../components/PhaseBanner";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
+import { TargetSelectionList, type TargetSelectionItem } from "../components/TargetSelectionList";
 import { emitGameAction } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
@@ -38,27 +41,70 @@ export function VoteScreen(_: Props) {
   const players = roomState?.players ?? [];
   const mePlayer = players.find((p) => p.playerId === playerId);
   const meAlive = mePlayer?.isAlive ?? true;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const selectedName =
+    selectedTargetPlayerId === "__NO_LYNCH__"
+      ? "Kimseyi Gönderme"
+      : players.find((player) => player.playerId === selectedTargetPlayerId)?.nickname ?? null;
+  const tiedTopCandidates = gameState?.lastDayVoteSummary?.tiedTopCandidates ?? [];
+  const hasTieRevote = !isMayorElection && gameState?.tieCountInRound ? tiedTopCandidates.length > 1 : false;
+  const tieCandidateSet = useMemo(() => new Set(tiedTopCandidates), [tiedTopCandidates]);
 
-  const candidates = players.filter(
-    (p) =>
-      p.isAlive &&
-      (isMayorElection ? true : p.playerId !== playerId) &&
-      (isMayorElection ? true : p.playerId !== guardProtectedPlayerId)
-  );
+  const candidates = players.filter((p) => {
+    if (!p.isAlive) return false;
+    if (!isMayorElection && p.playerId === playerId) return false;
+    if (!isMayorElection && p.playerId === guardProtectedPlayerId) return false;
+    if (hasTieRevote && !tieCandidateSet.has(p.playerId)) return false;
+    return true;
+  });
+  const targetItems: TargetSelectionItem[] = [
+    ...(!isMayorElection && noLynchEnabled && !hasTieRevote
+      ? [
+          {
+            id: "__NO_LYNCH__",
+            label: "Kimseyi Gonderme",
+            initials: "Ø",
+            isSelectable: meAlive,
+            isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
+            statusText: "Bos oy",
+            disabledReason: meAlive ? null : "Elendin"
+          }
+        ]
+      : []),
+    ...candidates.map((player) => ({
+      id: player.playerId,
+      label: player.nickname,
+      initials: initialsFromName(player.nickname),
+      isSelectable: meAlive,
+      isSelected: selectedTargetPlayerId === player.playerId,
+      statusText: player.playerId === mayorPlayerId ? "Baskan adayi" : "Aday",
+      disabledReason: meAlive ? null : "Elendin",
+      badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
+    }))
+  ];
 
   const submitVote = () => {
     if (!meAlive) return;
     if (!selectedTargetPlayerId) return;
     emitGameAction(isMayorElection ? "mayor-vote" : "day-vote", selectedTargetPlayerId);
+    setConfirmOpen(false);
   };
 
   return (
     <ScreenShell scene="vote" headerTitle="GÜNDÜZ FAZI">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{isMayorElection ? "Başkan Seçimi" : "Oylama"}</Text>
-        <Text style={styles.subtitle}>
-          {isMayorElection ? "Köy başkanını seç. Başkanın oyu gündüz 2 sayılır." : "Kimi köyden göndermek istiyorsun?"}
-        </Text>
+        <PhaseBanner
+          title={isMayorElection ? "Baskan Secimi" : "Oylama"}
+          description={isMayorElection ? "Koy baskanini sec. Baskanin oyu gunduz 2 sayilir." : "Kimi koyden gondermek istiyorsun?"}
+          notice={gameState?.tieCountInRound ? "Koy ikiye bolundu. Son karar icin tekrar oy veriliyor." : undefined}
+          phaseEndsAt={gameState?.phaseEndsAt ?? null}
+        />
+        {hasTieRevote ? (
+          <View style={styles.tieCard}>
+            <Text style={styles.tieTitle}>Beraberlikte Son Tur</Text>
+            <Text style={styles.tieText}>Yalnizca beraberlikte kalan adaylar icin tekrar oy kullaniliyor.</Text>
+          </View>
+        ) : null}
         {mayorPlayerId && !isMayorElection ? (
           <Text style={styles.mayorInfo}>
             Aktif Başkan: {players.find((p) => p.playerId === mayorPlayerId)?.nickname ?? mayorPlayerId}
@@ -69,49 +115,24 @@ export function VoteScreen(_: Props) {
             Gardiyan Koruması: {players.find((p) => p.playerId === guardProtectedPlayerId)?.nickname ?? guardProtectedPlayerId} bugün oylanamaz.
           </Text>
         ) : null}
-        <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} />
-
-        <View style={styles.grid}>
-          {!isMayorElection && noLynchEnabled ? (
-            <Pressable
-              key="__NO_LYNCH__"
-              style={[styles.card, selectedTargetPlayerId === "__NO_LYNCH__" ? styles.cardSelected : null]}
-              disabled={!meAlive}
-              onPress={() => setSelectedTargetPlayerId("__NO_LYNCH__")}
-            >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>Ø</Text>
-              </View>
-              <Text style={[styles.name, selectedTargetPlayerId === "__NO_LYNCH__" ? styles.nameSelected : null]}>Kimseyi Gönderme</Text>
-              <Text style={styles.voteHint}>{selectedTargetPlayerId === "__NO_LYNCH__" ? "● SEÇİLDİ" : "● OY VER"}</Text>
-            </Pressable>
-          ) : null}
-          {candidates.map((player) => {
-            const isSelected = selectedTargetPlayerId === player.playerId;
-            return (
-              <Pressable
-                key={player.playerId}
-                style={[styles.card, isSelected ? styles.cardSelected : null]}
-                disabled={!meAlive}
-                onPress={() => setSelectedTargetPlayerId(player.playerId)}
-              >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{initialsFromName(player.nickname)}</Text>
-                </View>
-                <Text style={[styles.name, isSelected ? styles.nameSelected : null]}>
-                  {player.nickname}
-                  {player.playerId === mayorPlayerId ? " (Başkan)" : ""}
-                </Text>
-                <Text style={styles.voteHint}>{isSelected ? "● HEDEF SEÇİLDİ" : "● OY VER"}</Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.selectedSummary}>
+          <Text style={styles.selectedLabel}>Seçilen Hedef</Text>
+          <Text style={styles.selectedValue}>{selectedName ?? "Henüz hedef seçilmedi."}</Text>
         </View>
+        <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
 
         <PrimaryButton
-          label={isMayorElection ? "Başkanı Onayla" : "Oylamayı Tamamla"}
+          label={
+            selectedName
+              ? isMayorElection
+                ? `${selectedName} için oyu kilitle`
+                : `${selectedName} için oyumu kilitle`
+              : isMayorElection
+                ? "Başkanı Onayla"
+                : "Oylamayı Tamamla"
+          }
           iconName="checkmark-done-outline"
-          onPress={submitVote}
+          onPress={() => setConfirmOpen(true)}
           disabled={!meAlive || !selectedTargetPlayerId}
         />
         <Text style={styles.help}>
@@ -124,6 +145,19 @@ export function VoteScreen(_: Props) {
         {privateResultText ? <Text style={styles.result}>{privateResultText}</Text> : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
       </ScrollView>
+      <ConfirmActionSheet
+        visible={confirmOpen}
+        title={isMayorElection ? "Baskan Oyu Kilitlensin mi?" : "Oyunu Kilitlemek Istiyor musun?"}
+        description={
+          selectedName
+            ? `${selectedName} icin verdigin oy onaylanacak. Faz bitene kadar degistiremeyebilirsin.`
+            : "Secim onaylanacak."
+        }
+        confirmLabel={isMayorElection ? "Baskan Oyu Kilitle" : "Oyumu Kilitle"}
+        variant={hasTieRevote ? "danger" : "blood"}
+        onConfirm={submitVote}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </ScreenShell>
   );
 }
@@ -136,23 +170,31 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: 14
   },
-  title: {
-    color: "#f4c4bc",
-    fontFamily: typography.serif,
-    fontSize: 56 / 1.45,
-    textAlign: "center"
-  },
-  subtitle: {
-    color: colors.textMuted,
-    textAlign: "center",
-    fontFamily: typography.serifRegular,
-    fontSize: 20
-  },
   mayorInfo: {
     color: colors.secondary,
     textAlign: "center",
     fontFamily: typography.sansMedium,
     fontSize: 13
+  },
+  tieCard: {
+    borderWidth: 1,
+    borderColor: "rgba(181,38,25,0.4)",
+    borderRadius: 12,
+    backgroundColor: "rgba(52,16,16,0.75)",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 3
+  },
+  tieTitle: {
+    color: "#ffb8ac",
+    fontFamily: typography.sansBold,
+    fontSize: 12,
+    letterSpacing: 1.1
+  },
+  tieText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
   },
   guardInfo: {
     color: "#58c1b6",
@@ -160,61 +202,25 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 13
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 10
-  },
-  card: {
-    width: "48.4%",
-    minHeight: 176,
-    borderRadius: 14,
+  selectedSummary: {
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.24)",
-    backgroundColor: colors.surfaceGlass,
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 14,
-    gap: 8
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 12,
+    backgroundColor: "rgba(36,31,20,0.62)",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 2
   },
-  cardSelected: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 5 }
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.42)",
-    backgroundColor: "rgba(8,8,10,0.9)",
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  avatarText: {
-    color: colors.text,
-    fontFamily: typography.serifSemi,
-    fontSize: 22
-  },
-  name: {
-    color: "#dec1bd",
-    fontFamily: typography.serifSemi,
-    fontSize: 36 / 1.72,
-    textAlign: "center"
-  },
-  nameSelected: {
-    color: colors.parchmentText
-  },
-  voteHint: {
-    color: colors.primaryBright,
+  selectedLabel: {
+    color: colors.textDim,
     fontFamily: typography.sansBold,
-    fontSize: 13,
-    letterSpacing: 1
+    fontSize: 11,
+    letterSpacing: 1.1
+  },
+  selectedValue: {
+    color: colors.secondary,
+    fontFamily: typography.serifSemi,
+    fontSize: 20
   },
   help: {
     color: colors.textDim,

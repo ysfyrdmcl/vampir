@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
@@ -11,10 +11,11 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CreateRoom">;
 
-export function CreateRoomScreen(_: Props) {
+export function CreateRoomScreen({ navigation }: Props) {
   const [nickname, setNickname] = useState("");
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(errorCode);
@@ -31,10 +32,14 @@ export function CreateRoomScreen(_: Props) {
     emitCreateRoom(value);
   };
 
+  const goBackToMenu = () => {
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+  };
+
   return (
-    <ScreenShell scene="create" headerTitle="GÜNDÜZ FAZI">
-      <View style={styles.root}>
-        <Text style={styles.title}>Oda Kur</Text>
+    <ScreenShell scene="create" headerTitle="ODA KUR">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.subtitle}>Karanlık meclisi başlat.</Text>
         <View style={styles.formCard}>
           <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
           <TextInput
@@ -57,40 +62,51 @@ export function CreateRoomScreen(_: Props) {
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         <PrimaryButton label="Odayı Oluştur" iconName="shield-checkmark-outline" onPress={createRoom} />
-      </View>
+        <PrimaryButton
+          label="Menüye Dön"
+          iconName="arrow-back-outline"
+          variant="outline"
+          onPress={goBackToMenu}
+          style={styles.backButton}
+        />
+      </ScrollView>
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    gap: 14,
+  scroll: {
+    flex: 1
+  },
+  content: {
+    flexGrow: 1,
+    gap: uiStandard.screen.pageGap,
+    paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
-  title: {
-    color: colors.text,
-    fontFamily: typography.serif,
-    fontSize: 56 / 1.5,
-    textAlign: "center"
+  subtitle: {
+    color: colors.textMuted,
+    textAlign: "center",
+    fontFamily: typography.serifRegular,
+    fontSize: uiStandard.text.heroSubtitleSize
   },
   formCard: {
-    backgroundColor: colors.parchment,
-    borderRadius: 14,
+    backgroundColor: uiStandard.surfaces.parchment.backgroundColor,
+    borderRadius: uiStandard.screen.cardRadius,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.42)",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: 12
+    borderColor: uiStandard.surfaces.parchment.borderColor,
+    paddingHorizontal: uiStandard.screen.cardPaddingX,
+    paddingVertical: uiStandard.screen.cardPaddingY,
+    gap: uiStandard.screen.sectionGap
   },
   fieldLabel: {
     color: colors.parchmentText,
     fontFamily: typography.sansBold,
-    fontSize: typography.label,
-    letterSpacing: 2
+    fontSize: uiStandard.text.sectionLabelSize,
+    letterSpacing: uiStandard.text.labelSpacing
   },
   input: {
-    height: 56,
+    height: uiStandard.screen.inputHeight,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(87,69,0,0.5)",
     color: colors.parchmentText,
@@ -104,10 +120,10 @@ const styles = StyleSheet.create({
   },
   codeCard: {
     marginTop: 2,
-    borderRadius: 12,
+    borderRadius: uiStandard.screen.panelRadius,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.32)",
-    backgroundColor: "rgba(32,31,31,0.92)",
+    borderColor: uiStandard.surfaces.code.borderColor,
+    backgroundColor: uiStandard.surfaces.code.backgroundColor,
     alignItems: "center",
     paddingVertical: 18,
     gap: 4
@@ -115,7 +131,7 @@ const styles = StyleSheet.create({
   codeLabel: {
     color: colors.textDim,
     fontFamily: typography.sansBold,
-    letterSpacing: 2,
+    letterSpacing: uiStandard.text.labelSpacing,
     fontSize: typography.label
   },
   code: {
@@ -127,5 +143,8 @@ const styles = StyleSheet.create({
   error: {
     color: colors.danger,
     fontFamily: typography.sansMedium
+  },
+  backButton: {
+    marginTop: 10
   }
 });

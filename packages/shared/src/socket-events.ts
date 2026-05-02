@@ -4,6 +4,7 @@ export const SOCKET_EVENTS = {
   ROOM_JOIN: "room:join",
   ROOM_LEAVE: "room:leave",
   ROOM_READY_TOGGLE: "room:ready-toggle",
+  ROOM_CONFIG_UPDATE: "room:config-update",
   ROOM_START: "room:start",
   GAME_ACTION_SUBMIT: "game:action:submit",
   ROOM_STATE: "room:state",

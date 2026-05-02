@@ -119,7 +119,9 @@ export const useGameStore = create<GameStoreState>((set) => ({
     set((state) => ({
       roomState,
       roomCode: roomState.roomCode,
-      rolePreset: roomState.rolePreset ?? state.rolePreset
+      gameMode: roomState.gameMode ?? state.gameMode,
+      rolePreset: roomState.rolePreset ?? state.rolePreset,
+      roomRules: roomState.rules ?? state.roomRules
     })),
   setGameState: (gameState) =>
     set({

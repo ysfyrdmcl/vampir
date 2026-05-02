@@ -50,6 +50,7 @@ export function TestModeSetupScreen({ navigation }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Test Oyun Kurulumu</Text>
         <Text style={styles.subtitle}>Kendi oyuncun + dummy botlarla oynarsın.</Text>
+        <Text style={styles.devHint}>Geliştirici ekranı. Normal oyuncu akışının parçası değildir.</Text>
 
         <Text style={styles.section}>Oyuncu Sayısı</Text>
         <View style={styles.row}>
@@ -86,7 +87,7 @@ export function TestModeSetupScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Seçtiğin rol mümkün değilse rol paketi veya oyuncu sayısına göre kapalı görünür.</Text>
 
         <PrimaryButton label="Test Lobby Başlat" iconName="play-outline" onPress={start} />
-        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="charcoal" onPress={() => navigation.navigate("Welcome")} />
+        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" onPress={() => navigation.navigate("Welcome")} />
       </ScrollView>
     </ScreenShell>
   );
@@ -105,6 +106,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
     textAlign: "center"
+  },
+  devHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    textAlign: "center",
+    fontSize: 12
   },
   section: {
     color: colors.secondary,

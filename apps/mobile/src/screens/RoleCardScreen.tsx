@@ -68,12 +68,11 @@ export function RoleCardScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <PrimaryButton label="Rolü Anladım" iconName="checkmark-circle-outline" onPress={() => navigation.goBack()} />
         <PrimaryButton
-          label={isFromLobby ? "Lobiye Dön" : "Menüye Dön"}
+          label="Rollere Dön"
           iconName="arrow-back-outline"
           variant="charcoal"
-          onPress={() => navigation.navigate(isFromLobby ? "Lobby" : "Welcome")}
+          onPress={() => navigation.navigate("RoleGuide", { source: isFromLobby ? "lobby" : "menu", focusActiveOnly: isFromLobby })}
         />
       </ScrollView>
     </ScreenShell>

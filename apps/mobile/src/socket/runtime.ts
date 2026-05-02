@@ -450,6 +450,28 @@ export function emitStartRoom(): void {
   });
 }
 
+export function emitRoomConfigUpdate(): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode || state.testMode) return;
+  ensureConnected();
+  const phaseDurations = buildPhaseDurationsPayload();
+  const config = buildGameConfigPayload();
+  getSocket().emit(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    phaseDurations,
+    gameMode: config.gameMode,
+    rolePreset: config.rolePreset,
+    rules: config.rules
+  });
+  logGameEvent("emit.room_config_update", {
+    roomCode: state.roomCode,
+    rolePreset: config.rolePreset,
+    gameMode: config.gameMode,
+    customDurations: Boolean(phaseDurations)
+  });
+}
+
 export function emitReadyToggle(isReady: boolean): void {
   const state = useGameStore.getState();
   if (!state.roomCode || state.testMode) return;

@@ -53,7 +53,7 @@ export const readyToggleSchema = z.object({
   isReady: z.boolean()
 });
 
-export const startRoomSchema = z.object({
+export const roomConfigSchema = z.object({
   identity: identitySchema,
   roomCode: z.string().min(4).max(8),
   phaseDurations: phaseDurationsSchema.optional(),
@@ -61,6 +61,8 @@ export const startRoomSchema = z.object({
   rolePreset: z.enum(["beginner", "classicPlus", "socialChaos"]).optional(),
   rules: ruleSettingsSchema.optional()
 });
+
+export const startRoomSchema = roomConfigSchema;
 
 export const actionSubmitSchema = z.object({
   identity: identitySchema,

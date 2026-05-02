@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
@@ -11,10 +11,11 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JoinRoom">;
 
-export function JoinRoomScreen(_: Props) {
+export function JoinRoomScreen({ navigation }: Props) {
   const [roomCode, setRoomCode] = useState("");
   const [nickname, setNickname] = useState("");
   const errorCode = useGameStore((s) => s.errorCode);
@@ -41,10 +42,13 @@ export function JoinRoomScreen(_: Props) {
     emitJoinRoom(safeRoomCode, safeNickname);
   };
 
+  const goBackToMenu = () => {
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+  };
+
   return (
-    <ScreenShell scene="join" headerTitle="GÜNDÜZ FAZI">
-      <View style={styles.root}>
-        <Text style={styles.title}>Odaya Katıl</Text>
+    <ScreenShell scene="join" headerTitle="ODAYA KATIL">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>Karanlık meclise davet edildin.</Text>
 
         <View style={styles.card}>
@@ -74,46 +78,52 @@ export function JoinRoomScreen(_: Props) {
             value={nickname}
             onChangeText={setNickname}
           />
-
-          <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} />
         </View>
+
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-      </View>
+        <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} />
+        <PrimaryButton
+          label="Menüye Dön"
+          iconName="arrow-back-outline"
+          variant="outline"
+          onPress={goBackToMenu}
+          style={styles.backButton}
+        />
+      </ScrollView>
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-    gap: 14
+  scroll: {
+    flex: 1
   },
-  title: {
-    color: colors.text,
-    fontFamily: typography.serif,
-    fontSize: 56 / 1.5,
-    textAlign: "center"
+  content: {
+    flexGrow: 1,
+    gap: uiStandard.screen.pageGap,
+    paddingBottom: spacing.xxl,
+    paddingTop: spacing.sm
   },
   subtitle: {
     color: colors.textMuted,
     textAlign: "center",
     fontFamily: typography.serifRegular,
-    fontSize: 19
+    fontSize: uiStandard.text.heroSubtitleSize
   },
   card: {
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.22)",
-    borderRadius: 16,
-    backgroundColor: colors.surfaceGlass,
-    padding: spacing.lg,
-    gap: 14
+    borderColor: uiStandard.surfaces.panel.borderColor,
+    borderRadius: uiStandard.screen.cardRadius,
+    backgroundColor: uiStandard.surfaces.panel.backgroundColor,
+    paddingHorizontal: uiStandard.screen.cardPaddingX,
+    paddingVertical: uiStandard.screen.cardPaddingY,
+    gap: uiStandard.screen.sectionGap
   },
   label: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: typography.label,
-    letterSpacing: 2
+    fontSize: uiStandard.text.sectionLabelSize,
+    letterSpacing: uiStandard.text.labelSpacing
   },
   codeSlots: {
     flexDirection: "row",
@@ -122,8 +132,8 @@ const styles = StyleSheet.create({
   },
   slot: {
     flex: 1,
-    height: 62,
-    borderRadius: 8,
+    height: uiStandard.screen.codeSlotHeight,
+    borderRadius: uiStandard.screen.codeSlotRadius,
     backgroundColor: "rgba(5,7,10,0.92)",
     borderBottomWidth: 2,
     borderBottomColor: "rgba(233,195,73,0.55)",
@@ -136,7 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 30
   },
   codeInput: {
-    height: 44,
+    height: uiStandard.screen.compactInputHeight,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(233,195,73,0.25)",
     color: colors.textDim,
@@ -148,7 +158,7 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   nameInput: {
-    height: 54,
+    height: uiStandard.screen.inputHeight,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(233,195,73,0.4)",
     color: colors.text,
@@ -159,5 +169,8 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: typography.sansMedium,
     textAlign: "center"
+  },
+  backButton: {
+    marginTop: 10
   }
 });

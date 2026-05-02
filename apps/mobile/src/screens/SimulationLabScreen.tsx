@@ -46,6 +46,7 @@ export function SimulationLabScreen({ navigation }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Otomatik Oyun Simülasyonu</Text>
         <Text style={styles.subtitle}>Senaryo: {header}</Text>
+        <Text style={styles.devHint}>Geliştirici ekranı. Canlı oyuncu deneyiminden ayrı tutulur.</Text>
 
         <Text style={styles.sectionTitle}>Oyuncu Sayısı</Text>
         <View style={styles.row}>
@@ -71,7 +72,7 @@ export function SimulationLabScreen({ navigation }: Props) {
           onPress={run}
           disabled={running}
         />
-        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="charcoal" onPress={() => navigation.navigate("Welcome")} />
+        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" onPress={() => navigation.navigate("Welcome")} />
 
         <View style={styles.logCard}>
           <Text style={styles.logTitle}>Son Özet</Text>
@@ -96,6 +97,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 14,
+    textAlign: "center"
+  },
+  devHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
     textAlign: "center"
   },
   sectionTitle: {

@@ -2,9 +2,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { Role, RoomPlayerView } from "@vampir-koylu/shared";
+import { useState } from "react";
 import type { RootStackParamList } from "../app/navigation/routes";
+import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
+import { DeadSealOverlay } from "../components/DeadSealOverlay";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { RoleBadge } from "../components/RoleBadge";
 import { ScreenShell } from "../components/ScreenShell";
+import { StatusBadge } from "../components/StatusBadge";
+import { TeamBadge } from "../components/TeamBadge";
 import { buildGameAnalysis } from "../logging/game-analysis";
 import { shouldShowLogEntry, toReadableLogText } from "../logging/log-policy";
 import type { LogFeedEntry } from "../logging/log-feed-store";
@@ -25,6 +31,13 @@ export function GameOverScreen({ navigation }: Props) {
   const minPlayers = roomState?.minPlayers ?? 4;
   const timeline = buildTimeline(logs, players);
   const analysis = buildGameAnalysis(logs, winner, players);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const isVampireWin = winner === "Vampires";
+  const winnerIcon = isVampireWin ? "moon-outline" : "sunny-outline";
+  const winnerTitle = isVampireWin ? "VAMPİRLER KAZANDI" : "KÖYLÜLER KAZANDI";
+  const winnerDescription = isVampireWin
+    ? "Karanlık çöktü ve avcılar artık avlanan oldu."
+    : "Köy dayanışma ile geceyi atlattı.";
 
   const exitToHome = () => {
     emitLeaveRoom();
@@ -36,15 +49,14 @@ export function GameOverScreen({ navigation }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Oyun Bitti</Text>
 
-        <View style={styles.winnerCard}>
-          <Ionicons name={winner === "Vampires" ? "moon-outline" : "sunny-outline"} size={42} color={winner === "Vampires" ? colors.primaryBright : colors.secondary} />
-          <Text style={[styles.winner, winner === "Vampires" ? styles.vampire : styles.villager]}>
-            {winner === "Vampires" ? "VAMPİRLER KAZANDI" : "KÖYLÜLER KAZANDI"}
-          </Text>
-          <Text style={styles.winnerDesc}>
-            {winner === "Vampires"
-              ? "Karanlık çöktü ve avcılar artık avlanan oldu."
-              : "Köy dayanışma ile geceyi atlattı."}
+        <View style={[styles.winnerCard, isVampireWin ? styles.winnerCardVampire : styles.winnerCardVillager]}>
+          <View style={[styles.winnerIconWrap, isVampireWin ? styles.winnerIconVampire : styles.winnerIconVillager]}>
+            <Ionicons name={winnerIcon} size={34} color={isVampireWin ? colors.primaryBright : colors.secondary} />
+          </View>
+          <Text style={[styles.winner, isVampireWin ? styles.vampire : styles.villager]}>{winnerTitle}</Text>
+          <Text style={styles.winnerDesc}>{winnerDescription}</Text>
+          <Text style={styles.winnerMeta}>
+            {isVampireWin ? "Gece tarafı üstünlüğü ele geçirdi" : "Gündüz ittifakı köyü savundu"}
           </Text>
         </View>
 
@@ -64,6 +76,24 @@ export function GameOverScreen({ navigation }: Props) {
           </>
         ) : null}
 
+        <Text style={styles.summaryTitle}>FİNAL ROL AÇILIMI</Text>
+        <View style={styles.roleGrid}>
+          {players.map((player) => {
+            const isVampireTeam = player.role === "Vampire";
+            return (
+              <View key={`role-${player.playerId}`} style={[styles.roleCard, isVampireTeam ? styles.roleCardVampire : styles.roleCardVillage]}>
+                <View style={styles.roleCardTop}>
+                  <Text style={styles.roleCardName} numberOfLines={1}>{player.nickname}</Text>
+                  <StatusBadge label={player.isAlive ? "Hayatta" : "Elendi"} tone={player.isAlive ? "alive" : "dead"} compact />
+                </View>
+                <RoleBadge role={player.role} />
+                <TeamBadge role={player.role} />
+                <DeadSealOverlay visible={!player.isAlive} />
+              </View>
+            );
+          })}
+        </View>
+
         <Text style={styles.summaryTitle}>OYUN ÖZETİ</Text>
         <View style={styles.summaryList}>
           {players.map((player) => (
@@ -75,9 +105,10 @@ export function GameOverScreen({ navigation }: Props) {
                   <Text style={styles.roleLabel}>Rol: {toRoleLabel(player.role)}</Text>
                 </View>
               </View>
-              <Text style={[styles.summaryState, player.isAlive ? styles.stateAlive : styles.stateDead]}>
-                {player.isAlive ? "Hayatta" : "Elendi"}
-              </Text>
+              <View style={styles.summaryRight}>
+                <TeamBadge role={player.role} compact />
+                <StatusBadge label={player.isAlive ? "Hayatta" : "Elendi"} tone={player.isAlive ? "alive" : "dead"} compact />
+              </View>
             </View>
           ))}
         </View>
@@ -102,8 +133,20 @@ export function GameOverScreen({ navigation }: Props) {
           onPress={emitStartRoom}
           disabled={players.length < minPlayers}
         />
-        <PrimaryButton label="Ana Menü" iconName="home-outline" variant="charcoal" onPress={exitToHome} />
+        <PrimaryButton label="Ana Menü" iconName="home-outline" variant="ghost" onPress={() => setConfirmOpen(true)} />
       </ScrollView>
+      <ConfirmActionSheet
+        visible={confirmOpen}
+        title="Ana Menüye Dön?"
+        description="Bu maç kapanır. İstersen yeniden oyun başlatıp lobiye de dönebilirsin."
+        confirmLabel="Ana Menüye Dön"
+        variant="blood"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          exitToHome();
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </ScreenShell>
   );
 }
@@ -124,12 +167,34 @@ const styles = StyleSheet.create({
   },
   winnerCard: {
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.3)",
     borderRadius: 16,
-    backgroundColor: "rgba(28,27,27,0.88)",
     padding: spacing.lg,
     alignItems: "center",
-    gap: 8
+    gap: 10
+  },
+  winnerCardVampire: {
+    borderColor: "rgba(196,55,55,0.36)",
+    backgroundColor: "rgba(34,14,14,0.88)"
+  },
+  winnerCardVillager: {
+    borderColor: "rgba(233,195,73,0.34)",
+    backgroundColor: "rgba(34,28,15,0.84)"
+  },
+  winnerIconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1
+  },
+  winnerIconVampire: {
+    borderColor: "rgba(196,55,55,0.5)",
+    backgroundColor: "rgba(80,20,20,0.28)"
+  },
+  winnerIconVillager: {
+    borderColor: "rgba(233,195,73,0.52)",
+    backgroundColor: "rgba(110,82,16,0.25)"
   },
   winner: {
     fontFamily: typography.serif,
@@ -149,11 +214,51 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 27
   },
+  winnerMeta: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 1.2
+  },
   summaryTitle: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: typography.label,
     letterSpacing: 2.2
+  },
+  roleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
+  roleCard: {
+    position: "relative",
+    width: "48%",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing.md,
+    gap: 6
+  },
+  roleCardVampire: {
+    borderColor: "rgba(196,55,55,0.35)",
+    backgroundColor: "rgba(36,13,13,0.82)"
+  },
+  roleCardVillage: {
+    borderColor: "rgba(170,137,132,0.28)",
+    backgroundColor: "rgba(14,14,15,0.78)"
+  },
+  roleCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8
+  },
+  roleCardName: {
+    color: colors.text,
+    fontFamily: typography.serifSemi,
+    fontSize: 17,
+    flex: 1
   },
   summaryList: {
     borderWidth: 1,
@@ -189,9 +294,9 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 12
   },
-  summaryState: {
-    fontFamily: typography.sansMedium,
-    fontSize: 14
+  summaryRight: {
+    alignItems: "flex-end",
+    gap: 2
   },
   stateAlive: {
     color: colors.success

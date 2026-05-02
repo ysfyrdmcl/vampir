@@ -69,6 +69,7 @@ export interface GameState {
 export interface RoomState {
   roomCode: string;
   status: "Lobby" | "InGame" | "GameOver";
+  hostPlayerId: string;
   players: PlayerState[];
   game: GameState;
   createdAt: number;

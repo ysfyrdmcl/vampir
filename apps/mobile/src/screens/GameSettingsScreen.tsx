@@ -1,6 +1,8 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
+import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { emitLeaveRoom } from "../socket/runtime";
@@ -11,6 +13,7 @@ import { typography } from "../theme/typography";
 type Props = NativeStackScreenProps<RootStackParamList, "GameSettings">;
 
 export function GameSettingsScreen({ navigation }: Props) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <ScreenShell scene="result" headerTitle="AYARLAR">
       <View style={styles.root}>
@@ -19,13 +22,23 @@ export function GameSettingsScreen({ navigation }: Props) {
         <PrimaryButton
           label="Odadan Ayrıl"
           iconName="exit-outline"
-          variant="charcoal"
-          onPress={() => {
-            emitLeaveRoom();
-            navigation.navigate("Welcome");
-          }}
+          variant="danger"
+          onPress={() => setConfirmOpen(true)}
         />
       </View>
+      <ConfirmActionSheet
+        visible={confirmOpen}
+        title="Odadan Ayrılsın mı?"
+        description="Bu işlem mevcut oyun oturumundan çıkış yapar ve seni ana menüye döndürür."
+        confirmLabel="Ayrıl"
+        variant="danger"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          emitLeaveRoom();
+          navigation.navigate("Welcome");
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </ScreenShell>
   );
 }
