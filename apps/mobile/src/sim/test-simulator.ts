@@ -15,9 +15,11 @@ interface SimPlayer {
 }
 
 interface ActionsState {
-  vampireTarget?: string;
+  vampireTargets: Record<string, string>;
   detectiveTarget?: string;
   doctorTarget?: string;
+  guardTarget?: string;
+  hunterTarget?: string;
   dayVotes: Record<string, string>;
 }
 
@@ -49,7 +51,7 @@ class TestSimulator {
   private currentPhase: GamePhase = "Lobby";
   private phaseTimer: ReturnType<typeof setTimeout> | null = null;
   private actionTimers: ReturnType<typeof setTimeout>[] = [];
-  private actions: ActionsState = { dayVotes: {} };
+  private actions: ActionsState = { vampireTargets: {}, dayVotes: {} };
   private doctorLastSelfProtect = false;
   private lastNightEliminated: string | null = null;
   private mayorPlayerId: string | null = null;
@@ -91,7 +93,7 @@ class TestSimulator {
     this.round = 1;
     this.tieCount = 0;
     this.currentPhase = "Lobby";
-    this.actions = { dayVotes: {} };
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     this.lastNightEliminated = null;
     this.doctorLastSelfProtect = false;
     this.mayorPlayerId = null;
@@ -125,7 +127,7 @@ class TestSimulator {
   leave(): void {
     this.clearTimers();
     this.players = [];
-    this.actions = { dayVotes: {} };
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     this.lastNightEliminated = null;
     this.currentPhase = "Lobby";
     this.mayorPlayerId = null;
@@ -138,7 +140,7 @@ class TestSimulator {
     this.players = this.players.map((player) => ({ ...player, isAlive: true, isConnected: true }));
     this.round = 1;
     this.tieCount = 0;
-    this.actions = { dayVotes: {} };
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     this.lastNightEliminated = null;
     this.doctorLastSelfProtect = false;
     this.mayorPlayerId = null;
@@ -162,9 +164,11 @@ class TestSimulator {
 
     if (actionType === "vampire-target" && me.role === "Vampire" && this.currentPhase === "VampireVote") {
       if (target.role === "Vampire") return;
-      this.actions.vampireTarget = targetPlayerId;
+      this.actions.vampireTargets[me.playerId] = targetPlayerId;
       useGameStore.getState().setPrivateResultText("Hedef seçildi.");
-      useGameStore.getState().setVampireVotePreview([{ vampirePlayerId: me.playerId, targetPlayerId }]);
+      useGameStore.getState().setVampireVotePreview(
+        Object.entries(this.actions.vampireTargets).map(([vampirePlayerId, targetPlayerId]) => ({ vampirePlayerId, targetPlayerId }))
+      );
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       logPersonalEvent("personal.vampire.target_selected", { targetPlayerId, round: this.round });
       return;
@@ -191,6 +195,20 @@ class TestSimulator {
     if (actionType === "mayor-vote" && this.currentPhase === "MayorElection") {
       this.actions.dayVotes[me.playerId] = targetPlayerId;
       useGameStore.getState().setPrivateResultText("Başkan tercihin kaydedildi.");
+      logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
+      return;
+    }
+    if (actionType === "guard-protect" && me.role === "Guard" && this.currentPhase === "GuardProtect") {
+      if (targetPlayerId === me.playerId) return;
+      this.actions.guardTarget = targetPlayerId;
+      useGameStore.getState().setPrivateResultText("Koruma hedefi kaydedildi.");
+      logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
+      return;
+    }
+    if (actionType === "hunter-shot" && me.role === "Hunter" && this.currentPhase === "HunterLastBreath") {
+      if (targetPlayerId === me.playerId) return;
+      this.actions.hunterTarget = targetPlayerId;
+      useGameStore.getState().setPrivateResultText("Son nefes hedefi kaydedildi.");
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
     }
   }
@@ -360,10 +378,10 @@ class TestSimulator {
       DoctorProtect: { next: "NightResolve", seconds: 3 },
       NightResolve: { next: "DayStart", seconds: this.phaseDuration("dayStart") },
       DayStart: {
-        next: this.shouldRunMayorElection() ? "MayorElection" : "DayDiscussion",
-        seconds: this.shouldRunMayorElection() ? this.phaseDuration("dayVote") : this.phaseDuration("dayDiscussion")
+        next: this.shouldRunMayorElection() ? "MayorElection" : this.shouldRunGuardProtect() ? "GuardProtect" : "DayDiscussion",
+        seconds: this.shouldRunMayorElection() || this.shouldRunGuardProtect() ? this.phaseDuration("dayVote") : this.phaseDuration("dayDiscussion")
       },
-      MayorElection: { next: "DayDiscussion", seconds: this.phaseDuration("dayVote") },
+      MayorElection: { next: this.shouldRunGuardProtect() ? "GuardProtect" : "DayDiscussion", seconds: this.phaseDuration("dayVote") },
       GuardProtect: { next: "DayDiscussion", seconds: this.phaseDuration("dayVote") },
       DayDiscussion: { next: "DayVote", seconds: this.phaseDuration("dayVote") },
       DayVote: { next: "ExecutionResolve", seconds: 4 },
@@ -382,6 +400,29 @@ class TestSimulator {
     if (this.currentPhase === "MayorElection") {
       this.resolveMayorElection();
     }
+    if (this.currentPhase === "GuardProtect") {
+      this.resolveGuardProtect();
+    }
+    if (this.currentPhase === "ExecutionResolve" && this.tieCount === 1 && !this.actions.hunterTarget) {
+      const summary = useGameStore.getState().lastDayVoteSummary;
+      if (summary?.executedPlayerId === null && (summary.tiedTopCandidates?.length ?? 0) > 1) {
+        this.setPhase("DayDiscussion", this.phaseDuration("dayDiscussion"));
+        return;
+      }
+    }
+    if (this.currentPhase === "ExecutionResolve") {
+      const summary = useGameStore.getState().lastDayVoteSummary;
+      if (summary?.executedPlayerId) {
+        const executed = this.players.find((p) => p.playerId === summary.executedPlayerId);
+        if (executed?.role === "Hunter") {
+          this.setPhase("HunterLastBreath", 3);
+          return;
+        }
+      }
+    }
+    if (this.currentPhase === "HunterLastBreath") {
+      this.resolveHunterLastBreath();
+    }
     this.setPhase(step.next, step.seconds);
   }
 
@@ -391,19 +432,22 @@ class TestSimulator {
 
     if (phase === "VampireVote") {
       useGameStore.getState().setVampireVotePreview([]);
-      const vamp = aliveBots.find((p) => p.role === "Vampire");
-      if (!vamp) return;
-      this.actionTimers.push(
-        setTimeout(() => {
-          const candidates = this.players.filter((p) => p.isAlive && p.role !== "Vampire");
-          const target = candidates[Math.floor(Math.random() * candidates.length)];
-          if (target) {
-            this.actions.vampireTarget = target.playerId;
-            useGameStore.getState().setVampireVotePreview([{ vampirePlayerId: vamp.playerId, targetPlayerId: target.playerId }]);
-            logGameEvent("test.action.bot", { actionType: "vampire-target", actor: vamp.nickname, target: target.nickname });
-          }
-        }, randomDelay())
-      );
+      const vampires = aliveBots.filter((p) => p.role === "Vampire");
+      for (const vamp of vampires) {
+        this.actionTimers.push(
+          setTimeout(() => {
+            const candidates = this.players.filter((p) => p.isAlive && p.role !== "Vampire");
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
+            if (target) {
+              this.actions.vampireTargets[vamp.playerId] = target.playerId;
+              useGameStore.getState().setVampireVotePreview(
+                Object.entries(this.actions.vampireTargets).map(([vampirePlayerId, targetPlayerId]) => ({ vampirePlayerId, targetPlayerId }))
+              );
+              logGameEvent("test.action.bot", { actionType: "vampire-target", actor: vamp.nickname, target: target.nickname });
+            }
+          }, randomDelay())
+        );
+      }
     }
 
     if (phase === "DetectiveInspect") {
@@ -465,18 +509,52 @@ class TestSimulator {
         );
       }
     }
+
+    if (phase === "GuardProtect") {
+      const guard = aliveBots.find((p) => p.role === "Guard");
+      if (!guard) return;
+      this.actionTimers.push(
+        setTimeout(() => {
+          const candidates = this.players.filter((p) => p.isAlive && p.playerId !== guard.playerId);
+          const target = candidates[Math.floor(Math.random() * candidates.length)];
+          if (target) {
+            this.actions.guardTarget = target.playerId;
+            logGameEvent("test.action.bot", { actionType: "guard-protect", actor: guard.nickname, target: target.nickname });
+          }
+        }, randomDelay())
+      );
+    }
+
+    if (phase === "HunterLastBreath") {
+      const hunter = aliveBots.find((p) => p.role === "Hunter");
+      if (!hunter) return;
+      this.actionTimers.push(
+        setTimeout(() => {
+          const candidates = this.players.filter((p) => p.isAlive && p.playerId !== hunter.playerId);
+          const target = candidates[Math.floor(Math.random() * candidates.length)];
+          if (target) {
+            this.actions.hunterTarget = target.playerId;
+            logGameEvent("test.action.bot", { actionType: "hunter-shot", actor: hunter.nickname, target: target.nickname });
+          }
+        }, randomDelay())
+      );
+    }
   }
 
   private resolveNight(): void {
     this.lastNightEliminated = null;
     const alive = this.players.filter((p) => p.isAlive);
-    const aliveVampire = alive.find((p) => p.role === "Vampire");
-    if (!aliveVampire) return;
+    const aliveVampires = alive.filter((p) => p.role === "Vampire");
+    if (!aliveVampires.length) return;
 
-    if (!this.actions.vampireTarget) {
-      const candidates = alive.filter((p) => p.playerId !== aliveVampire.playerId);
-      const random = candidates[Math.floor(Math.random() * candidates.length)];
-      this.actions.vampireTarget = random?.playerId;
+    for (const vampire of aliveVampires) {
+      if (!this.actions.vampireTargets[vampire.playerId]) {
+        const candidates = alive.filter((p) => p.role !== "Vampire");
+        const random = candidates[Math.floor(Math.random() * candidates.length)];
+        if (random) {
+          this.actions.vampireTargets[vampire.playerId] = random.playerId;
+        }
+      }
     }
 
     if (!this.actions.doctorTarget) {
@@ -506,9 +584,11 @@ class TestSimulator {
       }
     }
 
+    const vampireTargetByVotes = this.resolveVampireTargetByVotes(alive, this.actions.vampireTargets);
+
     let nightOutcome: "killed" | "protected" | "none" = "none";
-    if (this.actions.vampireTarget && this.actions.vampireTarget !== this.actions.doctorTarget) {
-      const target = this.players.find((p) => p.playerId === this.actions.vampireTarget);
+    if (vampireTargetByVotes && vampireTargetByVotes !== this.actions.doctorTarget) {
+      const target = this.players.find((p) => p.playerId === vampireTargetByVotes);
       if (target) {
         target.isAlive = false;
         if (this.mayorPlayerId === target.playerId) {
@@ -524,7 +604,7 @@ class TestSimulator {
           revealedRole: this.revealedRoleFor(target)
         });
       }
-    } else if (this.actions.vampireTarget && this.actions.vampireTarget === this.actions.doctorTarget) {
+    } else if (vampireTargetByVotes && vampireTargetByVotes === this.actions.doctorTarget) {
       nightOutcome = "protected";
       logGameEvent("summary.night_no_elimination", { round: this.round, reason: "doctor_protected" });
     } else {
@@ -544,27 +624,30 @@ class TestSimulator {
         text: nightOutcome === "protected" ? "Koruman saldırıyı engelledi." : "Koruduğun hedefe saldırı gelmedi."
       });
     }
-    if (me.role === "Vampire" && me.isAlive && this.actions.vampireTarget) {
-      const target = this.players.find((p) => p.playerId === this.actions.vampireTarget);
-      const targetName = target?.nickname ?? "hedef";
-      logPersonalEvent("personal.vampire.night_result", {
-        targetPlayerId: this.actions.vampireTarget,
-        round: this.round,
-        outcome: nightOutcome,
-        text:
-          nightOutcome === "protected"
-            ? `${targetName} doktor tarafından korundu.`
-            : nightOutcome === "killed"
-              ? `${targetName} gece elendi.`
-              : `${targetName} için gece sonucu netleşmedi.`
-      });
+    if (me.role === "Vampire" && me.isAlive) {
+      const targetId = this.actions.vampireTargets[me.playerId] ?? vampireTargetByVotes ?? null;
+      if (targetId) {
+        const target = this.players.find((p) => p.playerId === targetId);
+        const targetName = target?.nickname ?? "hedef";
+        logPersonalEvent("personal.vampire.night_result", {
+          targetPlayerId: targetId,
+          round: this.round,
+          outcome: nightOutcome,
+          text:
+            nightOutcome === "protected"
+              ? `${targetName} doktor tarafından korundu.`
+              : nightOutcome === "killed"
+                ? `${targetName} gece elendi.`
+                : `${targetName} için gece sonucu netleşmedi.`
+        });
+      }
     }
 
     logGameEvent("test.night.resolve.done", {
-      vampireTarget: this.actions.vampireTarget ?? null,
+      vampireTarget: vampireTargetByVotes,
       doctorTarget: this.actions.doctorTarget ?? null
     });
-    this.actions = { dayVotes: {} };
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
   }
 
@@ -581,17 +664,19 @@ class TestSimulator {
     }
 
     const counts = new Map<string, number>();
-    for (const target of Object.values(this.actions.dayVotes)) {
-      counts.set(target, (counts.get(target) ?? 0) + 1);
+    for (const [voterId, target] of Object.entries(this.actions.dayVotes)) {
+      if (this.guardProtectedPlayerId() && target === this.guardProtectedPlayerId()) continue;
+      const weight = this.mayorPlayerId && voterId === this.mayorPlayerId ? 2 : 1;
+      counts.set(target, (counts.get(target) ?? 0) + weight);
     }
     const ranked = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
     const top = ranked[0];
     const second = ranked[1];
     if (!top) {
-      this.actions = { dayVotes: {} };
+      this.actions = { vampireTargets: {}, dayVotes: {} };
       return;
     }
-    if (second && second[1] === top[1]) {
+    if (second && second[1] === top[1] && this.tieCount === 0) {
       this.tieCount += 1;
       useGameStore.getState().setLastDayVoteSummary({
         entries: ranked.map(([playerId, votes]) => ({ playerId, votes })),
@@ -599,13 +684,44 @@ class TestSimulator {
         tiedTopCandidates: ranked.filter(([, votes]) => votes === top[1]).map(([playerId]) => playerId)
       });
       useGameStore.getState().setPrivateResultText("Beraberlik çıktı. Köy tekrar oylayacak.");
-      this.actions = { dayVotes: {} };
+      this.actions = { vampireTargets: {}, dayVotes: {} };
       logGameEvent("test.dayvote.tie", { tieCount: this.tieCount });
       logGameEvent("vote.tie", {
         round: this.round,
         tieCount: this.tieCount,
         tiedTopCandidates: ranked.filter(([, votes]) => votes === top[1]).map(([playerId]) => playerId)
       });
+      return;
+    }
+    if (second && second[1] === top[1] && this.tieCount === 1) {
+      const tiePolicy = useGameStore.getState().roomRules.tiePolicy;
+      if (tiePolicy === "RevoteThenRandomExecution") {
+        const tiedTopCandidates = ranked.filter(([, votes]) => votes === top[1]).map(([playerId]) => playerId);
+        const randomTarget = tiedTopCandidates[Math.floor(Math.random() * tiedTopCandidates.length)];
+        const eliminated = this.players.find((p) => p.playerId === randomTarget);
+        if (eliminated) {
+          eliminated.isAlive = false;
+          if (this.mayorPlayerId === eliminated.playerId) this.mayorPlayerId = null;
+          useGameStore.getState().setLastDayVoteSummary({
+            entries: ranked.map(([playerId, votes]) => ({ playerId, votes })),
+            executedPlayerId: eliminated.playerId,
+            tiedTopCandidates
+          });
+          logGameEvent("vote.execution", { round: this.round, executedPlayerId: eliminated.playerId, randomByTiePolicy: true });
+          logGameEvent("summary.elimination", {
+            round: this.round,
+            source: "Day",
+            playerId: eliminated.playerId,
+            revealedRole: this.revealedRoleFor(eliminated)
+          });
+          useGameStore.getState().setPrivateResultText(`Beraberlik tekrarlandı. Rastgele infaz: ${eliminated.nickname}`);
+        }
+      } else {
+        useGameStore.getState().setPrivateResultText("Beraberlik tekrarlandı. Kimse elenmedi.");
+      }
+      this.tieCount = 0;
+      this.actions = { vampireTargets: {}, dayVotes: {} };
+      useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
       return;
     }
 
@@ -630,7 +746,8 @@ class TestSimulator {
         revealedRole: this.revealedRoleFor(eliminated)
       });
     }
-    this.actions = { dayVotes: {} };
+    this.tieCount = 0;
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
   }
 
@@ -652,13 +769,13 @@ class TestSimulator {
     const ranked = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
     const top = ranked[0];
     if (!top) {
-      this.actions = { dayVotes: {} };
+      this.actions = { vampireTargets: {}, dayVotes: {} };
       return;
     }
     const tiedTopCandidates = ranked.filter(([, votes]) => votes === top[1]).map(([playerId]) => playerId);
     const selectedMayorId = tiedTopCandidates[Math.floor(Math.random() * tiedTopCandidates.length)] ?? top[0];
     this.mayorPlayerId = selectedMayorId;
-    this.actions = { dayVotes: {} };
+    this.actions = { vampireTargets: {}, dayVotes: {} };
     useGameStore.getState().setPrivateResultText(
       `Başkan seçildi: ${this.players.find((p) => p.playerId === selectedMayorId)?.nickname ?? "Bilinmiyor"}`
     );
@@ -700,6 +817,76 @@ class TestSimulator {
     if (!rules.mayorEnabled) return false;
     const mayor = this.mayorPlayerId ? this.players.find((p) => p.playerId === this.mayorPlayerId) : null;
     return !mayor?.isAlive;
+  }
+
+  private shouldRunGuardProtect(): boolean {
+    return this.players.some((p) => p.isAlive && p.role === "Guard");
+  }
+
+  private guardProtectedPlayerId(): string | null {
+    return this.actions.guardTarget ?? null;
+  }
+
+  private resolveGuardProtect(): void {
+    const guard = this.players.find((p) => p.isAlive && p.role === "Guard");
+    if (!guard) {
+      this.actions.guardTarget = undefined;
+      return;
+    }
+    if (!this.actions.guardTarget) {
+      const candidates = this.players.filter((p) => p.isAlive && p.playerId !== guard.playerId);
+      const random = candidates[Math.floor(Math.random() * candidates.length)];
+      this.actions.guardTarget = random?.playerId;
+    }
+    if (this.actions.guardTarget) {
+      logGameEvent("role.guard.protect", { round: this.round, protectedPlayerId: this.actions.guardTarget });
+    }
+  }
+
+  private resolveHunterLastBreath(): void {
+    const summary = useGameStore.getState().lastDayVoteSummary;
+    if (!summary?.executedPlayerId) {
+      this.actions.hunterTarget = undefined;
+      return;
+    }
+    const hunter = this.players.find((p) => p.playerId === summary.executedPlayerId);
+    if (!hunter || hunter.role !== "Hunter") {
+      this.actions.hunterTarget = undefined;
+      return;
+    }
+    if (!this.actions.hunterTarget) {
+      const candidates = this.players.filter((p) => p.isAlive && p.playerId !== hunter.playerId);
+      const random = candidates[Math.floor(Math.random() * candidates.length)];
+      this.actions.hunterTarget = random?.playerId;
+    }
+    if (!this.actions.hunterTarget) return;
+    const target = this.players.find((p) => p.playerId === this.actions.hunterTarget);
+    if (!target || !target.isAlive) return;
+    target.isAlive = false;
+    if (this.mayorPlayerId === target.playerId) {
+      this.mayorPlayerId = null;
+    }
+    logGameEvent("role.hunter.shot", { round: this.round, targetPlayerId: target.playerId });
+    logGameEvent("summary.elimination", {
+      round: this.round,
+      source: "Day",
+      playerId: target.playerId,
+      revealedRole: this.revealedRoleFor(target)
+    });
+    useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
+  }
+
+  private resolveVampireTargetByVotes(alive: SimPlayer[], votes: Record<string, string>): string | null {
+    const counts = new Map<string, number>();
+    for (const targetId of Object.values(votes)) {
+      const target = alive.find((p) => p.playerId === targetId && p.role !== "Vampire");
+      if (!target) continue;
+      counts.set(target.playerId, (counts.get(target.playerId) ?? 0) + 1);
+    }
+    if (!counts.size) return null;
+    const top = Math.max(...Array.from(counts.values()));
+    const tied = Array.from(counts.entries()).filter(([, count]) => count === top).map(([id]) => id);
+    return tied[Math.floor(Math.random() * tied.length)] ?? null;
   }
 
   private clearTimers(): void {

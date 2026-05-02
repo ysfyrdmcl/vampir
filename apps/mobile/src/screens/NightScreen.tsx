@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
+import { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseBanner } from "../components/PhaseBanner";
@@ -115,6 +116,7 @@ function initialsFromName(name: string): string {
 }
 
 export function NightScreen(_: Props) {
+  const submittedActionKeyRef = useRef<string | null>(null);
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const role = useGameStore((s) => s.privateRole);
@@ -128,8 +130,17 @@ export function NightScreen(_: Props) {
   const errorText = toFriendlyErrorText(errorCode);
 
   const phase = gameState?.phase;
+  const round = gameState?.round ?? 0;
   const tieCount = gameState?.tieCountInRound ?? 0;
   const actionConfig = phase ? getActionConfig(phase) : null;
+  const actionKey = actionConfig ? `${phase}:${round}:${actionConfig.actionType}` : null;
+  const alreadySubmittedThisPhase = actionKey !== null && submittedActionKeyRef.current === actionKey;
+
+  useEffect(() => {
+    if (!actionKey || submittedActionKeyRef.current !== actionKey) {
+      submittedActionKeyRef.current = null;
+    }
+  }, [actionKey]);
 
   const players = roomState?.players ?? [];
   const mePlayer = players.find((p) => p.playerId === playerId);
@@ -165,10 +176,11 @@ export function NightScreen(_: Props) {
   });
 
   const submitAction = () => {
-    if (!actionConfig || !selectedTargetPlayerId) {
+    if (!actionConfig || !selectedTargetPlayerId || !actionKey || alreadySubmittedThisPhase) {
       return;
     }
     emitGameAction(actionConfig.actionType, selectedTargetPlayerId);
+    submittedActionKeyRef.current = actionKey;
   };
 
   if (!phase) {
@@ -197,7 +209,7 @@ export function NightScreen(_: Props) {
             iconName="checkmark-circle-outline"
             variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
             onPress={submitAction}
-            disabled={!selectedTargetPlayerId}
+            disabled={!selectedTargetPlayerId || alreadySubmittedThisPhase}
           />
         ) : (
           <View style={styles.waitingBox}>
