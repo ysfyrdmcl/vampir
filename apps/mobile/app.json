@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Vampir Koylu",
+    "slug": "vampir-koylu",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#131313"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
+

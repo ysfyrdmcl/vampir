@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Doktor Rol Detay Kartı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#c9c6c5",
+                        "primary": "#ffb4aa",
+                        "on-surface": "#e9e2d3",
+                        "on-secondary-fixed": "#241a00",
+                        "surface-container": "#221f16",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#e9c349",
+                        "secondary-fixed": "#ffe088",
+                        "tertiary-fixed-dim": "#c9c6c5",
+                        "surface-container-low": "#1e1b13",
+                        "on-primary-fixed": "#410001",
+                        "tertiary-container": "#222121",
+                        "surface-container-highest": "#38342b",
+                        "on-secondary-container": "#342800",
+                        "error": "#ffb4ab",
+                        "surface-tint": "#ffb4aa",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-primary-container": "#d26a5f",
+                        "primary-fixed": "#ffdad5",
+                        "on-primary": "#5f1410",
+                        "inverse-on-surface": "#343026",
+                        "on-primary-fixed-variant": "#7e2b23",
+                        "outline-variant": "#554240",
+                        "surface-dim": "#16130b",
+                        "primary-container": "#4a0404",
+                        "on-tertiary": "#313030",
+                        "surface-container-high": "#2d2a20",
+                        "on-secondary": "#3c2f00",
+                        "inverse-primary": "#9d4139",
+                        "tertiary-fixed": "#e5e2e1",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#e9e2d3",
+                        "background": "#16130b",
+                        "surface-container-lowest": "#110e06",
+                        "secondary-container": "#af8d11",
+                        "surface": "#16130b",
+                        "on-surface-variant": "#dcc0bd",
+                        "on-background": "#e9e2d3",
+                        "secondary": "#e9c349",
+                        "on-tertiary-container": "#8a8888",
+                        "on-error": "#690005",
+                        "outline": "#a38b88",
+                        "surface-variant": "#38342b",
+                        "on-secondary-fixed-variant": "#574500",
+                        "surface-bright": "#3d392f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target": "48px",
+                        "stack-md": "16px",
+                        "margin-safe": "20px",
+                        "gutter": "12px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Newsreader", "serif"],
+                        "body-lg": ["Manrope", "sans-serif"],
+                        "display-lg": ["Newsreader", "serif"],
+                        "title-sm": ["Newsreader", "serif"],
+                        "label-caps": ["Manrope", "sans-serif"],
+                        "body-md": ["Manrope", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "34px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "display-lg": ["42px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "title-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .fill-icon { font-variation-settings: 'FILL' 1; }
+        
+        /* Parchment Texture Overlay */
+        .bg-parchment {
+            background-color: theme('colors.surface-container');
+            background-image: radial-gradient(circle at center, rgba(233, 226, 211, 0.03) 0%, transparent 100%),
+                              linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 100%);
+        }
+        
+        /* Gold Foil Border Effect */
+        .border-gold-foil {
+            border: 1px solid theme('colors.secondary-container');
+            box-shadow: inset 0 0 10px rgba(175, 141, 17, 0.2), 0 0 15px rgba(175, 141, 17, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md bg-[url('https://www.transparenttextures.com/patterns/black-paper.png')]">
+<!-- Modal Container (The Divine - Level 3) -->
+<main class="flex-grow flex items-center justify-center p-margin-safe relative z-10 pt-safe pb-safe">
+<!-- Background Blur Overlay -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-xl z-0 pointer-events-none"></div>
+<!-- Role Card Modal -->
+<div class="relative z-10 w-full max-w-md bg-parchment border-gold-foil rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
+<!-- Emerald Green Top Accent -->
+<div class="h-1 w-full bg-gradient-to-r from-transparent via-[#10B981] to-transparent opacity-80"></div>
+<!-- Illustration Container -->
+<div class="relative w-full aspect-[4/3] bg-surface-container-lowest overflow-hidden">
+<img alt="Medieval Doctor Illustration" class="w-full h-full object-cover opacity-90 mix-blend-luminosity" data-alt="A highly detailed, dark fantasy illustration of a medieval plague doctor or mysterious healer standing in a dimly lit, ancient apothecary chamber. The figure wears dark, textured leather garments and holds a glowing emerald green potion bottle that casts an eerie, luminescent light on their face. The background features blurred wooden shelves lined with archaic medical tools and dried herbs. The overall mood is suspenseful and mystical, rendered in a high-end conceptual art style with deep shadows, rich textures, and dramatic chiaroscuro lighting consistent with a gothic mystery aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4YTAUvmNubqO5L8rqalDtxNqmHLUjBrqQwfGjZcX_bZxyl2DpNOZ6thR-3uFi82m-wE9KibbAGDu_3qZOodAxe9AudtnHThyM-ZBb0713cXRKi2qTlAEvgpKTqPNcty843MiXjOChH191qFdHvXPI_HAOhHFkjsDPb5rlj2vzkNq_JaPEys7kZZ_e_OC_1bG4JIE0QP-kvhBlY_GkLXLl2bmE9pa1mWJXTm9wleGAd-3gRiwOQ5BJIK1-_HA6n4YfioFmH8xhcw"/>
+<!-- Emerald Vignette/Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/50 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-tr from-[#064E3B]/40 to-transparent mix-blend-overlay"></div>
+</div>
+<!-- Content Area -->
+<div class="p-stack-lg flex flex-col items-center text-center -mt-12 relative z-10">
+<!-- Title -->
+<h1 class="font-display-lg text-display-lg text-on-surface mb-stack-md drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    DOKTOR
+                </h1>
+<!-- Chips Row -->
+<div class="flex flex-wrap justify-center gap-gutter mb-stack-lg">
+<!-- Team Chip -->
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-secondary/30 bg-surface-container-highest/80 backdrop-blur-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">shield</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Takım: Köy</span>
+</div>
+<!-- Action Chip -->
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#10B981]/40 bg-[#064E3B]/20 backdrop-blur-sm shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+<span class="material-symbols-outlined text-[16px] text-[#34D399]">dark_mode</span>
+<span class="font-label-caps text-label-caps text-[#A7F3D0] uppercase">Gece Aksiyonu</span>
+</div>
+</div>
+<!-- Description Text -->
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[280px] leading-relaxed mb-stack-lg">
+                    Her gece bir oyuncuyu korursun. Koruduğun kişi hedef alınırsa ölmez.
+                </p>
+<!-- Divider -->
+<div class="w-24 h-px bg-gradient-to-r from-transparent via-secondary/40 to-transparent mb-stack-lg"></div>
+<!-- Action Button -->
+<button class="w-full max-w-[240px] h-touch-target rounded-lg bg-primary-container border border-secondary/50 font-title-sm text-title-sm text-on-primary-container shadow-[0_4px_15px_rgba(0,0,0,0.5)] hover:bg-primary-container/80 transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95">
+                    Anladım
+                </button>
+</div>
+</div>
+</main>
+</body></html>

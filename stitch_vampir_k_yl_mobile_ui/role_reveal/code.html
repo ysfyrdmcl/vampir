@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700;6..72,800&amp;family=Manrope:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ffb4ab",
+                    "surface-container": "#201f1f",
+                    "surface-container-highest": "#353534",
+                    "on-tertiary-container": "#b9ad9b",
+                    "outline": "#aa8984",
+                    "secondary-container": "#af8d11",
+                    "surface-tint": "#ffb4a8",
+                    "on-secondary-fixed": "#241a00",
+                    "on-primary-container": "#ff907f",
+                    "primary": "#ffb4a8",
+                    "error-container": "#93000a",
+                    "on-surface": "#e5e2e1",
+                    "outline-variant": "#5a403c",
+                    "background": "#131313",
+                    "on-error-container": "#ffdad6",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-tertiary": "#372f23",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-fixed": "#211b0f",
+                    "secondary-fixed-dim": "#e9c349",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed": "#eee1ce",
+                    "tertiary-container": "#494133",
+                    "inverse-primary": "#b52619",
+                    "on-primary": "#690000",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#4e4638",
+                    "secondary": "#e9c349",
+                    "on-secondary-container": "#342800",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-variant": "#353534",
+                    "primary-container": "#8b0000",
+                    "on-secondary": "#3c2f00",
+                    "on-surface-variant": "#e3beb8",
+                    "secondary-fixed": "#ffe088",
+                    "surface-container-low": "#1c1b1b",
+                    "on-background": "#e5e2e1",
+                    "on-primary-fixed": "#410000",
+                    "surface-bright": "#3a3939",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "surface": "#131313",
+                    "tertiary-fixed-dim": "#d1c5b3",
+                    "on-secondary-fixed-variant": "#574500",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary": "#d1c5b3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "safe-margin": "20px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "unit": "4px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Manrope"],
+                    "h2": ["Newsreader"],
+                    "h1": ["Newsreader"],
+                    "body-sm": ["Manrope"],
+                    "body-lg": ["Manrope"],
+                    "newsreader": ["Newsreader"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "h1": ["34px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400"}],
+                    "body-lg": ["17px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .parchment-texture {
+            background-image: radial-gradient(circle at center, rgba(238, 225, 206, 0.15) 0%, rgba(13, 13, 13, 0) 70%), 
+                              linear-gradient(rgba(20, 20, 20, 0.8), rgba(10, 10, 10, 0.9));
+        }
+        .filigree-border {
+            border: 2px solid;
+            border-image: linear-gradient(to bottom, #8b0000, #af8d11, #8b0000) 1;
+        }
+        .moonlight-glow {
+            box-shadow: 0 0 40px rgba(175, 141, 17, 0.05), inset 0 0 20px rgba(139, 0, 0, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar Mapping -->
+<header class="flex justify-between items-center px-5 h-16 w-full fixed top-0 z-50 bg-neutral-950 dark:bg-black/95 border-b border-yellow-900/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-800 dark:text-red-700" data-icon="shield">shield</span>
+<h1 class="text-lg font-bold text-red-800 dark:text-red-700 font-newsreader uppercase tracking-widest">Gündüz Fazı</h1>
+</div>
+<div class="text-neutral-500 font-newsreader uppercase tracking-widest text-sm">#XJ82K1</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-safe-margin pt-20 pb-24 relative">
+<!-- Ambient Background Glow -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[radial-gradient(circle_at_center,rgba(139,0,0,0.08)_0%,transparent_60%)]"></div>
+</div>
+<!-- Role Identity Header -->
+<div class="mb-lg text-center z-10">
+<p class="font-label-caps text-label-caps text-secondary tracking-[0.2em] mb-xs">GİZLİ KİMLİK</p>
+<h2 class="font-h1 text-h1 text-on-surface">Rolün</h2>
+</div>
+<!-- Large Role Card (Bento/Artifact Style) -->
+<div class="w-full max-w-sm aspect-[3/4] relative z-10 perspective-1000">
+<div class="w-full h-full parchment-texture rounded-xl border border-yellow-900/30 moonlight-glow p-sm flex flex-col overflow-hidden">
+<!-- Inner Frame Filigree -->
+<div class="flex-1 border border-yellow-900/20 rounded-lg flex flex-col p-md relative bg-black/40">
+<!-- Role Illustration Area -->
+<div class="flex-1 relative rounded-lg overflow-hidden mb-md group">
+<img class="w-full h-full object-cover opacity-60 mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-700" data-alt="A dark and atmospheric gothic digital painting of a vampire with glowing crimson eyes, standing amidst swirling dark mists. The character wears an ornate black velvet Victorian coat with high collars. The lighting is dramatic and low-key, with cold blue moonlight highlighting the sharp features and a deep blood-red glow emanating from the shadows. The style is painterly and detailed, evoking a sense of ancient nobility and supernatural danger." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBF_w0WLxBxQwrf6pHqTgkXdN6lzCe5WpZAzX-lR6_vHz6XlaHjIcfqciTajRQl1bxQYYpGa8EjTGymGwVccI9_I3rrMwS_rHwXgQtQpzC6i2aTUSpb7YdVAz6S8NsbEQ8UBW0rCpcdpljruHSIVa03LV8KZXl1x1CK67BgO3umAQW4wOAeEEZMW3IlKU7Wk6sdjLKukaXbIKjsjVqnb74ZvouQkALsmNaIYSfwUBsR2FNtGgswAn45uihrRlw4xKc3AkckKiKXdg"/>
+<!-- Red Overlay Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-black via-primary-container/20 to-transparent"></div>
+<!-- Role Title Overlay -->
+<div class="absolute bottom-md left-0 w-full text-center">
+<span class="font-h1 text-[42px] text-primary-container tracking-tighter drop-shadow-[0_2px_10px_rgba(0,0,0,1)] uppercase font-extrabold italic">Vampir</span>
+</div>
+</div>
+<!-- Description Section -->
+<div class="text-center px-sm">
+<div class="flex justify-center gap-xs mb-sm">
+<span class="w-8 h-[1px] bg-secondary/30 mt-[10px]"></span>
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="auto_stories">auto_stories</span>
+<span class="w-8 h-[1px] bg-secondary/30 mt-[10px]"></span>
+</div>
+<p class="font-body-lg text-on-surface-variant leading-relaxed">
+                            Gece uyanır ve bir oyuncuyu hedef seçersin.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Call to Action -->
+<div class="mt-xl w-full max-w-sm z-10">
+<button class="w-full h-14 bg-primary-container text-on-surface font-newsreader text-lg font-bold rounded-xl border-t border-red-400/20 shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-sm">
+<span>Rolümü Anladım</span>
+<span class="material-symbols-outlined text-xl" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+<!-- Countdown Indicator (Tactile) -->
+<div class="mt-lg flex flex-col items-center gap-sm z-10">
+<div class="flex gap-1">
+<div class="w-12 h-1 bg-primary-container rounded-full"></div>
+<div class="w-12 h-1 bg-surface-container-highest rounded-full"></div>
+<div class="w-12 h-1 bg-surface-container-highest rounded-full"></div>
+</div>
+<p class="font-label-caps text-[10px] text-neutral-500 tracking-widest">OTOMATİK GEÇİŞ: 08s</p>
+</div>
+</main>
+<!-- BottomNavBar Suppression Rule: Task-focused sub-page, but for UI completeness we maintain the shell style as defined -->
+<!-- The prompt implies a focused state, but JSON requires navigation components for top-level ecosystem items. 
+         Role reveal is a "dead end" relative to global nav, so it is suppressed per instructions. -->
+<!-- Inline Status Bar (Custom for Game State) -->
+<div class="fixed top-16 left-0 w-full h-[2px] bg-surface-container z-40 overflow-hidden">
+<div class="h-full bg-gradient-to-r from-transparent via-red-800 to-transparent w-full animate-pulse"></div>
+</div>
+</body></html>

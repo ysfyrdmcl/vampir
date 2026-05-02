@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;0,800;1,400&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ffb4ab",
+                    "surface-container": "#201f1f",
+                    "surface-container-highest": "#353534",
+                    "on-tertiary-container": "#b9ad9b",
+                    "outline": "#aa8984",
+                    "secondary-container": "#af8d11",
+                    "surface-tint": "#ffb4a8",
+                    "on-secondary-fixed": "#241a00",
+                    "on-primary-container": "#ff907f",
+                    "primary": "#ffb4a8",
+                    "error-container": "#93000a",
+                    "on-surface": "#e5e2e1",
+                    "outline-variant": "#5a403c",
+                    "background": "#131313",
+                    "on-error-container": "#ffdad6",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-tertiary": "#372f23",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-fixed": "#211b0f",
+                    "secondary-fixed-dim": "#e9c349",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed": "#eee1ce",
+                    "tertiary-container": "#494133",
+                    "inverse-primary": "#b52619",
+                    "on-primary": "#690000",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#4e4638",
+                    "secondary": "#e9c349",
+                    "on-secondary-container": "#342800",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-variant": "#353534",
+                    "primary-container": "#8b0000",
+                    "on-secondary": "#3c2f00",
+                    "on-surface-variant": "#e3beb8",
+                    "secondary-fixed": "#ffe088",
+                    "surface-container-low": "#1c1b1b",
+                    "on-background": "#e5e2e1",
+                    "on-primary-fixed": "#410000",
+                    "surface-bright": "#3a3939",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "surface": "#131313",
+                    "tertiary-fixed-dim": "#d1c5b3",
+                    "on-secondary-fixed-variant": "#574500",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary": "#d1c5b3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "safe-margin": "20px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "unit": "4px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Manrope"],
+                    "h2": ["Newsreader"],
+                    "h1": ["Newsreader"],
+                    "body-sm": ["Manrope"],
+                    "body-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "h1": ["34px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400"}],
+                    "body-lg": ["17px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            -webkit-font-smoothing: antialiased;
+        }
+        .parchment-texture {
+            background-color: #d1c5b3;
+            background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0) 100%);
+            position: relative;
+        }
+        .parchment-texture::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url('https://www.transparenttextures.com/patterns/p6-dark.png');
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        .gothic-glow {
+            box-shadow: 0 0 30px rgba(139, 0, 0, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-5 h-16 w-full fixed top-0 z-50 bg-neutral-950 dark:bg-black/95 shadow-[0_4px_20px_rgba(0,0,0,0.8)] border-b border-yellow-900/20">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-red-800 dark:text-red-700" data-icon="shield">shield</span>
+<h1 class="text-lg font-bold text-red-800 dark:text-red-700 font-newsreader uppercase tracking-widest">Gündüz Fazı</h1>
+</div>
+<div class="text-neutral-500 font-label-caps text-xs tracking-widest opacity-60">
+            #XJ82K1
+        </div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-safe-margin pt-20 pb-24 relative overflow-hidden">
+<!-- Atmospheric Background Element -->
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,rgba(139,0,0,0.08)_0%,transparent_70%)]"></div>
+<img class="absolute bottom-0 left-0 w-full object-cover opacity-10 mix-blend-overlay h-3/4" data-alt="A shadowy, high-contrast silhouette of a jagged Gothic castle looming against a deep charcoal sky. Faint, ethereal moonlight creates a rim-lighting effect on the spires, evoking a sense of dread and mystery. The style is minimalist digital art with a heavy focus on atmospheric tension and high-stakes cinematic lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjrN5sOddcmy46PSJUkfjp0kX36_A1nI2BmUrvctmS-iHEBaL05w7zJhMsDIOp0G8A-GTMuGkh0AJe8B7WjeQhIo_5XS47Qf4ogmTaJuINRduAGJLpB2FS3SrYiHIOdOP2uXnhnqm3djDyYQQQAquBKi90Jmvb5a2VQ891S9_uvXgy-K0CLE3dMGeLnCZui3etHevkXnMmDnqEx4T6w3siP35JJtVqXdnGPgTaX3L23J8SF1GcqFPjoSIwsp1qtGLe4_DVzUBGCA"/>
+</div>
+<!-- Join Room Form Container -->
+<div class="w-full max-w-sm z-10 flex flex-col items-center space-y-lg">
+<div class="text-center space-y-xs">
+<h2 class="font-h1 text-h1 text-on-surface">Odaya Katıl</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant/60 italic">Karanlık meclise davet edildin.</p>
+</div>
+<!-- Card UI -->
+<div class="w-full bg-surface-container-low border border-yellow-900/10 rounded-xl p-lg gothic-glow flex flex-col space-y-lg">
+<!-- Code Input Section -->
+<div class="space-y-sm">
+<label class="font-label-caps text-label-caps text-secondary/70 block px-1">ODA KODU</label>
+<div class="flex gap-xs justify-between">
+<!-- Six digit input blocks -->
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+<div class="w-12 h-14 bg-surface-container-lowest border-b-2 border-secondary/30 flex items-center justify-center font-h2 text-h2 text-secondary focus-within:border-secondary transition-colors">
+<input class="w-full bg-transparent border-none text-center focus:ring-0 p-0" maxlength="1" placeholder="•" type="text"/>
+</div>
+</div>
+<p class="text-[10px] font-body-sm text-on-surface-variant/40 mt-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="info">info</span>
+                        Oda kodunu arkadaşından al
+                    </p>
+</div>
+<!-- Nickname Input Section -->
+<div class="space-y-sm">
+<label class="font-label-caps text-label-caps text-secondary/70 block px-1">OYUNCU ADIN</label>
+<div class="relative group">
+<input class="w-full bg-transparent border-0 border-b border-secondary/20 font-body-lg text-body-lg py-md focus:border-secondary focus:ring-0 transition-all duration-300 placeholder:text-on-surface-variant/30" placeholder="Lakabını gir..." type="text"/>
+<div class="absolute bottom-0 left-0 h-[1px] w-0 bg-secondary transition-all duration-500 group-focus-within:w-full"></div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-14 mt-md bg-primary-container text-tertiary-fixed font-h2 text-lg uppercase tracking-[0.2em] relative overflow-hidden group shadow-[0_4px_15px_rgba(139,0,0,0.4)] border-t border-red-400/20 active:scale-95 transition-all duration-200">
+<div class="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-50"></div>
+<span class="relative z-10 flex items-center justify-center gap-sm">
+                        Katıl
+                        <span class="material-symbols-outlined text-xl" data-icon="login">login</span>
+</span>
+</button>
+</div>
+<!-- Footer Text -->
+<button class="text-on-surface-variant/40 font-label-caps text-[11px] tracking-widest hover:text-secondary transition-colors flex items-center gap-sm mt-xl">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+                ANA MENÜYE DÖN
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-neutral-950 dark:bg-black/95 shadow-[0_-4px_20px_rgba(0,0,0,0.9)] border-t border-yellow-900/20">
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="castle">castle</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+</a>
+<a class="flex flex-col items-center justify-center text-red-600 drop-shadow-[0_0_8px_rgba(139,0,0,0.6)] p-2" href="#">
+<span class="material-symbols-outlined" data-icon="group" data-weight="fill" style="font-variation-settings: 'FILL' 1;">group</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</nav>
+</body></html>

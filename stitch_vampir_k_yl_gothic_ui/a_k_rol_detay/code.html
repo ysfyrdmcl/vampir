@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Aşık Rol Detay Kartı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "tertiary": "#c9c6c5",
+                            "primary": "#ffb4aa",
+                            "on-surface": "#e9e2d3",
+                            "on-secondary-fixed": "#241a00",
+                            "surface-container": "#221f16",
+                            "primary-fixed-dim": "#ffb4aa",
+                            "error-container": "#93000a",
+                            "secondary-fixed-dim": "#e9c349",
+                            "secondary-fixed": "#ffe088",
+                            "tertiary-fixed-dim": "#c9c6c5",
+                            "surface-container-low": "#1e1b13",
+                            "on-primary-fixed": "#410001",
+                            "tertiary-container": "#222121",
+                            "surface-container-highest": "#38342b",
+                            "on-secondary-container": "#342800",
+                            "error": "#ffb4ab",
+                            "surface-tint": "#ffb4aa",
+                            "on-tertiary-fixed": "#1c1b1b",
+                            "on-tertiary-fixed-variant": "#474646",
+                            "on-primary-container": "#d26a5f",
+                            "primary-fixed": "#ffdad5",
+                            "on-primary": "#5f1410",
+                            "inverse-on-surface": "#343026",
+                            "on-primary-fixed-variant": "#7e2b23",
+                            "outline-variant": "#554240",
+                            "surface-dim": "#16130b",
+                            "primary-container": "#4a0404",
+                            "on-tertiary": "#313030",
+                            "surface-container-high": "#2d2a20",
+                            "on-secondary": "#3c2f00",
+                            "inverse-primary": "#9d4139",
+                            "tertiary-fixed": "#e5e2e1",
+                            "on-error-container": "#ffdad6",
+                            "inverse-surface": "#e9e2d3",
+                            "background": "#16130b",
+                            "surface-container-lowest": "#110e06",
+                            "secondary-container": "#af8d11",
+                            "surface": "#16130b",
+                            "on-surface-variant": "#dcc0bd",
+                            "on-background": "#e9e2d3",
+                            "secondary": "#e9c349",
+                            "on-tertiary-container": "#8a8888",
+                            "on-error": "#690005",
+                            "outline": "#a38b88",
+                            "surface-variant": "#38342b",
+                            "on-secondary-fixed-variant": "#574500",
+                            "surface-bright": "#3d392f"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "touch-target": "48px",
+                            "stack-md": "16px",
+                            "margin-safe": "20px",
+                            "gutter": "12px",
+                            "stack-sm": "8px",
+                            "stack-lg": "32px",
+                            "unit": "4px"
+                    },
+                    "fontFamily": {
+                            "headline-md": [
+                                    "Newsreader"
+                            ],
+                            "body-lg": [
+                                    "Manrope"
+                            ],
+                            "display-lg": [
+                                    "Newsreader"
+                            ],
+                            "title-sm": [
+                                    "Newsreader"
+                            ],
+                            "label-caps": [
+                                    "Manrope"
+                            ],
+                            "body-md": [
+                                    "Manrope"
+                            ]
+                    },
+                    "fontSize": {
+                            "headline-md": [
+                                    "28px",
+                                    {
+                                            "lineHeight": "34px",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "body-lg": [
+                                    "18px",
+                                    {
+                                            "lineHeight": "26px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "display-lg": [
+                                    "42px",
+                                    {
+                                            "lineHeight": "48px",
+                                            "letterSpacing": "-0.02em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "title-sm": [
+                                    "20px",
+                                    {
+                                            "lineHeight": "28px",
+                                            "letterSpacing": "0.05em",
+                                            "fontWeight": "500"
+                                    }
+                            ],
+                            "label-caps": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "16px",
+                                            "letterSpacing": "0.1em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "body-md": [
+                                    "16px",
+                                    {
+                                            "lineHeight": "24px",
+                                            "fontWeight": "400"
+                                    }
+                            ]
+                    }
+            },
+                },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+        }
+        .parchment-texture {
+            background-color: theme('colors.surface-container');
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.1"/></svg>');
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-background min-h-screen flex flex-col items-center justify-center p-margin-safe pb-32">
+<!-- Top App Bar (Suppressed as this is a detail modal/card view, focusing on content) -->
+<!-- Main Content Canvas: The Divine Modal (Level 3) -->
+<main class="w-full max-w-md mx-auto relative z-10 flex flex-col gap-stack-lg">
+<!-- Role Card -->
+<article class="parchment-texture rounded-xl border border-secondary shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_0_20px_rgba(212,175,55,0.1)] overflow-hidden flex flex-col relative">
+<!-- Card Header Image -->
+<div class="h-64 w-full relative">
+<img alt="Aşık İllüstrasyonu" class="w-full h-full object-cover opacity-80 mix-blend-luminosity" data-alt="A dark fantasy illustration of two intertwined hearts locked together by a golden seal, adorned with withered crimson roses. The scene is illuminated by soft, flickering candlelight casting deep, mysterious shadows in a gothic, ancient setting. The overall aesthetic is rich with dark burgundy, gold, and deep black tones, conveying a sense of tragic romance and fatalistic destiny. The style is highly detailed, blending skeuomorphic tactile elements with ethereal mystery." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyU8feJvaZVLdV03TvouCH4szSuyg-G1GpEgpsSTFzZaidiK2HM_y1wPcVGFO9SUtNtKezDKUy3tWkKt0IJAnNrn7GlbCSLZZo_Y2OQ47kmBo77Q0IICkn7xm-hWqUKazpjHLv6RKcdyOpcvNB7rYcA_S8OPJ_7qTdC6dR4dD0cvSkB_RrVD0XNydcs-JgaAd2JH56gICID9BA-4UMivdXjQu_H9QKaPBOKzVMzUC0tnePx2yQXwjRvsymyFeQDYLOeLoUYYUQHw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-transparent"></div>
+</div>
+<!-- Card Content -->
+<div class="p-stack-md flex flex-col items-center text-center gap-stack-md relative -mt-12 z-10">
+<!-- Title -->
+<h1 class="font-display-lg text-display-lg text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    AŞIK
+                </h1>
+<!-- Chips -->
+<div class="flex flex-wrap justify-center gap-gutter">
+<span class="inline-flex items-center gap-unit px-3 py-1 rounded-full bg-primary-container/50 border border-primary/30 backdrop-blur-md">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-caps text-label-caps text-on-primary-container">Takım: Gizli Bağ</span>
+</span>
+<span class="inline-flex items-center gap-unit px-3 py-1 rounded-full bg-surface-container-high/80 border border-secondary/30 backdrop-blur-md">
+<span class="material-symbols-outlined text-[16px] text-secondary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-secondary">Pasif Etki</span>
+</span>
+</div>
+<!-- Description -->
+<div class="w-full mt-stack-sm p-stack-md bg-surface-container-low/50 rounded-lg border-t border-b border-primary/20 backdrop-blur-sm shadow-inner">
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                        Bir oyuncuya gizli bağ ile bağlısın. Bağlı olduğun oyuncu ölürse sen de ölürsün.
+                    </p>
+</div>
+</div>
+</article>
+<!-- Action Area -->
+<div class="w-full flex justify-center mt-stack-md">
+<button class="w-full h-touch-target bg-primary-container border border-secondary/50 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.6)] flex items-center justify-center gap-stack-sm active:scale-95 transition-transform duration-150 group">
+<span class="font-title-sm text-title-sm text-on-primary-container group-hover:text-primary transition-colors">
+                    Anladım
+                </span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">check_circle</span>
+</button>
+</div>
+</main>
+<!-- Bottom Nav Bar (Suppressed based on contextual state rules for transactional/modal screens) -->
+</body></html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dedektif Rol Detay Kartı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#c9c6c5",
+                        "primary": "#ffb4aa",
+                        "on-surface": "#e9e2d3",
+                        "on-secondary-fixed": "#241a00",
+                        "surface-container": "#221f16",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#e9c349",
+                        "secondary-fixed": "#ffe088",
+                        "tertiary-fixed-dim": "#c9c6c5",
+                        "surface-container-low": "#1e1b13",
+                        "on-primary-fixed": "#410001",
+                        "tertiary-container": "#222121",
+                        "surface-container-highest": "#38342b",
+                        "on-secondary-container": "#342800",
+                        "error": "#ffb4ab",
+                        "surface-tint": "#ffb4aa",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-primary-container": "#d26a5f",
+                        "primary-fixed": "#ffdad5",
+                        "on-primary": "#5f1410",
+                        "inverse-on-surface": "#343026",
+                        "on-primary-fixed-variant": "#7e2b23",
+                        "outline-variant": "#554240",
+                        "surface-dim": "#16130b",
+                        "primary-container": "#4a0404",
+                        "on-tertiary": "#313030",
+                        "surface-container-high": "#2d2a20",
+                        "on-secondary": "#3c2f00",
+                        "inverse-primary": "#9d4139",
+                        "tertiary-fixed": "#e5e2e1",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#e9e2d3",
+                        "background": "#16130b",
+                        "surface-container-lowest": "#110e06",
+                        "secondary-container": "#af8d11",
+                        "surface": "#16130b",
+                        "on-surface-variant": "#dcc0bd",
+                        "on-background": "#e9e2d3",
+                        "secondary": "#e9c349",
+                        "on-tertiary-container": "#8a8888",
+                        "on-error": "#690005",
+                        "outline": "#a38b88",
+                        "surface-variant": "#38342b",
+                        "on-secondary-fixed-variant": "#574500",
+                        "surface-bright": "#3d392f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target": "48px",
+                        "stack-md": "16px",
+                        "margin-safe": "20px",
+                        "gutter": "12px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Newsreader"],
+                        "body-lg": ["Manrope"],
+                        "display-lg": ["Newsreader"],
+                        "title-sm": ["Newsreader"],
+                        "label-caps": ["Manrope"],
+                        "body-md": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "34px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "display-lg": ["42px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "title-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+            background-color: #0a0a0a;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center p-margin-safe font-body-md antialiased overflow-hidden">
+<!-- Layer 0: The Abyss (already handled by body background) -->
+<!-- Layer 1 & 2: The Chamber & The Artifact (Card Container) -->
+<main class="w-full max-w-md relative z-10 flex flex-col items-center">
+<!-- Glassmorphism Card -->
+<div class="relative w-full rounded-xl bg-black/80 backdrop-blur-[20px] border border-secondary-container/30 shadow-[0_0_30px_rgba(0,0,0,0.8),_0_0_10px_rgba(212,175,55,0.1)] overflow-hidden flex flex-col">
+<!-- Weathered Parchment Texture Overlay -->
+<div class="absolute inset-0 opacity-10 bg-gradient-to-br from-secondary/20 to-transparent pointer-events-none"></div>
+<!-- Role Illustration Area -->
+<div class="relative w-full aspect-square bg-surface-container-highest overflow-hidden">
+<img alt="Dedektif İllüstrasyonu" class="w-full h-full object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-700 ease-in-out" data-alt="A moody, high-contrast illustration of a mysterious detective character holding a classic magnifying glass. The detective is cloaked in shadows, wearing a traditional trench coat and fedora, set against a dark, foggy cobblestone street reminiscent of a gothic Turkish village. Subtle purple and gold magical accents glow around the magnifying glass, matching the dark fantasy UI aesthetic of deep blacks, rich burgundies, and ancient gold filigree." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMQmedgomch4CMgsa-KcvQOuazVvyQyM_LqqCbBPbTpVnzkXG1b3s7dCvSFdXkC0q6gVnNkdiiaPTmlwoFjT6s5uqPlJgqlLenQRc9in8CpMpOK4IjBMFwXj3mFr50AvznnOc4fJfZyH2_MpSfXzuXwC9lbIgZ97wDvWPR0TVnuTp9CCsTrCb1BO_W7jGmI6i86PaI-K2xzs6EvA--hD0idKu1hQBLrIlUwPE4OIf0WRrB2_U3Xuhyt1c7wc3bM7-vWcoeKl1okw"/>
+<!-- Inner Shadow Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+</div>
+<!-- Content Area -->
+<div class="relative px-6 pb-8 pt-4 flex flex-col items-center text-center -mt-16 z-20">
+<!-- Title -->
+<h1 class="font-display-lg text-display-lg text-on-surface mb-stack-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    DEDEKTİF
+                </h1>
+<!-- Status Chips -->
+<div class="flex flex-wrap justify-center gap-gutter mb-stack-md">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container/60 border border-secondary/40 font-label-caps text-label-caps text-secondary shadow-[0_0_10px_rgba(233,195,73,0.1)]">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">shield</span>
+                        Takım: Köy
+                    </span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-900/30 border border-purple-500/50 font-label-caps text-label-caps text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+                        Gece Aksiyonu
+                    </span>
+</div>
+<!-- Description Text -->
+<div class="w-full relative py-stack-sm mb-stack-lg">
+<!-- Subtle top/bottom framing -->
+<div class="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-secondary/30 to-transparent"></div>
+<p class="font-body-lg text-body-lg text-on-surface-variant px-4">
+                        Her gece bir oyuncuyu sorgularsın. Sonuç sadece sana görünür. Açıklamak ya da saklamak senin kararın.
+                    </p>
+<div class="absolute bottom-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-secondary/30 to-transparent"></div>
+</div>
+<!-- Action Button -->
+<button class="w-full min-h-[48px] rounded-lg bg-primary-container border border-secondary/40 font-title-sm text-title-sm text-on-surface shadow-[0_4px_15px_rgba(0,0,0,0.5),_inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-inverse-primary hover:border-secondary transition-all active:scale-[0.98] flex items-center justify-center">
+                    Anladım
+                </button>
+</div>
+</div>
+</main>
+</body></html>

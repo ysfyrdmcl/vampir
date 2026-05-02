@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Gündüz Fazı - Köy Uyandı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ffb4ab",
+                        "surface-container": "#201f1f",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-container": "#b9ad9b",
+                        "outline": "#aa8984",
+                        "secondary-container": "#af8d11",
+                        "surface-tint": "#ffb4a8",
+                        "on-secondary-fixed": "#241a00",
+                        "on-primary-container": "#ff907f",
+                        "primary": "#ffb4a8",
+                        "error-container": "#93000a",
+                        "on-surface": "#e5e2e1",
+                        "outline-variant": "#5a403c",
+                        "background": "#131313",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#131313",
+                        "on-primary-fixed-variant": "#920703",
+                        "on-tertiary": "#372f23",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary-fixed": "#211b0f",
+                        "secondary-fixed-dim": "#e9c349",
+                        "inverse-on-surface": "#313030",
+                        "tertiary-fixed": "#eee1ce",
+                        "tertiary-container": "#494133",
+                        "inverse-primary": "#b52619",
+                        "on-primary": "#690000",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed-variant": "#4e4638",
+                        "secondary": "#e9c349",
+                        "on-secondary-container": "#342800",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-variant": "#353534",
+                        "primary-container": "#8b0000",
+                        "on-secondary": "#3c2f00",
+                        "on-surface-variant": "#e3beb8",
+                        "secondary-fixed": "#ffe088",
+                        "surface-container-low": "#1c1b1b",
+                        "on-background": "#e5e2e1",
+                        "on-primary-fixed": "#410000",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "surface": "#131313",
+                        "tertiary-fixed-dim": "#d1c5b3",
+                        "on-secondary-fixed-variant": "#574500",
+                        "primary-fixed": "#ffdad4",
+                        "tertiary": "#d1c5b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "safe-margin": "20px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Manrope"],
+                        "h2": ["Newsreader"],
+                        "h1": ["Newsreader"],
+                        "body-sm": ["Manrope"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "h1": ["34px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-lg": ["17px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .parchment-bg {
+            background-color: #d1c5b3;
+            background-image: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 100%),
+                              linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 100%);
+        }
+        .gothic-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
+        }
+        .text-glow-red {
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.8);
+        }
+        .filigree-border {
+            border: 1px solid rgba(175, 141, 17, 0.2);
+            position: relative;
+        }
+        .filigree-border::after {
+            content: "";
+            position: absolute;
+            inset: 2px;
+            border: 1px solid rgba(175, 141, 17, 0.1);
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen pb-24 selection:bg-primary-container selection:text-white">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-5 h-16 w-full fixed top-0 z-50 bg-neutral-950 dark:bg-black/95 docked full-width border-b border-yellow-900/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-red-800 dark:text-red-700" data-icon="shield">shield</span>
+<h1 class="text-lg font-bold text-red-800 dark:text-red-700 font-newsreader uppercase tracking-widest">Gündüz Fazı</h1>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-caps text-neutral-500">#XJ82K1</span>
+</div>
+</header>
+<main class="pt-20 px-safe-margin max-w-md mx-auto space-y-lg">
+<!-- Banner Section -->
+<section class="relative overflow-hidden rounded-xl h-48 bg-surface-container-low filigree-border">
+<img alt="Village Sunrise" class="absolute inset-0 w-full h-full object-cover opacity-50" data-alt="A hauntingly beautiful cinematic shot of an ancient medieval village at first light. The rising sun casts long, eerie shadows through thick morning mist. The color palette is dominated by cold blues and warm gold highlights, with a subtle gothic atmosphere. The scene evokes mystery and tension, reflecting a social deduction game's visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa0oDImDEqGv2ztHFG-D4u8-3S7sDWfv1jGAsmMVDXu_lgOoCNOFuS17SRp22ebMnpv1R-nsmYgcaZfR2We9LmyAookF746fh9KVBdZS-RL1r0hP8NNkWGrwmvO8dP77s868GoSJi_NUvIkdOG8jkJ5j9d3c8COxp30YnTz3_PUS2Jijsf5pIHYvGu13m3jDre53B6hxFdPBtAcdz-SgZ89v4RSBdJVmHaaTcmkA7PLi3E20Fv5-SBkX7R6w340n3kQjnePzdWOg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4">
+<h2 class="font-h1 text-h1 text-white mb-xs">Köy uyandı</h2>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-caps">Tartışma Süresi: 60s</span>
+</div>
+</div>
+</section>
+<!-- Notification Card -->
+<div class="parchment-bg p-md rounded-lg gothic-shadow border-l-4 border-primary-container">
+<div class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary-container text-[32px] pt-1" data-icon="skull" data-weight="fill" style="font-variation-settings: 'FILL' 1;">skull</span>
+<div>
+<h3 class="font-h2 text-body-lg font-bold text-on-tertiary-fixed mb-xs">Kara Haber</h3>
+<p class="text-on-tertiary font-body-sm leading-snug">Bu gece biri saldırıya uğradı: <span class="font-bold underline decoration-primary-container">Ahmet</span></p>
+</div>
+</div>
+</div>
+<!-- Player Grid -->
+<section class="space-y-md">
+<div class="flex justify-between items-end">
+<h3 class="font-label-caps text-neutral-400">OYUNCULAR</h3>
+<span class="text-[10px] text-neutral-500 uppercase tracking-tighter">11 Canlı / 1 Kayıp</span>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<!-- Alive Player -->
+<div class="bg-surface-container-high p-sm rounded-lg filigree-border flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-secondary/30">
+<img alt="Avatar" class="w-full h-full object-cover grayscale" data-alt="Close up portrait of a stern-looking man in 19th-century noble attire, captured in dramatic low-key lighting. The style is painterly and moody, consistent with a dark vampire-themed game. Deep shadows and a single light source from the side define his features." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGLXwbgICMjDsUVkh08WGi-LExnE6osld0kSow4quwC5RPVf9FRCFRZaqPjJhjNA4otyODJALo-Rqjm2FX8hhZHm0N6SdLbz0_J9ITFJ74BzAq1_a2WC1iQn-OAjdu8ogYMrvpEDpnP9eVH9zGaXmdpaiEFLHZJpuUrdpWX07836b_4vSNFlnTASg0-OjyPJIE6qRcpgF98qzlbaT0lKhXySvCBFAOxf4Sqd4i-9MQzTLFXyHJCPiN5ETOTwBmm7FM7w8IXoz3-Q"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate">Zeynep</p>
+<div class="flex items-center gap-[2px]">
+<div class="w-2 h-2 rounded-full bg-green-900 shadow-[0_0_4px_rgba(0,100,0,0.8)]"></div>
+<span class="text-[10px] text-green-700/80 uppercase font-bold">Hayatta</span>
+</div>
+</div>
+</div>
+<!-- Dead Player -->
+<div class="bg-surface-container-lowest opacity-60 p-sm rounded-lg border border-red-900/30 flex items-center gap-sm grayscale">
+<div class="relative w-12 h-12 rounded-full overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="A portrait of a young man with a look of surprise and terror, framed in a dark, atmospheric vignette. The lighting is cold and moonlight-inspired, matching the gothic minimalist aesthetic of a high-stakes horror game. High contrast and deep blacks." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKbMbgqFlXDS6iCNpDigQqAxZUs0go_aOCPzcFpAMfRc8vod4s7IgKWH9BC-MNhtUJvj0F2gzuPod45cy4LsIdoVNIdt5x6t7KfX5qgiyluUI5UpBJVIe9KpAx-HPVAs-oLPj6eIWxT2sTdyj5LdNYWFm__zaZkIraGI9KRtwclnDEg2G7oMw5LXn0tePueHnWFwwqSe2RKEZk9xWkMBE9vWG9ONxsZx6mGDuRMGwDOVDTsabjHv19Dm24si3SOAw70pNy0_f-MA"/>
+<div class="absolute inset-0 bg-red-950/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-red-600 text-xl" data-icon="close">close</span>
+</div>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate line-through text-neutral-500">Ahmet</p>
+<div class="flex items-center gap-[2px]">
+<span class="material-symbols-outlined text-red-900 text-[12px]" data-icon="skull">skull</span>
+<span class="text-[10px] text-red-900 uppercase font-bold">Ölü</span>
+</div>
+</div>
+</div>
+<!-- More Players (Alive) -->
+<div class="bg-surface-container-high p-sm rounded-lg filigree-border flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-secondary/30">
+<img alt="Avatar" class="w-full h-full object-cover grayscale" data-alt="A moody, high-contrast portrait of a woman in a dark Victorian-era dress. Her expression is mysterious and neutral. The lighting is dimly lit by candlelight, casting long shadows. Dark navy and deep burgundy tones are present in the image's background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-40b_MqagziyDSjl2yfbG6m70EJhKMVaMW0phCV_JZeJYkC9eEx28ow-CFD7vaTNkec5Hec4w5-yzRSjZ9ZH5mHqUnVlGxRyhaWSins_DDDvQ1tWuI3Sx2yxwr3QwtyAZ8e9E3ic_gi5qxn2a5mLxxO6QsIbC--QloUyDtty6r2XzVEaPzrxZRrNkZbay7WM7a-LFOD_9tKS6TbrnjOX0mCOI7sSYXeUvlVROkDI3b2ersW3TS3NuFeBFsKXq-68daXdCQGywLQ"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate">Elif</p>
+<div class="flex items-center gap-[2px]">
+<div class="w-2 h-2 rounded-full bg-green-900 shadow-[0_0_4px_rgba(0,100,0,0.8)]"></div>
+<span class="text-[10px] text-green-700/80 uppercase font-bold">Hayatta</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-high p-sm rounded-lg filigree-border flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-secondary/30">
+<img alt="Avatar" class="w-full h-full object-cover grayscale" data-alt="A portrait of an older man with grey hair and sharp, analytical eyes. He wears a dark iron brooch on his lapel. The image has a heavy, textured feel like aged parchment. Lighting is dramatic and shadows are deep, emphasizing the atmospheric tension of the game." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc-QilVGYc58T4BGtRCICa_MuhTPTeG9cWvPSCDoykag37E7VyJVVgrP_SKDMXCvarcL-HfizUmCJpPy0mNqy2qWk-s0t9qHpJpKZLUgmvV6EQiyBa3Y6Lgsr459onyIe_I7VoKuZfwkSLpWQdPP8tyd0caFWu2ZQEsSdCvVBz_4nB58S0emfIFX0uUf2txFva2diiUwxm8w6yvbM4JIWkubZTKp9VL1pd5YRLQZ9dcRx2ni8tD620WjicK-iREo_dJUb6bFonVQ"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate">Mustafa</p>
+<div class="flex items-center gap-[2px]">
+<div class="w-2 h-2 rounded-full bg-green-900 shadow-[0_0_4px_rgba(0,100,0,0.8)]"></div>
+<span class="text-[10px] text-green-700/80 uppercase font-bold">Hayatta</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-high p-sm rounded-lg filigree-border flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-secondary/30">
+<img alt="Avatar" class="w-full h-full object-cover grayscale" data-alt="A portrait of a focused woman in a dark velvet cloak. Her face is partially obscured by shadows. The overall mood is noble yet mysterious. Cinematic lighting emphasizes the textures of her skin and the velvet fabric. The background is nearly pitch black." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6tSE7oQXDgqo3zQ6-gWdx9fMbI1x5rSWpCRn-6LBrpKbQdzQKLxl1v4QU_fN657FoAjh7SXyVRDQNLIXaCgVqSlMRVkFYMLGK-KrFn7ZSQIYnbxA4UH8W9NjbeRm5IFL4CejnwCvpDPTzQel4sZfmbka8mFKq6S1cyqPxNJPJtwd3I9HqZDxCPk8p-HhpT5eeHctxLRBLM515tCXbgKs4V9lEZHk5s-ggZtKolv8uhor6Qngv0AVZdNOX8mSEl7Jh0onPbCVtdw"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate">Selin</p>
+<div class="flex items-center gap-[2px]">
+<div class="w-2 h-2 rounded-full bg-green-900 shadow-[0_0_4px_rgba(0,100,0,0.8)]"></div>
+<span class="text-[10px] text-green-700/80 uppercase font-bold">Hayatta</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-high p-sm rounded-lg filigree-border flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-secondary/30">
+<img alt="Avatar" class="w-full h-full object-cover grayscale" data-alt="A sharp, dramatic portrait of a man in a high-collared black coat. The background is a faint, out-of-focus stone wall. The lighting is cool, suggesting a cold, moonlit night. The style is extremely focused and premium, capturing subtle emotional cues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyEeWQEItPSivxIpuFCowDqbhkg02z51oNiy9xMoWWngbOyQ64yHfhiT90b_iFAs5fU40msHgvf3xPGDpEurWJf_sHYjEWzi-wmzuBtAIAth1hu9d2qKgcqvawceMz4-pQ7TV8p30g8lBvPpWDJqyM4VA_4P0GY5b3D5fwhyxQ5f1RrAFSMZN_wxx6nHe2KNLUeMkZQerej58VliRKM8GPxL9hp52Kg4lAuJqJX2Y5fICCsz5pdccK5Fj03y2jCe-n0Xzuv5bgEg"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm font-bold truncate">Can</p>
+<div class="flex items-center gap-[2px]">
+<div class="w-2 h-2 rounded-full bg-green-900 shadow-[0_0_4px_rgba(0,100,0,0.8)]"></div>
+<span class="text-[10px] text-green-700/80 uppercase font-bold">Hayatta</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Button -->
+<div class="pt-md pb-xl">
+<button class="w-full h-14 bg-primary-container text-white rounded-lg font-h2 text-body-lg flex items-center justify-center gap-sm gothic-shadow border-t border-red-500/30 active:scale-95 transition-all">
+<span>Oylamaya Geç</span>
+<span class="material-symbols-outlined" data-icon="how_to_vote">how_to_vote</span>
+</button>
+<p class="text-center text-[11px] text-neutral-600 mt-sm font-label-caps tracking-widest">TÜM OYUNCULARIN HAZIR OLMASI GEREKİR</p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-neutral-950 dark:bg-black/95 docked full-width rounded-t-lg border-t border-yellow-900/20 shadow-[0_-4px_20px_rgba(0,0,0,0.9)]">
+<div class="flex flex-col items-center justify-center text-red-600 drop-shadow-[0_0_8px_rgba(139,0,0,0.6)] p-2">
+<span class="material-symbols-outlined" data-icon="castle">castle</span>
+<span class="font-newsreader text-[10px] tracking-tight">Köy</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="font-newsreader text-[10px] tracking-tight">Geçmiş</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-newsreader text-[10px] tracking-tight">Kadro</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-newsreader text-[10px] tracking-tight">Ayarlar</span>
+</div>
+</nav>
+</body></html>

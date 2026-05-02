@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;700;800&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ffb4ab",
+                        "surface-container": "#201f1f",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-container": "#b9ad9b",
+                        "outline": "#aa8984",
+                        "secondary-container": "#af8d11",
+                        "surface-tint": "#ffb4a8",
+                        "on-secondary-fixed": "#241a00",
+                        "on-primary-container": "#ff907f",
+                        "primary": "#ffb4a8",
+                        "error-container": "#93000a",
+                        "on-surface": "#e5e2e1",
+                        "outline-variant": "#5a403c",
+                        "background": "#131313",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#131313",
+                        "on-primary-fixed-variant": "#920703",
+                        "on-tertiary": "#372f23",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary-fixed": "#211b0f",
+                        "secondary-fixed-dim": "#e9c349",
+                        "inverse-on-surface": "#313030",
+                        "tertiary-fixed": "#eee1ce",
+                        "tertiary-container": "#494133",
+                        "inverse-primary": "#b52619",
+                        "on-primary": "#690000",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed-variant": "#4e4638",
+                        "secondary": "#e9c349",
+                        "on-secondary-container": "#342800",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-variant": "#353534",
+                        "primary-container": "#8b0000",
+                        "on-secondary": "#3c2f00",
+                        "on-surface-variant": "#e3beb8",
+                        "secondary-fixed": "#ffe088",
+                        "surface-container-low": "#1c1b1b",
+                        "on-background": "#e5e2e1",
+                        "on-primary-fixed": "#410000",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "surface": "#131313",
+                        "tertiary-fixed-dim": "#d1c5b3",
+                        "on-secondary-fixed-variant": "#574500",
+                        "primary-fixed": "#ffdad4",
+                        "tertiary": "#d1c5b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "safe-margin": "20px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Manrope"],
+                        "h2": ["Newsreader"],
+                        "h1": ["Newsreader"],
+                        "body-sm": ["Manrope"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "h1": ["34px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-lg": ["17px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .parchment-texture {
+            background-color: #d1c5b3;
+            background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0) 100%);
+            position: relative;
+        }
+        .parchment-texture::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .flicker {
+            filter: drop-shadow(0 0 15px rgba(233, 195, 73, 0.4));
+        }
+        .glass-dark {
+            background: rgba(32, 31, 31, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(170, 137, 132, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex flex-col">
+<!-- TopAppBar from JSON -->
+<header class="flex justify-between items-center px-5 h-16 w-full fixed top-0 z-50 bg-neutral-950 dark:bg-black/95 shadow-[0_4px_20px_rgba(0,0,0,0.8)] border-b border-yellow-900/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-800 dark:text-red-700" data-icon="shield">shield</span>
+<h1 class="text-lg font-bold text-red-800 dark:text-red-700 font-newsreader uppercase tracking-widest">Gündüz Fazı</h1>
+</div>
+<div class="flex items-center">
+<span class="text-neutral-500 font-label-caps text-label-caps">#XJ82K1</span>
+</div>
+</header>
+<main class="flex-grow flex flex-col items-center justify-center px-safe-margin pt-20 pb-24 overflow-hidden relative">
+<!-- Background Atmosphere Glow -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(139,0,0,0.15)_0%,transparent_60%)] pointer-events-none"></div>
+<!-- Tie Content Section -->
+<div class="w-full max-w-md flex flex-col items-center text-center z-10">
+<!-- Dramatic Visual -->
+<div class="relative mb-lg">
+<div class="absolute inset-0 bg-secondary/20 blur-3xl rounded-full scale-150"></div>
+<div class="w-32 h-32 glass-dark rounded-full flex items-center justify-center border-2 border-secondary/30 relative">
+<span class="material-symbols-outlined text-secondary text-6xl flicker" data-icon="local_fire_department" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+</div>
+<!-- Header -->
+<h2 class="font-h1 text-h1 text-on-surface mb-sm tracking-tight">Beraberlik</h2>
+<!-- Description -->
+<p class="font-body-lg text-on-surface-variant max-w-[280px] leading-relaxed mb-xl">
+                Oylar eşit çıktı. Son kez tekrar konuşun.
+            </p>
+<!-- Timer Display -->
+<div class="w-full parchment-texture rounded-xl p-lg shadow-xl border border-outline-variant/20 mb-xl flex flex-col items-center">
+<span class="font-label-caps text-label-caps text-on-tertiary-fixed-variant mb-unit uppercase">Kalan Süre</span>
+<div class="flex items-baseline gap-1">
+<span class="font-h1 text-[48px] text-on-tertiary font-bold tracking-tighter">30</span>
+<span class="font-h2 text-h2 text-on-tertiary-fixed-variant">s</span>
+</div>
+<!-- Visual Timer Bar -->
+<div class="w-full h-1 bg-tertiary-container/30 rounded-full mt-md overflow-hidden">
+<div class="h-full bg-primary-container w-full"></div>
+</div>
+</div>
+<!-- Asymmetric Interaction Cards (Candidates) -->
+<div class="grid grid-cols-2 gap-sm w-full mb-xl">
+<div class="glass-dark p-md rounded-lg border-l-4 border-secondary flex flex-col items-start gap-sm">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline/30">
+<img class="w-full h-full object-cover" data-alt="Cinematic portrait of a noble man with dark features wearing Victorian attire in a dimly lit study. The scene is shot from a low angle with dramatic lighting, evoking a gothic oil painting style with deep shadows and warm highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGZZ5pCaSY5btVmpZUqBI13tRPEoIdjWaSNqwszKR5SE7rhX5tOBkV9oCZ6-SsgiGFc-yku6GMDCdM2gPn2n9m0J8liRFhnbCiSHI0f83Zl4e4OYihQE9G0TQQcZGIKHRRwrr1kZOV8T7w-xae6KRrcLGCM-TPI4KDoPZMd8C3PW_qpH7yPOpaC0ULLEvrTmT_mozaVMhqqhQu9C7c1sgcYwNR77S9xLebHteeFBT_WOg-kEzjOfDK7VZ7IfEzF1dC4Jy7b3rQwQ"/>
+</div>
+<div class="text-left">
+<p class="font-label-caps text-label-caps text-on-surface">VALERIUS</p>
+<p class="text-[10px] text-secondary font-bold uppercase">5 Oy</p>
+</div>
+</div>
+<div class="glass-dark p-md rounded-lg border-l-4 border-secondary flex flex-col items-start gap-sm">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline/30">
+<img class="w-full h-full object-cover" data-alt="Cinematic portrait of a mysterious woman with pale skin and a rich velvet dress, holding a silver goblet. The image follows a gothic noir aesthetic with a soft candlelight glow, emphasizing rich textures and an atmosphere of suspense." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS4N5xHmj2Lf-ijmtdOv3IsBhP3i3O0_O4I-EoNUCWGPBRgfAvEsqaJfDDJERT_y--9gfDbOyAajCi2N__Z5IkomYJjyu9EypCtSECvDVSk0_XgZB0_gJWH9X2LybuW5USACqm-JLzVe6c7efjbSActOVwCZly4-63Rsf8nmRQehFKF73IkBzZTLzVe0-ruUU1jWfoJmewkzG6IGDTdk2j3bmqUgJz41EnqM8Wk1D0c63W3IFxgpQPUScHd7FQz1u1unLoBT1PlQ"/>
+</div>
+<div class="text-left">
+<p class="font-label-caps text-label-caps text-on-surface">ELARA</p>
+<p class="text-[10px] text-secondary font-bold uppercase">5 Oy</p>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-[56px] bg-neutral-800 text-neutral-500 font-h2 text-h2 rounded-lg flex items-center justify-center border border-white/5 opacity-60 cursor-not-allowed shadow-inner" disabled="">
+                Tekrar Oyla
+            </button>
+<p class="mt-sm font-label-caps text-[10px] text-on-surface-variant/50 uppercase tracking-widest">Sürenin bitmesi bekleniyor</p>
+</div>
+</main>
+<!-- BottomNavBar from JSON -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-neutral-950 dark:bg-black/95 shadow-[0_-4px_20px_rgba(0,0,0,0.9)] border-t border-yellow-900/20">
+<a class="flex flex-col items-center justify-center text-red-600 drop-shadow-[0_0_8px_rgba(139,0,0,0.6)] p-2" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="castle" style="font-variation-settings: 'FILL' 1;">castle</span>
+<span class="font-newsreader text-[10px] tracking-tight uppercase mt-1">Beraberlik</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="history_edu">history_edu</span>
+<span class="font-newsreader text-[10px] tracking-tight uppercase mt-1">Geçmiş</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="group">group</span>
+<span class="font-newsreader text-[10px] tracking-tight uppercase mt-1">Meclis</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="settings">settings</span>
+<span class="font-newsreader text-[10px] tracking-tight uppercase mt-1">Ayarlar</span>
+</a>
+</nav>
+</body></html>

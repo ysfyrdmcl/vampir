@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&amp;family=Newsreader:opsz,wght@6..72,400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ffb4ab",
+                    "surface-container": "#201f1f",
+                    "surface-container-highest": "#353534",
+                    "on-tertiary-container": "#b9ad9b",
+                    "outline": "#aa8984",
+                    "secondary-container": "#af8d11",
+                    "surface-tint": "#ffb4a8",
+                    "on-secondary-fixed": "#241a00",
+                    "on-primary-container": "#ff907f",
+                    "primary": "#ffb4a8",
+                    "error-container": "#93000a",
+                    "on-surface": "#e5e2e1",
+                    "outline-variant": "#5a403c",
+                    "background": "#131313",
+                    "on-error-container": "#ffdad6",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-tertiary": "#372f23",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-fixed": "#211b0f",
+                    "secondary-fixed-dim": "#e9c349",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed": "#eee1ce",
+                    "tertiary-container": "#494133",
+                    "inverse-primary": "#b52619",
+                    "on-primary": "#690000",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#4e4638",
+                    "secondary": "#e9c349",
+                    "on-secondary-container": "#342800",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-variant": "#353534",
+                    "primary-container": "#8b0000",
+                    "on-secondary": "#3c2f00",
+                    "on-surface-variant": "#e3beb8",
+                    "secondary-fixed": "#ffe088",
+                    "surface-container-low": "#1c1b1b",
+                    "on-background": "#e5e2e1",
+                    "on-primary-fixed": "#410000",
+                    "surface-bright": "#3a3939",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "surface": "#131313",
+                    "tertiary-fixed-dim": "#d1c5b3",
+                    "on-secondary-fixed-variant": "#574500",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary": "#d1c5b3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "safe-margin": "20px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "unit": "4px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Manrope"],
+                    "h2": ["Newsreader"],
+                    "h1": ["Newsreader"],
+                    "body-sm": ["Manrope"],
+                    "body-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "h1": ["34px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400"}],
+                    "body-lg": ["17px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .parchment-texture {
+            background-color: #d1c5b3;
+            background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.05) 100%);
+            position: relative;
+        }
+        .parchment-texture::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .moonlight-glow {
+            background: radial-gradient(circle at 50% -20%, rgba(233, 195, 73, 0.15) 0%, transparent 60%);
+        }
+        .gothic-border {
+            border: 1px solid rgba(175, 141, 17, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen selection:bg-primary-container selection:text-white overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-5 h-16 w-full fixed top-0 z-50 bg-neutral-950 dark:bg-black/95 shadow-[0_4px_20px_rgba(0,0,0,0.8)] border-b border-yellow-900/20">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-red-800 dark:text-red-700" data-icon="shield">shield</span>
+<span class="text-lg font-bold text-red-800 dark:text-red-700 font-newsreader uppercase tracking-widest">Gündüz Fazı</span>
+</div>
+<div class="bg-surface-container-highest/50 px-3 py-1 rounded-full border border-yellow-900/20">
+<span class="font-label-caps text-label-caps text-secondary">#XJ82K1</span>
+</div>
+</header>
+<main class="pt-24 pb-32 px-safe-margin min-h-screen moonlight-glow">
+<!-- Action Header -->
+<section class="mb-lg text-center">
+<h1 class="font-h1 text-h1 text-secondary mb-xs">Doktor Uyandı</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant italic">“Bu gece kimi koruyacaksın?”</p>
+<!-- Timer Component -->
+<div class="mt-md inline-flex items-center gap-sm px-md py-sm bg-surface-container-high rounded-full gothic-border">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="hourglass_top">hourglass_top</span>
+<span class="font-label-caps text-label-caps text-secondary">20S KALDI</span>
+</div>
+</section>
+<!-- Instruction Card -->
+<div class="mb-lg p-md bg-surface-container-low rounded-xl gothic-border flex items-start gap-md">
+<span class="material-symbols-outlined text-secondary-container" data-icon="info">info</span>
+<p class="font-body-sm text-body-sm text-on-tertiary-container">Kendini art arda iki gece koruyamazsın. Seçimini bilgece yap, sadık dost.</p>
+</div>
+<!-- Player Selection Bento Grid -->
+<section class="grid grid-cols-2 gap-md">
+<!-- Player Card: Disabled (Previous Night Protection) -->
+<div class="relative group aspect-[3/4] rounded-xl overflow-hidden gothic-border opacity-50 grayscale">
+<img class="w-full h-full object-cover" data-alt="A moody, cinematic portrait of a medieval doctor in a dark room illuminated by a single candle. The figure wears a dark cowl and leather apron, looking tired but determined. The color palette is dominated by deep blacks, ochre gold, and a faint emerald green glow from a potion bottle nearby. High-end digital painting style with heavy texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYfqMC2bfT7aqiK9wyee4n3dOJ1YeJld__8XdntziZ8YIOVdtra4LylYP830TXwY7_kXkzfqBblEr4tm9_HsSU1p9y9Omqdsd0bC7U5hUxlmJJztN1z6frc8ZOy-jmImTdPv3mr4Rwn8bU4Hjgfw2YC98HUDNA3hlC88SnkgusxAYzKUHBr07yWdwWD2mnfJsJLNv9QO_pbXAvn8MN7RqgNmB3WONgTGYoF_e-o0XaWMcA-VpnWDBZfVvhcByJLKr1j7bhCW8fuA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-sm w-full">
+<p class="font-label-caps text-[10px] text-error mb-1">GEÇEN GECE SEÇİLDİ</p>
+<p class="font-h2 text-body-lg text-white">Sen (Doktor)</p>
+</div>
+</div>
+<!-- Player Card: Selectable -->
+<div class="relative group aspect-[3/4] rounded-xl overflow-hidden gothic-border ring-2 ring-transparent transition-all active:scale-95">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a stern knight in tarnished silver armor, sitting at a dimly lit tavern table. Moonlight filters through a high window, catching the metallic edges of his breastplate. Gothic minimalism aesthetic with a palette of cold iron, deep burgundy, and faint gold filigree accents in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC59mugA9_h7NsKn2PFKHzo0QsmEPveBOgww-8KRm8CJWbvRPZGon18N2VkUeDbGaVsGfvIFXWKBbnClOPfKyTct07edUHn_3NjaxrxW4JJrWiduGYt9SwQ9EnzpKBUfd6v_0CGdU-pqeSGUG56DDoz6gEHIp67I9oVpgtZVZApPMZiROrUbN80jkxByV8831KoN47x4m383aAinJFsI21qZglG0lylUNSRSkWuVzkci7gizr7d4kvyuPmK-CNWkh7dlfrFjeDLeg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute top-sm right-sm">
+<div class="w-6 h-6 rounded-full border border-secondary/40 bg-black/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[16px] opacity-0 group-active:opacity-100" data-icon="check">check</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 p-sm w-full">
+<div class="flex items-center gap-1 mb-1">
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+<span class="font-label-caps text-[10px] text-green-400">HAYATTA</span>
+</div>
+<p class="font-h2 text-body-lg text-white">Sör Cedric</p>
+</div>
+</div>
+<!-- Player Card: Selectable -->
+<div class="relative group aspect-[3/4] rounded-xl overflow-hidden gothic-border ring-2 ring-secondary ring-offset-2 ring-offset-background">
+<img class="w-full h-full object-cover" data-alt="A portrait of a mysterious noblewoman wearing a high-collared velvet gown of deep violet. She holds a golden goblet, her eyes reflecting the orange flicker of a nearby fireplace. Atmospheric tension, noble gothic style, rich textures of fabric and gold jewelry, dark moody lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxyE3CJMSoK10cZAp64DIKH321MnBRHLTG_3_m3cJHW9LWBHNmsKFFtMkoFMXSHTjETtywnVzca0-s04CkbdDVJHdrCKIzg1NkPAGZE0ikID0KZlphKTUB5DWjIt9ELUTcO-_fsuhc36vVxRdiy7zztzl9SHM7oB4t328az_RRo-kHne-qS0_5L68cE5EXO2bFUcsi8OlNgGCA7GMNZ8UXY0iW5w4iOAFLd2Wxm3BFjHuxttC0VEbnWBtW_xgBl7QpOy2AP4cfSw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<!-- Selection Indicator -->
+<div class="absolute top-sm right-sm">
+<div class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shadow-[0_0_12px_rgba(233,195,73,0.5)]">
+<span class="material-symbols-outlined text-on-secondary-fixed text-[16px]" data-icon="check" data-weight="fill">check</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 p-sm w-full">
+<div class="flex items-center gap-1 mb-1">
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+<span class="font-label-caps text-[10px] text-green-400">HAYATTA</span>
+</div>
+<p class="font-h2 text-body-lg text-white">Lady Elena</p>
+</div>
+</div>
+<!-- Player Card: Selectable -->
+<div class="relative group aspect-[3/4] rounded-xl overflow-hidden gothic-border ring-2 ring-transparent transition-all active:scale-95">
+<img class="w-full h-full object-cover" data-alt="A burly blacksmith with soot-stained skin and a thick beard, standing by a glowing forge. The orange heat of the coals provides a dramatic backlighting. Skeuomorphic details, heavy shadows, intense heat effects, gothic fantasy realism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsWZCLPvEzqDRAq3NMly7KrE5Z5JDtgdnXYPn_M27Bcg544VxmGRr7iOZEYO4dUh4ymGm90k5Oor44D4q54dWrqemk7nuHUjx41k_QoN9oAHP3wWCDrliHevUqKw0S0jj5VIKS30bUKqBDfbcGu-m_GX4bpV6CcvzA8y1R6NxsL_iBTP6vfhpiyEKpczFrZkmqRbF21wKBodZ--UoQCElw2XayvBO33MgPko4gFwon0Cfw6xPx62zwM3MkuMcDQYFytsyo6wZObg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-sm w-full">
+<div class="flex items-center gap-1 mb-1">
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+<span class="font-label-caps text-[10px] text-green-400">HAYATTA</span>
+</div>
+<p class="font-h2 text-body-lg text-white">Usta Thorne</p>
+</div>
+</div>
+</section>
+<!-- Primary Action Button -->
+<div class="fixed bottom-24 left-0 w-full px-safe-margin z-40">
+<button class="w-full h-14 bg-primary-container text-white font-h2 text-h2 rounded-lg shadow-[0_8px_16px_rgba(139,0,0,0.4)] border-t border-red-400/20 active:scale-95 active:opacity-80 transition-all flex items-center justify-center gap-md">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+                Koru
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-neutral-950 dark:bg-black/95 shadow-[0_-4px_20px_rgba(0,0,0,0.9)] border-t border-yellow-900/20">
+<div class="flex flex-col items-center justify-center text-red-600 drop-shadow-[0_0_8px_rgba(139,0,0,0.6)] p-2">
+<span class="material-symbols-outlined" data-icon="castle" data-weight="fill">castle</span>
+<span class="font-newsreader text-[10px] tracking-tight">KALE</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="font-newsreader text-[10px] tracking-tight">GÜNCE</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-newsreader text-[10px] tracking-tight">HALK</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-600 p-2 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-newsreader text-[10px] tracking-tight">AYARLAR</span>
+</div>
+</nav>
+</body></html>

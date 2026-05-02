@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Lobi Ekranı - Vampir Köylü</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#c9c6c5",
+                      "primary": "#ffb4aa",
+                      "on-surface": "#e9e2d3",
+                      "on-secondary-fixed": "#241a00",
+                      "surface-container": "#221f16",
+                      "primary-fixed-dim": "#ffb4aa",
+                      "error-container": "#93000a",
+                      "secondary-fixed-dim": "#e9c349",
+                      "secondary-fixed": "#ffe088",
+                      "tertiary-fixed-dim": "#c9c6c5",
+                      "surface-container-low": "#1e1b13",
+                      "on-primary-fixed": "#410001",
+                      "tertiary-container": "#222121",
+                      "surface-container-highest": "#38342b",
+                      "on-secondary-container": "#342800",
+                      "error": "#ffb4ab",
+                      "surface-tint": "#ffb4aa",
+                      "on-tertiary-fixed": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#474646",
+                      "on-primary-container": "#d26a5f",
+                      "primary-fixed": "#ffdad5",
+                      "on-primary": "#5f1410",
+                      "inverse-on-surface": "#343026",
+                      "on-primary-fixed-variant": "#7e2b23",
+                      "outline-variant": "#554240",
+                      "surface-dim": "#16130b",
+                      "primary-container": "#4a0404",
+                      "on-tertiary": "#313030",
+                      "surface-container-high": "#2d2a20",
+                      "on-secondary": "#3c2f00",
+                      "inverse-primary": "#9d4139",
+                      "tertiary-fixed": "#e5e2e1",
+                      "on-error-container": "#ffdad6",
+                      "inverse-surface": "#e9e2d3",
+                      "background": "#16130b",
+                      "surface-container-lowest": "#110e06",
+                      "secondary-container": "#af8d11",
+                      "surface": "#16130b",
+                      "on-surface-variant": "#dcc0bd",
+                      "on-background": "#e9e2d3",
+                      "secondary": "#e9c349",
+                      "on-tertiary-container": "#8a8888",
+                      "on-error": "#690005",
+                      "outline": "#a38b88",
+                      "surface-variant": "#38342b",
+                      "on-secondary-fixed-variant": "#574500",
+                      "surface-bright": "#3d392f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "touch-target": "48px",
+                      "stack-md": "16px",
+                      "margin-safe": "20px",
+                      "gutter": "12px",
+                      "stack-sm": "8px",
+                      "stack-lg": "32px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Newsreader"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "display-lg": [
+                              "Newsreader"
+                      ],
+                      "title-sm": [
+                              "Newsreader"
+                      ],
+                      "label-caps": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "42px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "title-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #0a0a0a;
+            background-image: radial-gradient(circle at 50% 50%, rgba(30,27,19,0.5) 0%, #0a0a0a 100%);
+            background-attachment: fixed;
+        }
+        
+        .parchment-texture {
+            background-color: rgba(34, 31, 22, 0.85);
+            backdrop-filter: blur(20px);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+        }
+
+        .role-card {
+            background: linear-gradient(145deg, rgba(30, 27, 19, 0.9), rgba(22, 19, 11, 0.95));
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .role-card:hover {
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 15px rgba(212, 175, 55, 0.1), inset 0 1px 1px rgba(255,255,255,0.05);
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .role-icon-container {
+            background: rgba(10, 10, 10, 0.6);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        
+        .team-vampire {
+            color: #d26a5f;
+            text-shadow: 0 0 10px rgba(210, 106, 95, 0.3);
+        }
+        
+        .team-villager {
+            color: #e9c349;
+            text-shadow: 0 0 10px rgba(233, 195, 73, 0.3);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+        }
+        
+        .btn-seal {
+            background: linear-gradient(to bottom, #4a0404, #310000);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,180,170,0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-background min-h-screen flex flex-col font-body-md pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 border-b border-amber-900/30 bg-stone-950/80 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex justify-between items-center w-full px-5 py-3 z-40 sticky">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">castle</span>
+<h1 class="font-headline-md text-headline-md font-serif italic tracking-widest uppercase text-xl font-bold text-red-900 dark:text-red-700 drop-shadow-[0_2px_2px_rgba(212,175,55,0.5)]">
+                VAMPİR KÖYLÜ
+            </h1>
+</div>
+<div class="w-8 h-8 rounded-full border border-secondary/40 overflow-hidden shadow-[0_0_10px_rgba(233,195,73,0.2)]">
+<img alt="Ancient Hunter Profile" class="w-full h-full object-cover" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZcXMY0gchZ2kYg7cbu4p3rMCgF0X1kc_S8Tl2O3ZMWyZys8awAyQ9N4Ocp1vuBV4VUSVWt2OpKQ0N2428TsRz6qz6grwmIv7SeLzB4iP8mJz59JAbPYcy8jd9uk0etBWgQhhSR0wHByDiVtf6cg_IlsiW1VYTNyGuBsZszQkfpM59JqOKZuk-xJV0ICOuQOZ6vtferrOKz5l5Yo_VQlxbqv-yJCWBAScVBwN7zc7LTgURBUtLpXAF1N50MdKfzFk2sbp2AYGv6w"/>
+</div>
+</header>
+<main class="flex-grow w-full max-w-3xl mx-auto px-margin-safe pt-stack-lg pb-stack-lg flex flex-col gap-stack-lg">
+<!-- Header Section -->
+<section class="text-center">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-stack-sm drop-shadow-md">
+                Bu Oyundaki Roller
+            </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto">
+                Gece çöktüğünde herkes gerçek yüzünü gösterecek. Şimdilik aranızdaki dağılım böyle.
+            </p>
+</section>
+<!-- Roles List -->
+<section class="flex flex-col gap-stack-md">
+<!-- Vampire Row -->
+<div class="role-card rounded-lg p-4 flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="role-icon-container w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined team-vampire text-[28px]" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">Vampir</h3>
+<p class="font-label-caps text-label-caps team-vampire uppercase tracking-widest mt-1">Gecenin Çocukları</p>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full border border-primary-container bg-surface-container-highest">
+<span class="font-headline-md text-title-sm text-primary">2</span>
+</div>
+</div>
+<!-- Seer Row -->
+<div class="role-card rounded-lg p-4 flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="role-icon-container w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined team-villager text-[28px]" style="font-variation-settings: 'FILL' 1;">visibility</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">Kahin/Dedektif</h3>
+<p class="font-label-caps text-label-caps team-villager uppercase tracking-widest mt-1">Köylü İttifakı</p>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full border border-secondary-container bg-surface-container-highest">
+<span class="font-headline-md text-title-sm text-secondary">1</span>
+</div>
+</div>
+<!-- Hunter Row -->
+<div class="role-card rounded-lg p-4 flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="role-icon-container w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined team-villager text-[28px]" style="font-variation-settings: 'FILL' 1;">my_location</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">Avcı</h3>
+<p class="font-label-caps text-label-caps team-villager uppercase tracking-widest mt-1">Köylü İttifakı</p>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full border border-secondary-container bg-surface-container-highest">
+<span class="font-headline-md text-title-sm text-secondary">1</span>
+</div>
+</div>
+<!-- Villager Row -->
+<div class="role-card rounded-lg p-4 flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="role-icon-container w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-[28px]" style="font-variation-settings: 'FILL' 1;">agriculture</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">Sıradan Köylü</h3>
+<p class="font-label-caps text-label-caps text-tertiary uppercase tracking-widest mt-1">Masum Halk</p>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full border border-surface-variant bg-surface-container-highest">
+<span class="font-headline-md text-title-sm text-tertiary">5</span>
+</div>
+</div>
+</section>
+<div class="divider my-stack-sm w-full"></div>
+<!-- Total Players Summary -->
+<div class="flex justify-between items-center px-4">
+<span class="font-body-md text-body-md text-on-surface-variant">Toplam Oyuncu</span>
+<span class="font-headline-md text-title-sm text-on-surface">9 Kişi</span>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 border-t border-amber-900/50 bg-stone-950/90 backdrop-blur-xl shadow-[0_-8px_24px_rgba(0,0,0,0.9)] fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-safe h-20">
+<a class="flex flex-col items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(212,175,55,0.3)] bg-red-950/40 rounded-xl px-3 py-1 hover:opacity-100 hover:text-amber-200 active:translate-y-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">fort</span>
+<span class="font-serif text-[10px] uppercase tracking-tighter">Oba</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-600 opacity-70 hover:opacity-100 hover:text-amber-200 active:translate-y-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined mb-1">menu_book</span>
+<span class="font-serif text-[10px] uppercase tracking-tighter">Kitaplık</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-600 opacity-70 hover:opacity-100 hover:text-amber-200 active:translate-y-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined mb-1">groups</span>
+<span class="font-serif text-[10px] uppercase tracking-tighter">Meydan</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-600 opacity-70 hover:opacity-100 hover:text-amber-200 active:translate-y-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined mb-1">gavel</span>
+<span class="font-serif text-[10px] uppercase tracking-tighter">Kurallar</span>
+</a>
+</nav>
+</body></html>

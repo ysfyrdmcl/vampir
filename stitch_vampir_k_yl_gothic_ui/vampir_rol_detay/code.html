@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vampir Köylü - Rol Detayı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&amp;family=Newsreader:ital,wght@0,500;0,600;0,700;1,500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#c9c6c5",
+                      "primary": "#ffb4aa",
+                      "on-surface": "#e9e2d3",
+                      "on-secondary-fixed": "#241a00",
+                      "surface-container": "#221f16",
+                      "primary-fixed-dim": "#ffb4aa",
+                      "error-container": "#93000a",
+                      "secondary-fixed-dim": "#e9c349",
+                      "secondary-fixed": "#ffe088",
+                      "tertiary-fixed-dim": "#c9c6c5",
+                      "surface-container-low": "#1e1b13",
+                      "on-primary-fixed": "#410001",
+                      "tertiary-container": "#222121",
+                      "surface-container-highest": "#38342b",
+                      "on-secondary-container": "#342800",
+                      "error": "#ffb4ab",
+                      "surface-tint": "#ffb4aa",
+                      "on-tertiary-fixed": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#474646",
+                      "on-primary-container": "#d26a5f",
+                      "primary-fixed": "#ffdad5",
+                      "on-primary": "#5f1410",
+                      "inverse-on-surface": "#343026",
+                      "on-primary-fixed-variant": "#7e2b23",
+                      "outline-variant": "#554240",
+                      "surface-dim": "#16130b",
+                      "primary-container": "#4a0404",
+                      "on-tertiary": "#313030",
+                      "surface-container-high": "#2d2a20",
+                      "on-secondary": "#3c2f00",
+                      "inverse-primary": "#9d4139",
+                      "tertiary-fixed": "#e5e2e1",
+                      "on-error-container": "#ffdad6",
+                      "inverse-surface": "#e9e2d3",
+                      "background": "#16130b",
+                      "surface-container-lowest": "#110e06",
+                      "secondary-container": "#af8d11",
+                      "surface": "#16130b",
+                      "on-surface-variant": "#dcc0bd",
+                      "on-background": "#e9e2d3",
+                      "secondary": "#e9c349",
+                      "on-tertiary-container": "#8a8888",
+                      "on-error": "#690005",
+                      "outline": "#a38b88",
+                      "surface-variant": "#38342b",
+                      "on-secondary-fixed-variant": "#574500",
+                      "surface-bright": "#3d392f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "touch-target": "48px",
+                      "stack-md": "16px",
+                      "margin-safe": "20px",
+                      "gutter": "12px",
+                      "stack-sm": "8px",
+                      "stack-lg": "32px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Newsreader"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "display-lg": [
+                              "Newsreader"
+                      ],
+                      "title-sm": [
+                              "Newsreader"
+                      ],
+                      "label-caps": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "42px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "title-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style="background-image: radial-gradient(circle at 50% 50%, rgba(22, 19, 11, 0.9) 0%, rgba(10, 10, 10, 1) 100%), url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnX9X3ahHwPysR9h_WhDEstHVSTKNLjXpf_DR-uWWGQ_cGFBBBirWVVKyjbpwpjo5lNDbhMQbV-K-r7B7R6YxuPzdv7TRwFfHu6sci5R_HKs33_63GaX8PbGKy6bI4Ako0Ei9x2DeRb95nyPAoFyN8CTVNajQYGDn10o4IVT8NF5rTbjpPkxEw3m2-qeEGuV44-Gd9s8F8F8JRPWYlyHmEkedR409Zz_iC-2c7GHbpphJ_-llOQH5F50ybm8C4x8lwywUiJgqRpA');">
+<!-- Atmospheric Overlay -->
+<div class="absolute inset-0 pointer-events-none bg-primary-container/5 mix-blend-overlay"></div>
+<main class="w-full max-w-md p-margin-safe z-10">
+<!-- Role Card Modal (The Divine Level) -->
+<div class="bg-surface-container/90 backdrop-blur-xl border border-secondary/30 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8),inset_0_1px_2px_rgba(233,195,73,0.2)] overflow-hidden flex flex-col relative">
+<!-- Close Button (Top Right) -->
+<button aria-label="Close" class="absolute top-4 right-4 z-20 text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+<!-- Card Header / Illustration Area -->
+<div class="relative w-full aspect-[4/3] bg-surface-container-lowest overflow-hidden flex items-center justify-center border-b border-secondary/20">
+<!-- Inner Glow/Shadow -->
+<div class="absolute inset-0 shadow-[inset_0_-20px_40px_rgba(22,19,11,1)] z-10 pointer-events-none"></div>
+<img alt="Vampir Role Illustration" class="w-full h-full object-cover opacity-80 mix-blend-luminosity filter sepia-[0.3] hover:sepia-0 transition-all duration-700" data-alt="A dark fantasy illustration of a sinister vampire character enshrouded in a flowing dark cloak. The lighting is moody and cinematic, with deep shadows and subtle, glowing red accents highlighting the character's mysterious features. The background suggests an ancient, crumbling gothic structure, adhering to the Gothic Mystery aesthetic with a tactile, painted skeuomorphic style. A soft, candle-lit glow emanates from below, adding a sense of dread and elegance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwXIUJ7ULCNtDjf6t_P5rL0NMd9BPFQOVMWcJCAdHNpnP70G4QiEt37RskeUbm4B9DCyumqqo5pvNHCXnIU8ZdVSFZCUXCm0xwk9bTiRtysLWts04MA9qzsVHpxkGyUkd-5j1dCCXeY9Yi4Y5Rh64jqG09Jr9wiIdae2c-9T7umu69DcVscibKBnsobtAovQoLcZDWZGdC1kW6-W_lGRKr3OmjcqQFSbFTPXdvZKL41DSt-5zpKh6WAZNrerZw2awYz6AG-D-sLg"/>
+<!-- Blood Red Overlay Hint -->
+<div class="absolute inset-0 bg-gradient-to-t from-primary-container/80 to-transparent mix-blend-multiply"></div>
+</div>
+<!-- Content Canvas -->
+<div class="p-stack-lg flex flex-col items-center text-center space-y-stack-md">
+<!-- Title -->
+<h1 class="font-display-lg text-display-lg text-on-surface drop-shadow-[0_2px_8px_rgba(157,65,57,0.6)]">VAMPİR</h1>
+<!-- Status Chips -->
+<div class="flex flex-wrap justify-center gap-gutter">
+<span class="inline-flex items-center px-3 py-1 rounded-full border border-primary/40 bg-primary-container/40 text-primary font-label-caps text-label-caps backdrop-blur-sm shadow-[0_0_10px_rgba(255,180,170,0.1)]">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">groups</span>
+                        Takım: Vampirler
+                    </span>
+<span class="inline-flex items-center px-3 py-1 rounded-full border border-secondary/40 bg-surface-container-high/60 text-secondary font-label-caps text-label-caps backdrop-blur-sm">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+                        Gece Aksiyonu
+                    </span>
+</div>
+<!-- Description Text -->
+<div class="bg-surface-container-low/50 border border-outline-variant/30 rounded-lg p-stack-md w-full relative">
+<!-- Parchment subtle texture overlay -->
+<div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/aged-paper.png')] mix-blend-overlay pointer-events-none rounded-lg"></div>
+<p class="font-body-md text-body-md text-on-surface-variant relative z-10 leading-relaxed">
+                        Geceleri bir oyuncuyu hedef alırsın. Gündüz köylü gibi davran.
+                    </p>
+<div class="mt-stack-sm pt-stack-sm border-t border-outline-variant/20 relative z-10 flex items-start text-left">
+<span class="material-symbols-outlined text-primary text-[18px] mr-2 mt-1 flex-shrink-0" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="font-body-md text-body-md text-on-surface">
+<strong class="font-headline-md text-primary drop-shadow-[0_0_4px_rgba(255,180,170,0.3)]">Kazanma şartı:</strong> Vampirler köyle eşitlenirse kazanır.
+                        </p>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full mt-stack-md h-touch-target bg-primary-container hover:bg-inverse-primary border border-secondary/40 rounded-DEFAULT font-title-sm text-title-sm text-on-surface flex items-center justify-center transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] active:scale-[0.98]">
+                    Anladım
+                </button>
+</div>
+</div>
+</main>
+</body></html>
