@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import type { Role, RoomPlayerView } from "@vampir-koylu/shared";
+import type { RoomPlayerView } from "@vampir-koylu/shared";
 import { useState } from "react";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
@@ -20,6 +20,7 @@ import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
+import { toRoleLabel } from "../utils/role-label";
 
 type Props = NativeStackScreenProps<RootStackParamList, "GameOver">;
 
@@ -344,16 +345,6 @@ const styles = StyleSheet.create({
     padding: spacing.md
   }
 });
-
-function toRoleLabel(role: Role | null | undefined): string {
-  if (role === "Vampire") return "Vampir";
-  if (role === "Detective") return "Dedektif";
-  if (role === "Doctor") return "Doktor";
-  if (role === "Villager") return "Köylü";
-  if (role === "Hunter") return "Avcı";
-  if (role === "Guard") return "Gardiyan";
-  return "Gizli";
-}
 
 function buildTimeline(entries: LogFeedEntry[], players: RoomPlayerView[]): Array<{ time: string; text: string }> {
   const picked = entries.filter((entry) => shouldShowLogEntry(entry, "general"));

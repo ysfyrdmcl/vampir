@@ -47,6 +47,20 @@ export interface RuleSettings {
   loversEnabled?: boolean;
 }
 
+export function resolveRuleSettings(gameMode: GameMode, rules?: Partial<RuleSettings>): RuleSettings {
+  return {
+    firstNightNoKill: gameMode === "SafeFirstNight",
+    revealEliminatedRole: rules?.revealEliminatedRole ?? false,
+    allowDoctorSelfProtect: rules?.allowDoctorSelfProtect ?? true,
+    allowDoctorConsecutiveProtectSameTarget: rules?.allowDoctorConsecutiveProtectSameTarget ?? false,
+    allowDetectiveRepeatInspectSameTarget: rules?.allowDetectiveRepeatInspectSameTarget ?? false,
+    tiePolicy: rules?.tiePolicy ?? "RevoteThenNoExecution",
+    noLynchEnabled: rules?.noLynchEnabled ?? false,
+    mayorEnabled: rules?.mayorEnabled ?? false,
+    loversEnabled: rules?.loversEnabled ?? false
+  };
+}
+
 export interface ClientIdentity {
   deviceId: string;
   playerSessionToken?: string;

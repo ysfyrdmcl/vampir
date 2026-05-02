@@ -1,7 +1,7 @@
 import { env } from "../config/env.js";
 import { randomRoomCode, randomToken } from "../utils/random.js";
 import type { PlayerState, RoomState } from "../game/game-types.js";
-import type { GameMode, PhaseDurationSettings, RolePresetId, RuleSettings } from "@vampir-koylu/shared";
+import { resolveRuleSettings, type GameMode, type PhaseDurationSettings, type RolePresetId, type RuleSettings } from "@vampir-koylu/shared";
 
 export class RoomManager {
   private readonly rooms = new Map<string, RoomState>();
@@ -37,7 +37,7 @@ export class RoomManager {
         lastEliminationSummary: null,
         gameMode: gameMode ?? "Classic",
         rolePreset: rolePreset ?? "beginner",
-        rules: this.resolveRules(rules),
+        rules: this.resolveRules(gameMode ?? "Classic", rules),
         loverLinks: {},
         detectiveInspectedTargets: {},
         phaseDurations: this.resolveDurations(phaseDurations)
@@ -141,6 +141,7 @@ export class RoomManager {
   updateGameConfig(roomCode: string, options: { phaseDurations?: PhaseDurationSettings; gameMode?: GameMode; rolePreset?: RolePresetId; rules?: Partial<RuleSettings> }): RoomState {
     const room = this.requireRoom(roomCode);
     let changed = false;
+    const nextGameMode = options.gameMode ?? room.game.gameMode;
     if (options.phaseDurations) {
       room.game.phaseDurations = this.resolveDurations(options.phaseDurations);
       changed = true;
@@ -153,8 +154,8 @@ export class RoomManager {
       room.game.rolePreset = options.rolePreset;
       changed = true;
     }
-    if (options.rules) {
-      room.game.rules = this.resolveRules(options.rules);
+    if (options.rules || options.gameMode) {
+      room.game.rules = this.resolveRules(nextGameMode, options.rules ?? room.game.rules);
       changed = true;
     }
     if (changed && room.status === "Lobby") {
@@ -263,17 +264,7 @@ export class RoomManager {
     };
   }
 
-  private resolveRules(rules?: Partial<RuleSettings>): RuleSettings {
-    return {
-      firstNightNoKill: rules?.firstNightNoKill ?? false,
-      revealEliminatedRole: rules?.revealEliminatedRole ?? false,
-      allowDoctorSelfProtect: rules?.allowDoctorSelfProtect ?? true,
-      allowDoctorConsecutiveProtectSameTarget: rules?.allowDoctorConsecutiveProtectSameTarget ?? false,
-      allowDetectiveRepeatInspectSameTarget: rules?.allowDetectiveRepeatInspectSameTarget ?? false,
-      tiePolicy: rules?.tiePolicy ?? "RevoteThenNoExecution",
-      noLynchEnabled: rules?.noLynchEnabled ?? false,
-      mayorEnabled: rules?.mayorEnabled ?? false,
-      loversEnabled: rules?.loversEnabled ?? false
-    };
+  private resolveRules(gameMode: GameMode, rules?: Partial<RuleSettings>): RuleSettings {
+    return resolveRuleSettings(gameMode, rules);
   }
 }

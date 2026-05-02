@@ -34,6 +34,29 @@ function toGameModeLabel(mode: string): string {
   return mode;
 }
 
+const GAME_MODE_DETAILS: Record<GameMode, { label: string; description: string; ruleNote: string }> = {
+  Classic: {
+    label: "Klasik",
+    description: "Standart oyun akışı. Dengeli ve sürprizsiz bir başlangıç profili.",
+    ruleNote: "İlk gece ölüm yok kapalı kalır."
+  },
+  SafeFirstNight: {
+    label: "İlk Gece Güvenli",
+    description: "İlk turda daha yumuşak giriş yapar ve yeni oyuncular için güvenli bir başlangıç sağlar.",
+    ruleNote: "İlk gece ölüm yok otomatik olarak açık olur."
+  },
+  FastParty: {
+    label: "Hızlı Parti",
+    description: "Daha hızlı tempolu bir oda kurulumunu öne çıkarır.",
+    ruleNote: "Seçili kurallar oda ayarlarıyla birlikte senkron kalır."
+  },
+  MysteryVillage: {
+    label: "Gizemli Köy",
+    description: "Daha belirsiz ve sürpriz odaklı bir profil hissi verir.",
+    ruleNote: "Seçili kurallar oda ayarlarıyla birlikte senkron kalır."
+  }
+};
+
 function rolePhaseLabel(roleId: RoleDefinitionId): string {
   const phase = ROLE_DEFINITIONS[roleId].phase;
   if (phase === "night") return "Gece";
@@ -83,7 +106,9 @@ export function LobbyScreen({ navigation }: Props) {
   const [advancedRulesOpen, setAdvancedRulesOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [roleInfoOpen, setRoleInfoOpen] = useState(false);
+  const [modeInfoOpen, setModeInfoOpen] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<RolePresetId>(rolePreset);
+  const [previewMode, setPreviewMode] = useState<GameMode>(gameMode);
 
   const players = roomState?.players ?? [];
   const roomCode = roomState?.roomCode ?? "------";
@@ -103,6 +128,9 @@ export function LobbyScreen({ navigation }: Props) {
   const isHost = roomState?.hostPlayerId ? roomState.hostPlayerId === me : players[0]?.playerId === me;
   const activeRolePreview = rolePreview(rolePreset, setupPlayerCount, roomRules);
   const modalRolePreview = rolePreview(previewPreset, setupPlayerCount, roomRules);
+  const activeModeInfo = GAME_MODE_DETAILS[gameMode];
+  const previewModeInfo = GAME_MODE_DETAILS[previewMode];
+  const firstNightForcedByMode = gameMode === "SafeFirstNight";
 
   const leaveRoom = () => {
     emitLeaveRoom();
@@ -135,6 +163,9 @@ export function LobbyScreen({ navigation }: Props) {
   };
   const updateGameMode = (nextMode: GameMode) => {
     setGameMode(nextMode);
+    setRoomRules({ firstNightNoKill: nextMode === "SafeFirstNight" });
+    setPreviewMode(nextMode);
+    setModeInfoOpen(true);
     emitRoomConfigUpdate();
   };
   const updateRules = (updater: Partial<RuleSettings>) => {
@@ -266,10 +297,10 @@ export function LobbyScreen({ navigation }: Props) {
           <Text style={styles.timingTitle}>Oyun Modu</Text>
           <View style={styles.modeRow}>
             {[
-              { key: "Classic", label: "Klasik" },
-              { key: "SafeFirstNight", label: "İlk Gece Güvenli" },
-              { key: "FastParty", label: "Hızlı Parti" },
-              { key: "MysteryVillage", label: "Gizemli Köy" }
+              { key: "Classic", label: GAME_MODE_DETAILS.Classic.label },
+              { key: "SafeFirstNight", label: GAME_MODE_DETAILS.SafeFirstNight.label },
+              { key: "FastParty", label: GAME_MODE_DETAILS.FastParty.label },
+              { key: "MysteryVillage", label: GAME_MODE_DETAILS.MysteryVillage.label }
             ].map((mode) => (
               <Pressable
                 key={mode.key}
@@ -280,6 +311,7 @@ export function LobbyScreen({ navigation }: Props) {
               </Pressable>
             ))}
           </View>
+          <Text style={styles.settingHint}>{activeModeInfo.description}</Text>
 
           <Text style={styles.timingTitle}>Oyun Süre Ayarları</Text>
           <View style={styles.timingModeRow}>
@@ -336,9 +368,18 @@ export function LobbyScreen({ navigation }: Props) {
               <Text style={styles.ruleHint}>
                 Bu bölüm yalnızca mevcut oyuncu sayısı ve rol paketinde etkisi olan kuralları gösterir.
               </Text>
-              <Pressable style={styles.ruleRow} onPress={() => updateRules({ firstNightNoKill: !roomRules.firstNightNoKill })}>
+              <Pressable
+                style={[styles.ruleRow, firstNightForcedByMode ? styles.ruleRowDisabled : null]}
+                onPress={() => {
+                  if (firstNightForcedByMode) return;
+                  updateRules({ firstNightNoKill: !roomRules.firstNightNoKill });
+                }}
+              >
                 <Text style={styles.ruleLabel}>İlk gece ölüm yok</Text>
-                <Text style={styles.ruleValue}>{roomRules.firstNightNoKill ? "Açık" : "Kapalı"}</Text>
+                <View style={styles.ruleValueWrap}>
+                  <Text style={styles.ruleValue}>{roomRules.firstNightNoKill ? "Açık" : "Kapalı"}</Text>
+                  {firstNightForcedByMode ? <Text style={styles.ruleMeta}>mod tarafından</Text> : null}
+                </View>
               </Pressable>
               <Pressable style={styles.ruleRow} onPress={() => updateRules({ revealEliminatedRole: !roomRules.revealEliminatedRole })}>
                 <Text style={styles.ruleLabel}>Elenen oyuncunun rolü açıklansın</Text>
@@ -463,6 +504,28 @@ export function LobbyScreen({ navigation }: Props) {
               ))}
             </View>
             <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" onPress={() => setRoleInfoOpen(false)} />
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={modeInfoOpen} transparent animationType="fade" onRequestClose={() => setModeInfoOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.roleModal}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.modalKicker}>Oyun Modu</Text>
+                <Text style={styles.modalTitle}>{previewModeInfo.label}</Text>
+              </View>
+              <Pressable style={styles.modalClose} onPress={() => setModeInfoOpen(false)}>
+                <Ionicons name="close-outline" size={20} color={colors.text} />
+              </Pressable>
+            </View>
+            <Text style={styles.modalText}>{previewModeInfo.description}</Text>
+            <View style={styles.modeEffectBox}>
+              <Text style={styles.modeEffectTitle}>Bu modda</Text>
+              <Text style={styles.modeEffectText}>{previewModeInfo.ruleNote}</Text>
+              <Text style={styles.modeEffectText}>Diğer oda kuralları da gönderilen ayarlarla senkron kalır.</Text>
+            </View>
+            <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" onPress={() => setModeInfoOpen(false)} />
           </View>
         </View>
       </Modal>
@@ -741,6 +804,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(12,12,14,0.8)"
   },
+  ruleRowDisabled: {
+    opacity: 0.85
+  },
   ruleLabel: {
     color: colors.text,
     fontFamily: typography.sansMedium,
@@ -748,12 +814,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 8
   },
+  ruleValueWrap: {
+    alignItems: "flex-end",
+    gap: 2
+  },
   ruleValue: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: 11,
     maxWidth: 160,
     textAlign: "right"
+  },
+  ruleMeta: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 10,
+    textTransform: "lowercase"
   },
   timingLabel: {
     color: colors.text,
@@ -847,6 +923,26 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(18,18,20,0.98)",
     padding: spacing.lg,
     gap: 12
+  },
+  modeEffectBox: {
+    gap: 6,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.12)"
+  },
+  modeEffectTitle: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    fontSize: 12
+  },
+  modeEffectText: {
+    color: colors.text,
+    fontFamily: typography.sansMedium,
+    lineHeight: 18
   },
   modalKicker: {
     color: colors.textDim,

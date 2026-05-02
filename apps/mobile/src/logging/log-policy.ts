@@ -1,4 +1,5 @@
 import type { LogFeedEntry } from "./log-feed-store";
+import { toRoleLabel, toWinnerLabel } from "../utils/role-label";
 
 export type LogScope = "general" | "personal";
 type LogTab = "general" | "personal";
@@ -83,14 +84,14 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   if (event === "summary.elimination") {
     const source = String(p.source ?? "Day") === "Night" ? "Gece sonucu" : "Gündüz sonucu";
     const player = String(p.playerId ?? "bir oyuncu");
-    const roleText = p.revealedRole ? ` Rol: ${String(p.revealedRole)}.` : "";
+    const roleText = p.revealedRole ? ` Rol: ${toRoleLabel(p.revealedRole)}.` : "";
     return `${source}: ${player} elendi.${roleText}`;
   }
   if (event === "summary.players_eliminated") return `Elenen oyuncular: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.chain_elimination") return `Zincir eleme gerçekleşti: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.night_no_elimination") return "Gece kimse elenmedi.";
   if (event === "game.phase.personal_turn_info") return `Sıra bilgisi: ${String(p.phase ?? "-")}.`;
-  if (event === "game.role.assigned") return `Rolün atandı: ${String(p.role ?? "-")}.`;
+  if (event === "game.role.assigned") return `Rolün atandı: ${toRoleLabel(p.role as string | null | undefined)}.`;
   if (event === "game.private_result.detective") return `Dedektif sonucu: ${String(p.text ?? "-")}.`;
   if (event === "game.private_result.vampire_preview") return "Vampir oy önizlemesi güncellendi.";
   if (event === "game.private_result.lover_link") return `Aşık bağı bildirimi: ${String(p.text ?? "-")}.`;
@@ -107,7 +108,7 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   if (event === "role.hunter.shot") return `Avcı bir hedef seçti (${String(p.targetPlayerId ?? "-")}).`;
   if (event === "role.mayor.selected") return `Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;
   if (event === "role.guard.protect") return `Gardiyan koruma açtı (${String(p.protectedPlayerId ?? "-")}).`;
-  if (event === "game.over") return `Oyun bitti. Kazanan: ${String(p.winner ?? "-")}.`;
+  if (event === "game.over") return `Oyun bitti. Kazanan: ${toWinnerLabel(p.winner as string | null | undefined)}.`;
   return event;
 }
 

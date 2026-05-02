@@ -16,7 +16,7 @@ export function RoleRevealScreen(_: Props) {
   const gameState = useGameStore((s) => s.gameState);
 
   return (
-    <ScreenShell scene="role" headerTitle="GÜNDÜZ FAZI">
+    <ScreenShell scene="role" headerTitle="">
       <View style={styles.root}>
         <Text style={styles.eyebrow}>GİZLİ KİMLİK</Text>
         <Text style={styles.title}>Rolün</Text>

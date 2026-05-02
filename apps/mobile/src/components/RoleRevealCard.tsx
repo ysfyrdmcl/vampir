@@ -7,6 +7,7 @@ import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
 import { getRoleTheme } from "../ui/role-theme";
+import { toRoleLabel } from "../utils/role-label";
 
 interface RoleRevealCardProps {
   role: Role | null;
@@ -60,7 +61,7 @@ export function RoleRevealCard({ role }: RoleRevealCardProps) {
           <View style={[styles.iconWrap, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
             <Ionicons name={roleTheme.icon} size={70} color={roleTheme.accent} />
           </View>
-          <Text style={[styles.roleTitle, { color: roleTheme.accent }]}>{role ?? "ROL BEKLENİYOR"}</Text>
+          <Text style={[styles.roleTitle, { color: roleTheme.accent }]}>{role ? toRoleLabel(role) : "ROL BEKLENİYOR"}</Text>
           <Text style={styles.mission}>{roleTheme.mission}</Text>
           <Text style={styles.secretWarning}>Ekranı sadece sen gör. Rolünü kimseyle paylaşma.</Text>
         </Animated.View>

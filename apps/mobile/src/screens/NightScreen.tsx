@@ -15,6 +15,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { toRoleLabel } from "../utils/role-label";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Night">;
 
@@ -253,7 +254,9 @@ export function NightScreen(_: Props) {
               {(playerNameById.get(gameState.lastEliminationSummary.playerId) ?? gameState.lastEliminationSummary.playerId)} elendi.
             </Text>
             {roomState?.rules?.revealEliminatedRole ? (
-              <Text style={styles.resultText}>Rol: {gameState.lastEliminationSummary.revealedRole ?? "Bilinmiyor"}</Text>
+              <Text style={styles.resultText}>
+                Rol: {gameState.lastEliminationSummary.revealedRole ? toRoleLabel(gameState.lastEliminationSummary.revealedRole) : "Bilinmiyor"}
+              </Text>
             ) : (
               <Text style={styles.resultText}>Rol gizli kaldı.</Text>
             )}

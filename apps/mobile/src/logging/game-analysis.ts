@@ -1,5 +1,6 @@
 import type { RoomPlayerView } from "@vampir-koylu/shared";
 import type { LogFeedEntry } from "./log-feed-store";
+import { toRoleLabel } from "../utils/role-label";
 
 export interface GameAnalysisSummary {
   winnerText: string;
@@ -37,7 +38,7 @@ export function buildGameAnalysis(
     const source = entry.payload?.source === "Night" ? "Gece" : "Gündüz";
     const playerId = String(entry.payload?.playerId ?? "");
     const name = nameById.get(playerId) ?? (playerId || "Bir oyuncu");
-    const role = entry.payload?.revealedRole ? ` (${String(entry.payload.revealedRole)})` : "";
+    const role = entry.payload?.revealedRole ? ` (${toRoleLabel(entry.payload.revealedRole)})` : "";
     return `${source}: ${name}${role} elendi.`;
   });
 

@@ -2,6 +2,7 @@ import {
   ROLE_DEFINITIONS,
   SOCKET_EVENTS,
   buildRoleDeck,
+  resolveRuleSettings,
   type ActionType,
   type GamePrivateResultPayload,
   type RolePresetId,
@@ -341,10 +342,11 @@ function buildPhaseDurationsPayload() {
 function buildGameConfigPayload() {
   const state = useGameStore.getState();
   const playerCount = Math.max(state.roomState?.players.length ?? 4, state.roomState?.minPlayers ?? 4);
+  const sanitizedRules = sanitizeRulesForSetup(state.roomRules, playerCount, state.rolePreset);
   return {
     gameMode: state.gameMode,
     rolePreset: state.rolePreset,
-    rules: sanitizeRulesForSetup(state.roomRules, playerCount, state.rolePreset)
+    rules: resolveRuleSettings(state.gameMode, sanitizedRules)
   };
 }
 

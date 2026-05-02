@@ -2,20 +2,11 @@ import type { Role } from "@vampir-koylu/shared";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
+import { toRoleLabel } from "../utils/role-label";
 
 interface RoleBadgeProps {
   role: Role | null | undefined;
   compact?: boolean;
-}
-
-function roleLabel(role: Role | null | undefined): string {
-  if (role === "Vampire") return "Vampir";
-  if (role === "Detective") return "Dedektif";
-  if (role === "Doctor") return "Doktor";
-  if (role === "Guard") return "Gardiyan";
-  if (role === "Hunter") return "Avcı";
-  if (role === "Villager") return "Köylü";
-  return "Gizli";
 }
 
 function rolePalette(role: Role | null | undefined) {
@@ -31,7 +22,7 @@ export function RoleBadge({ role, compact = false }: RoleBadgeProps) {
   const palette = rolePalette(role);
   return (
     <View style={[styles.badge, compact ? styles.badgeCompact : null, { borderColor: palette.border, backgroundColor: palette.bg }]}>
-      <Text style={[styles.text, compact ? styles.textCompact : null, { color: palette.text }]}>{roleLabel(role)}</Text>
+      <Text style={[styles.text, compact ? styles.textCompact : null, { color: palette.text }]}>{toRoleLabel(role)}</Text>
     </View>
   );
 }
