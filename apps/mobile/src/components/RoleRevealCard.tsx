@@ -12,9 +12,10 @@ import { toRoleLabel } from "../utils/role-label";
 
 interface RoleRevealCardProps {
   role: Role | null;
+  loverPartnerName?: string | null;
 }
 
-export function RoleRevealCard({ role }: RoleRevealCardProps) {
+export function RoleRevealCard({ role, loverPartnerName }: RoleRevealCardProps) {
   const [revealed, setRevealed] = useState(false);
   const rotate = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
@@ -110,6 +111,16 @@ export function RoleRevealCard({ role }: RoleRevealCardProps) {
           )}
           <Text style={[styles.roleTitle, { color: roleTheme.accent }]}>{role ? toRoleLabel(role) : "ROL BEKLENİYOR"}</Text>
           <Text style={styles.mission}>{roleTheme.mission}</Text>
+          {loverPartnerName ? (
+            <View style={styles.loverPanel}>
+              <View style={styles.loverHeader}>
+                <Ionicons name="link-outline" size={16} color={colors.secondary} />
+                <Text style={styles.loverLabel}>Aşık Bağı</Text>
+              </View>
+              <Text style={styles.loverName}>{loverPartnerName}</Text>
+              <Text style={styles.loverHint}>Bağlı oyuncun. Rolü gizli kalır.</Text>
+            </View>
+          ) : null}
           <View style={styles.secretPill}>
             <Ionicons name="eye-off-outline" size={14} color={colors.textDim} />
             <Text style={styles.secretWarning}>Sadece sen gör</Text>
@@ -251,5 +262,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: "rgba(8,8,10,0.5)"
+  },
+  loverPanel: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 14,
+    padding: 12,
+    gap: 5,
+    backgroundColor: "rgba(35,29,18,0.54)"
+  },
+  loverHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6
+  },
+  loverLabel: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  loverName: {
+    color: colors.text,
+    fontFamily: typography.serif,
+    fontSize: 22,
+    textAlign: "center"
+  },
+  loverHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    textAlign: "center"
   }
 });

@@ -27,6 +27,8 @@ export class RoomManager {
         phase: "Lobby",
         round: 0,
         phaseEndsAt: null,
+        isPaused: false,
+        pausedRemainingMs: null,
         tieCountInRound: 0,
         mayorPlayerId: null,
         guardProtectedPlayerId: null,

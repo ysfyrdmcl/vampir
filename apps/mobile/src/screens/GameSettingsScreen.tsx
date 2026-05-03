@@ -5,7 +5,8 @@ import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
-import { emitLeaveRoom } from "../socket/runtime";
+import { emitGamePause, emitGameResume, emitLeaveRoom } from "../socket/runtime";
+import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -13,31 +14,65 @@ import { typography } from "../theme/typography";
 type Props = NativeStackScreenProps<RootStackParamList, "GameSettings">;
 
 export function GameSettingsScreen({ navigation }: Props) {
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [pauseConfirmOpen, setPauseConfirmOpen] = useState(false);
+  const roomState = useGameStore((s) => s.roomState);
+  const gameState = useGameStore((s) => s.gameState);
+  const playerId = useGameStore((s) => s.playerId);
+  const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === playerId);
+  const canPauseControl = isHost && roomState?.status === "InGame" && gameState?.phase !== "GameOver";
+  const isPaused = Boolean(gameState?.isPaused);
   return (
-    <ScreenShell scene="result" headerTitle="AYARLAR">
+    <ScreenShell scene="result" headerTitle="AYARLAR" showPauseOverlay={false}>
       <View style={styles.root}>
         <Text style={styles.title}>Oyun Ayarları</Text>
-        <Text style={styles.subtitle}>Bu fazda sadece güvenli çıkış seçeneği aktif.</Text>
+        <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda sadece güvenli çıkış seçeneği aktif."}</Text>
+        {canPauseControl ? (
+          <PrimaryButton
+            label={isPaused ? "Oyunu Devam Ettir" : "Oyunu Durdur"}
+            iconName={isPaused ? "play-outline" : "pause-outline"}
+            variant={isPaused ? "gold" : "blood"}
+            onPress={() => {
+              if (isPaused) {
+                emitGameResume();
+                return;
+              }
+              setPauseConfirmOpen(true);
+            }}
+          />
+        ) : null}
         <PrimaryButton
           label="Odadan Ayrıl"
           iconName="exit-outline"
           variant="danger"
-          onPress={() => setConfirmOpen(true)}
+          onPress={() => setLeaveConfirmOpen(true)}
         />
       </View>
       <ConfirmActionSheet
-        visible={confirmOpen}
+        visible={pauseConfirmOpen}
+        title="Oyunu durdur?"
+        description="Süre ve tüm oyuncu aksiyonları duraklatılacak."
+        confirmLabel="Duraklat"
+        cancelLabel="Vazgeç"
+        variant="blood"
+        onConfirm={() => {
+          setPauseConfirmOpen(false);
+          emitGamePause();
+        }}
+        onCancel={() => setPauseConfirmOpen(false)}
+      />
+      <ConfirmActionSheet
+        visible={leaveConfirmOpen}
         title="Odadan Ayrılsın mı?"
         description="Bu işlem mevcut oyun oturumundan çıkış yapar ve seni ana menüye döndürür."
         confirmLabel="Ayrıl"
         variant="danger"
         onConfirm={() => {
-          setConfirmOpen(false);
+          setLeaveConfirmOpen(false);
           emitLeaveRoom();
           navigation.navigate("Welcome");
         }}
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={() => setLeaveConfirmOpen(false)}
       />
     </ScreenShell>
   );

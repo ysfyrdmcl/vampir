@@ -25,6 +25,8 @@ export class GameEngine {
     room.game.winner = null;
     room.game.actions = [];
     room.game.privateResults = [];
+    room.game.isPaused = false;
+    room.game.pausedRemainingMs = null;
     room.game.lastDayVoteSummary = null;
     room.game.lastEliminationSummary = null;
     room.game.loverLinks = {};
@@ -65,6 +67,9 @@ export class GameEngine {
   }
 
   tick(room: RoomState): { phaseChanged: boolean; privateResults: RoomState["game"]["privateResults"] } {
+    if (room.game.isPaused) {
+      return { phaseChanged: false, privateResults: [] };
+    }
     if (!room.game.phaseEndsAt || Date.now() < room.game.phaseEndsAt) {
       return { phaseChanged: false, privateResults: [] };
     }
@@ -83,6 +88,7 @@ export class GameEngine {
       phase: room.game.phase,
       round: room.game.round,
       phaseEndsAt: room.game.phaseEndsAt,
+      isPaused: room.game.isPaused,
       tieCountInRound: room.game.tieCountInRound,
       mayorPlayerId: room.game.mayorPlayerId,
       guardProtectedPlayerId: room.game.guardProtectedPlayerId,
@@ -298,6 +304,7 @@ export class GameEngine {
   private validateAction(room: RoomState, actorPlayerId: string, submission: ActionSubmission): void {
     const actor = room.players.find((p) => p.playerId === actorPlayerId);
     if (!actor) throw new Error("PLAYER_NOT_FOUND");
+    if (room.game.isPaused) throw new Error("GAME_PAUSED");
     if (!actor.isAlive && !(submission.actionType === "hunter-shot" && room.game.phase === "HunterLastBreath")) {
       throw new Error("PLAYER_DEAD");
     }

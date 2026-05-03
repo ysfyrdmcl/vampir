@@ -7,9 +7,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View
+  View,
+  useWindowDimensions
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
@@ -28,6 +28,7 @@ interface ScreenShellProps extends PropsWithChildren {
   headerTitle?: string;
   showTopBar?: boolean;
   showBottomNav?: boolean;
+  showPauseOverlay?: boolean;
 }
 
 function phaseLabelFromState(phase: GamePhase | null): string {
@@ -47,9 +48,10 @@ function activeNavIndex(scene: SceneType): number {
   return 0;
 }
 
-export function ScreenShell({ children, scene = "night", headerTitle, showTopBar = true, showBottomNav = true }: ScreenShellProps) {
+export function ScreenShell({ children, scene = "night", headerTitle, showTopBar = true, showBottomNav = true, showPauseOverlay = true }: ScreenShellProps) {
   const roomState = useGameStore((s) => s.roomState);
-  const phase = useGameStore((s) => s.gameState?.phase ?? null);
+  const gameState = useGameStore((s) => s.gameState);
+  const phase = gameState?.phase ?? null;
   const privateRole = useGameStore((s) => s.privateRole);
   const privateResultText = useGameStore((s) => s.privateResultText);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
@@ -57,8 +59,11 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   const storedRoomCode = useGameStore((s) => s.roomCode);
   const roomCode = roomState?.roomCode ?? storedRoomCode;
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const label = headerTitle ?? phaseLabelFromState(phase);
   const meAlive = roomState?.players.find((player) => player.playerId === mePlayerId)?.isAlive ?? true;
+  const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === mePlayerId);
+  const isPaused = Boolean(gameState?.isPaused && roomState?.status === "InGame");
   const statusAttention = Boolean(
     meAlive &&
       ((phase === "VampireVote" && privateRole === "Vampire") ||
@@ -114,11 +119,15 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   const navActive = useMemo(() => activeNavIndex(scene), [scene]);
   const shouldShowTopBar = showTopBar && scene !== "home";
   const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
+  const horizontalPadding = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
+  const contentMaxWidth = width >= 768 ? 680 : undefined;
+  const topBarHeight = 64 + insets.top;
   const navigateIfReady = (route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
     if (!navigationRef.isReady()) return;
     navigationRef.navigate(route);
   };
   const goStatus = () => {
+    if (isPaused) return;
     if (roomState?.status === "GameOver") {
       navigateIfReady("GameOver");
       return;
@@ -128,51 +137,80 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <View style={styles.safe}>
       <View style={styles.root}>
         <GameBackground variant={scene} backdropScale={backdropScale} />
 
         {shouldShowTopBar ? (
-          <View style={styles.topBar}>
-            <View style={styles.topLeft}>
-              <Ionicons name="shield-outline" size={24} color={colors.primaryBright} />
-              <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
-            </View>
-            {roomCode ? (
-              <View style={styles.roomCodeChip}>
-                <Text style={styles.roomCodeText}>#{roomCode}</Text>
+          <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
+            <View style={[styles.topBarInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
+              <View style={styles.topLeft}>
+                <Ionicons name="shield-outline" size={24} color={colors.primaryBright} />
+                <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
               </View>
-            ) : null}
+              {roomCode ? (
+                <View style={styles.roomCodeChip}>
+                  <Text style={styles.roomCodeText}>#{roomCode}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
-        <Animated.View style={[styles.content, { opacity: contentOpacity, transform: [{ translateY: contentY }] }]}>{children}</Animated.View>
+        <Animated.View
+          style={[
+            styles.content,
+            {
+              maxWidth: contentMaxWidth,
+              paddingHorizontal: horizontalPadding,
+              paddingTop: spacing.lg + (shouldShowTopBar ? 0 : insets.top),
+              opacity: contentOpacity,
+              transform: [{ translateY: contentY }]
+            }
+          ]}
+        >
+          {children}
+        </Animated.View>
         <GameToast message={privateResultText} />
+        {isPaused && showPauseOverlay ? (
+          <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? 74 + insets.bottom : 0 }]}>
+            <View style={styles.pausePanel}>
+              <Ionicons name="pause-circle-outline" size={42} color={colors.secondary} />
+              <Text style={styles.pauseTitle}>Oyun Duraklatıldı</Text>
+              <Text style={styles.pauseText}>Süre ve oyuncu aksiyonları host devam ettirene kadar beklemede.</Text>
+            </View>
+          </View>
+        ) : null}
 
         {shouldShowBottomNav ? (
           <View style={[styles.bottomNav, { height: 74 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }]}>
-            <Pressable style={styles.navItem} onPress={goStatus}>
-              <View style={styles.navIconWrap}>
-                <Ionicons name="eye-outline" size={24} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
-                {statusAttention ? <View style={styles.navDotDanger} /> : null}
-              </View>
-              <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
-            </Pressable>
-            <Pressable style={styles.navItem} onPress={() => navigateIfReady("GameLog")}>
-              <View style={styles.navIconWrap}>
-                <Ionicons name="book-outline" size={24} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
-                {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
-              </View>
-              <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
-            </Pressable>
-            <Pressable style={styles.navItem} onPress={() => navigateIfReady("GameSettings")}>
-              <Ionicons name="settings-outline" size={22} color={navActive === 2 ? colors.primaryBright : "#6e6d72"} />
-              <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
-            </Pressable>
+            <View style={[styles.bottomNavInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
+              <Pressable style={styles.navItem} onPress={goStatus}>
+                <View style={styles.navIconWrap}>
+                  <Ionicons name="eye-outline" size={24} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
+                  {statusAttention ? <View style={styles.navDotDanger} /> : null}
+                </View>
+                <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
+              </Pressable>
+              <Pressable style={styles.navItem} onPress={() => navigateIfReady("GameLog")}>
+                <View style={styles.navIconWrap}>
+                  <Ionicons name="book-outline" size={24} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
+                  {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
+                </View>
+                <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
+              </Pressable>
+              <Pressable style={styles.navItem} onPress={() => {
+                if (isPaused && !isHost) return;
+                navigateIfReady("GameSettings");
+              }}>
+                <Ionicons name="settings-outline" size={22} color={navActive === 2 ? colors.primaryBright : "#6e6d72"} />
+                <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -190,7 +228,13 @@ const styles = StyleSheet.create({
     height: 64,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(170,137,132,0.16)",
-    paddingHorizontal: uiStandard.screen.pagePadding,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  topBarInner: {
+    width: "100%",
+    flex: 1,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row"
@@ -228,16 +272,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: uiStandard.screen.pagePadding,
-    paddingTop: spacing.lg
+    width: "100%",
+    alignSelf: "center"
   },
   bottomNav: {
     borderTopWidth: 1,
     borderTopColor: "rgba(233,195,73,0.18)",
     backgroundColor: "rgba(7,7,8,0.95)",
     height: 74,
-    paddingHorizontal: spacing.md,
     paddingBottom: 8,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  bottomNavInner: {
+    width: "100%",
+    flex: 1,
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
@@ -278,5 +328,36 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
     backgroundColor: colors.secondary
+  },
+  pauseOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: uiStandard.screen.pagePadding,
+    backgroundColor: "rgba(5,5,6,0.78)"
+  },
+  pausePanel: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    borderRadius: 14,
+    backgroundColor: "rgba(12,12,14,0.94)",
+    padding: spacing.lg,
+    alignItems: "center",
+    gap: 8
+  },
+  pauseTitle: {
+    color: colors.secondary,
+    fontFamily: typography.serif,
+    fontSize: 28,
+    textAlign: "center"
+  },
+  pauseText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 13,
+    textAlign: "center"
   }
 });

@@ -88,7 +88,7 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
     return `${source}: ${player} elendi.${roleText}`;
   }
   if (event === "summary.players_eliminated") return `Elenen oyuncular: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
-  if (event === "summary.chain_elimination") return `Zincir eleme gerçekleşti: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
+  if (event === "summary.chain_elimination") return `Aşık bağı tetiklendi. Birbirine bağlı oyuncular elendi: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.night_no_elimination") return "Gece kimse elenmedi.";
   if (event === "game.phase.personal_turn_info") return `Sıra bilgisi: ${String(p.phase ?? "-")}.`;
   if (event === "game.role.assigned") return `Rolün atandı: ${toRoleLabel(p.role as string | null | undefined)}.`;

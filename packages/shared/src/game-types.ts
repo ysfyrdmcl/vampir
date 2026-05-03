@@ -91,6 +91,7 @@ export interface GameStateSnapshotPublic {
   phase: GamePhase;
   round: number;
   phaseEndsAt: number | null;
+  isPaused?: boolean;
   tieCountInRound: number;
   mayorPlayerId?: string | null;
   guardProtectedPlayerId?: string | null;

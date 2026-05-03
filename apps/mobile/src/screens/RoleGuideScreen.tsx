@@ -42,9 +42,6 @@ export function RoleGuideScreen({ navigation, route }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.title}>Roller ve Kurallar</Text>
-          <Text style={styles.desc}>
-            Kartlar standart düzende hazırlandı. Rol adı, takım, aksiyon zamanı ve özel kurallar burada tek formatta gösterilir.
-          </Text>
         </View>
 
         {isFromLobby ? (
@@ -100,7 +97,9 @@ function RoleRow({
 }) {
   return (
     <Pressable onPress={onPress} style={styles.card}>
-      <Image source={ROLE_ART[role.id]} style={styles.thumb} />
+      <View style={styles.thumbFrame}>
+        <Image source={ROLE_ART[role.id]} style={styles.thumb} resizeMode="cover" />
+      </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTop}>
           <Text style={styles.cardTitle}>{role.name}</Text>
@@ -207,10 +206,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(17,16,18,0.9)",
     minHeight: 130
   },
-  thumb: {
+  thumbFrame: {
     width: 106,
     height: 130,
+    overflow: "hidden",
     backgroundColor: "#090909"
+  },
+  thumb: {
+    width: "100%",
+    height: "100%"
   },
   cardBody: {
     flex: 1,

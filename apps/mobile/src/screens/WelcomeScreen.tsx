@@ -53,7 +53,6 @@ export function WelcomeScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.menuCard}>
-          <Text style={styles.sectionLabel}>ANA AKSİYONLAR</Text>
           <View style={styles.actions}>
             <PrimaryButton label="Oda Kur" iconName="git-network-outline" onPress={() => navigation.navigate("CreateRoom")} />
             <PrimaryButton label="Odaya Katıl" iconName="people-outline" onPress={() => navigation.navigate("JoinRoom")} variant="charcoal" />

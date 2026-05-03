@@ -64,6 +64,13 @@ export const roomConfigSchema = z.object({
 
 export const startRoomSchema = roomConfigSchema;
 
+export const gamePauseSchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8)
+});
+
+export const gameResumeSchema = gamePauseSchema;
+
 export const actionSubmitSchema = z.object({
   identity: identitySchema,
   roomCode: z.string().min(4).max(8),

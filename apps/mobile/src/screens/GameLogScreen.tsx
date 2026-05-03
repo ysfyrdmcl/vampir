@@ -115,7 +115,7 @@ export function GameLogScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="day" headerTitle="GÜNLÜK">
+    <ScreenShell scene="day" headerTitle="GÜNLÜK" showPauseOverlay={false}>
       <View style={styles.root}>
         {entryToast ? (
           <Animated.View pointerEvents="none" style={[styles.entryToast, { opacity: toastOpacity, transform: [{ translateY: toastY }] }]}>

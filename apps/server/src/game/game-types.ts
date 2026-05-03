@@ -26,6 +26,8 @@ export interface GameState {
   phase: GamePhase;
   round: number;
   phaseEndsAt: number | null;
+  isPaused: boolean;
+  pausedRemainingMs: number | null;
   tieCountInRound: number;
   mayorPlayerId: string | null;
   guardProtectedPlayerId: string | null;

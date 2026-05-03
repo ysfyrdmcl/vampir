@@ -15,6 +15,12 @@ type Props = NativeStackScreenProps<RootStackParamList, "RoleReveal">;
 export function RoleRevealScreen(_: Props) {
   const role = useGameStore((s) => s.privateRole);
   const gameState = useGameStore((s) => s.gameState);
+  const roomState = useGameStore((s) => s.roomState);
+  const loverPartnerPlayerId = useGameStore((s) => s.loverPartnerPlayerId);
+  const loverPartnerName =
+    loverPartnerPlayerId
+      ? roomState?.players.find((player) => player.playerId === loverPartnerPlayerId)?.nickname ?? loverPartnerPlayerId
+      : null;
 
   return (
     <ScreenShell scene="role" headerTitle="">
@@ -25,7 +31,7 @@ export function RoleRevealScreen(_: Props) {
         </View>
         <Text style={styles.title}>Rolün</Text>
 
-        <RoleRevealCard role={role} />
+        <RoleRevealCard role={role} loverPartnerName={loverPartnerName} />
 
         <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} />
       </View>

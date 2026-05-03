@@ -236,6 +236,7 @@ export function initSocketRuntime(): void {
       logPersonalEvent("game.role.assigned", { role: payload.role });
     }
     if (payload.loverPartnerPlayerId) {
+      store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId);
       const roomState = store.getState().roomState;
       const partnerName =
         roomState?.players.find((p) => p.playerId === payload.loverPartnerPlayerId)?.nickname ?? payload.loverPartnerPlayerId;
@@ -474,6 +475,38 @@ export function emitRoomConfigUpdate(): void {
   });
 }
 
+export function emitGamePause(): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode) return;
+  if (state.testMode) {
+    testSimulator.pauseGame();
+    logGameEvent("emit.game_pause.test_mode");
+    return;
+  }
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.GAME_PAUSE, {
+    identity: identityPayload(),
+    roomCode: state.roomCode
+  });
+  logGameEvent("emit.game_pause", { roomCode: state.roomCode });
+}
+
+export function emitGameResume(): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode) return;
+  if (state.testMode) {
+    testSimulator.resumeGame();
+    logGameEvent("emit.game_resume.test_mode");
+    return;
+  }
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.GAME_RESUME, {
+    identity: identityPayload(),
+    roomCode: state.roomCode
+  });
+  logGameEvent("emit.game_resume", { roomCode: state.roomCode });
+}
+
 export function emitReadyToggle(isReady: boolean): void {
   const state = useGameStore.getState();
   if (!state.roomCode || state.testMode) return;
@@ -489,6 +522,7 @@ export function emitReadyToggle(isReady: boolean): void {
 export function emitGameAction(actionType: ActionType, targetPlayerId?: string): void {
   const state = useGameStore.getState();
   if (!state.roomCode || !state.gameState) return;
+  if (state.gameState.isPaused) return;
   if (state.testMode) {
     testSimulator.submitAction(actionType, targetPlayerId);
     logGameEvent("emit.game_action.test_mode", { actionType, targetPlayerId });

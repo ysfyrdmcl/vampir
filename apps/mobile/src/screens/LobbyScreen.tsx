@@ -483,11 +483,7 @@ export function LobbyScreen({ navigation }: Props) {
         ) : null}
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        {isHost ? (
-          <>
-            <Text style={styles.startHint}>Başlatma kontrolü üstteki host paneline taşındı; detay ayarları burada kalır.</Text>
-          </>
-        ) : null}
+     
         <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger" onPress={() => setLeaveConfirmOpen(true)} />
       </ScrollView>
       <ConfirmActionSheet

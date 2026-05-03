@@ -27,6 +27,7 @@ interface GameStoreState {
   roomState: RoomStateSnapshot | null;
   gameState: GameStateSnapshotPublic | null;
   privateRole: Role | null;
+  loverPartnerPlayerId: string | null;
   privateResultText: string | null;
   vampireVotePreview: VampireVotePreviewEntry[];
   lastDayVoteSummary: DayVoteSummary | null;
@@ -46,6 +47,7 @@ interface GameStoreState {
   setRoomState: (roomState: RoomStateSnapshot) => void;
   setGameState: (gameState: GameStateSnapshotPublic) => void;
   setPrivateRole: (role: Role | null) => void;
+  setLoverPartnerPlayerId: (playerId: string | null) => void;
   setPrivateResultText: (value: string | null) => void;
   setVampireVotePreview: (entries: VampireVotePreviewEntry[]) => void;
   setLastDayVoteSummary: (summary: DayVoteSummary | null) => void;
@@ -70,6 +72,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   roomState: null,
   gameState: null,
   privateRole: null,
+  loverPartnerPlayerId: null,
   privateResultText: null,
   vampireVotePreview: [],
   lastDayVoteSummary: null,
@@ -129,6 +132,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       lastDayVoteSummary: gameState.lastDayVoteSummary ?? null
     }),
   setPrivateRole: (role) => set({ privateRole: role }),
+  setLoverPartnerPlayerId: (loverPartnerPlayerId) => set({ loverPartnerPlayerId }),
   setPrivateResultText: (privateResultText) => set({ privateResultText }),
   setVampireVotePreview: (vampireVotePreview) => set({ vampireVotePreview }),
   setLastDayVoteSummary: (lastDayVoteSummary) => set({ lastDayVoteSummary }),
@@ -158,6 +162,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       roomState: null,
       gameState: null,
       privateRole: null,
+      loverPartnerPlayerId: null,
       privateResultText: null,
       vampireVotePreview: [],
       lastDayVoteSummary: null,

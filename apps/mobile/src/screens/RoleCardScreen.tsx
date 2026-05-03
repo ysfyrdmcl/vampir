@@ -18,7 +18,9 @@ export function RoleCardScreen({ navigation, route }: Props) {
     <ScreenShell scene="role" headerTitle="ROL DETAYI" showBottomNav={false}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-          <Image source={ROLE_ART[role.id]} style={styles.art} />
+          <View style={styles.artFrame}>
+            <Image source={ROLE_ART[role.id]} style={styles.art} resizeMode="cover" />
+          </View>
           <View style={styles.body}>
             <Text style={styles.title}>{role.name.toUpperCase()}</Text>
             <View style={styles.chipRow}>
@@ -94,10 +96,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "rgba(15,15,17,0.88)"
   },
-  art: {
+  artFrame: {
     width: "100%",
     aspectRatio: 4 / 3,
+    overflow: "hidden",
     backgroundColor: "#0a0a0a"
+  },
+  art: {
+    width: "100%",
+    height: "100%"
   },
   body: {
     padding: spacing.lg,

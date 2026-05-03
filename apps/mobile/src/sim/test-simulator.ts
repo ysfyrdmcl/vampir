@@ -1,4 +1,4 @@
-import { buildRoleDeck, type ActionType, type GamePhase, type GameStateSnapshotPublic, type Role, type RolePresetId, type RoomStateSnapshot } from "@vampir-koylu/shared";
+import { buildRoleDeck, ROLE_DEFINITIONS, type ActionType, type GamePhase, type GameStateSnapshotPublic, type Role, type RolePresetId, type RoomStateSnapshot } from "@vampir-koylu/shared";
 import { logGameEvent, logPersonalEvent } from "../logging/game-logger";
 import { useGameStore } from "../store/game-store";
 
@@ -51,10 +51,12 @@ class TestSimulator {
   private currentPhase: GamePhase = "Lobby";
   private phaseTimer: ReturnType<typeof setTimeout> | null = null;
   private actionTimers: ReturnType<typeof setTimeout>[] = [];
+  private pausedRemainingMs: number | null = null;
   private actions: ActionsState = { vampireTargets: {}, dayVotes: {} };
   private doctorLastSelfProtect = false;
   private lastNightEliminated: string | null = null;
   private mayorPlayerId: string | null = null;
+  private loverLinks: Record<string, string> = {};
 
   isEnabled(): boolean {
     return useGameStore.getState().testMode;
@@ -93,10 +95,12 @@ class TestSimulator {
     this.round = 1;
     this.tieCount = 0;
     this.currentPhase = "Lobby";
+    this.pausedRemainingMs = null;
     this.actions = { vampireTargets: {}, dayVotes: {} };
     this.lastNightEliminated = null;
     this.doctorLastSelfProtect = false;
     this.mayorPlayerId = null;
+    this.loverLinks = {};
     this.preferredPlayerRole = preferredPlayerRole;
 
     store.setTestMode(true);
@@ -111,6 +115,7 @@ class TestSimulator {
       phase: "Lobby",
       round: this.round,
       phaseEndsAt: null,
+      isPaused: false,
       tieCountInRound: 0
     });
     store.setPrivateResultText(`Test modu aktif. ${botCount} dummy oyuncu eklendi.`);
@@ -130,7 +135,9 @@ class TestSimulator {
     this.actions = { vampireTargets: {}, dayVotes: {} };
     this.lastNightEliminated = null;
     this.currentPhase = "Lobby";
+    this.pausedRemainingMs = null;
     this.mayorPlayerId = null;
+    this.loverLinks = {};
     useGameStore.getState().setTestMode(false);
     logGameEvent("test.simulation.leave");
   }
@@ -144,8 +151,12 @@ class TestSimulator {
     this.lastNightEliminated = null;
     this.doctorLastSelfProtect = false;
     this.mayorPlayerId = null;
+    this.loverLinks = {};
+    this.pausedRemainingMs = null;
     this.assignRoles();
+    this.setupLovers();
     useGameStore.getState().setPrivateRole(this.me().role);
+    this.notifyMyLoverLink();
     useGameStore.getState().setLastDayVoteSummary(null);
     useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
     logGameEvent("test.game.started", {
@@ -155,8 +166,49 @@ class TestSimulator {
     this.setPhase("RoleReveal", this.phaseDuration("roleReveal"));
   }
 
+  pauseGame(): void {
+    if (!this.isEnabled() || this.currentPhase === "Lobby" || this.currentPhase === "GameOver") return;
+    const state = useGameStore.getState();
+    if (state.gameState?.isPaused) return;
+    this.pausedRemainingMs = state.gameState?.phaseEndsAt ? Math.max(0, state.gameState.phaseEndsAt - Date.now()) : null;
+    if (this.phaseTimer) {
+      clearTimeout(this.phaseTimer);
+      this.phaseTimer = null;
+    }
+    this.clearActionTimers();
+    state.setGameState({
+      ...(state.gameState ?? {
+        phase: this.currentPhase,
+        round: this.round,
+        tieCountInRound: this.tieCount
+      }),
+      phaseEndsAt: null,
+      isPaused: true
+    });
+    logGameEvent("test.game.paused", { phase: this.currentPhase, round: this.round, pausedRemainingMs: this.pausedRemainingMs });
+  }
+
+  resumeGame(): void {
+    if (!this.isEnabled()) return;
+    const state = useGameStore.getState();
+    if (!state.gameState?.isPaused) return;
+    const phaseEndsAt = this.pausedRemainingMs === null ? null : Date.now() + this.pausedRemainingMs;
+    state.setGameState({
+      ...state.gameState,
+      phaseEndsAt,
+      isPaused: false
+    });
+    if (this.pausedRemainingMs !== null && this.pausedRemainingMs > 0) {
+      this.phaseTimer = setTimeout(() => this.advancePhase(), this.pausedRemainingMs);
+    }
+    this.pausedRemainingMs = null;
+    this.scheduleBotBehavior(this.currentPhase);
+    logGameEvent("test.game.resumed", { phase: this.currentPhase, round: this.round });
+  }
+
   submitAction(actionType: ActionType, targetPlayerId?: string): void {
     if (!this.isEnabled()) return;
+    if (useGameStore.getState().gameState?.isPaused) return;
     const me = this.me();
     if (!me.isAlive || !targetPlayerId) return;
     const target = this.players.find((player) => player.playerId === targetPlayerId);
@@ -244,6 +296,43 @@ class TestSimulator {
     }));
   }
 
+  private setupLovers(): void {
+    this.loverLinks = this.buildLoverLinks(this.players);
+    const pairs = Object.entries(this.loverLinks).filter(([playerId, partnerId]) => playerId < partnerId);
+    for (const [playerId, partnerId] of pairs) {
+      logGameEvent("test.role.lovers.linked", { playerId, partnerId });
+    }
+  }
+
+  private buildLoverLinks(players: SimPlayer[]): Record<string, string> {
+    const state = useGameStore.getState();
+    if (!state.roomRules.loversEnabled) return {};
+    if (state.rolePreset !== "socialChaos") return {};
+    if (players.length < ROLE_DEFINITIONS.Lover.minPlayers) return {};
+    const first = this.pickRandomFrom(players);
+    if (!first) return {};
+    const second = this.pickRandomFrom(players.filter((p) => p.playerId !== first.playerId));
+    if (!second) return {};
+    return {
+      [first.playerId]: second.playerId,
+      [second.playerId]: first.playerId
+    };
+  }
+
+  private notifyMyLoverLink(): void {
+    const me = this.me();
+    const partnerId = this.loverLinks[me.playerId];
+    if (!partnerId) return;
+    useGameStore.getState().setLoverPartnerPlayerId(partnerId);
+    const partnerName = this.players.find((p) => p.playerId === partnerId)?.nickname ?? partnerId;
+    const text = `Aşık bağı: ${partnerName}. Bu oyuncu ölürse sen de ölürsün.`;
+    useGameStore.getState().setPrivateResultText(text);
+    logPersonalEvent("game.private_result.lover_link", {
+      loverPartnerPlayerId: partnerId,
+      text
+    });
+  }
+
   private toRoomSnapshot(status: "Lobby" | "InGame" | "GameOver"): RoomStateSnapshot {
     return {
       roomCode: this.roomCode,
@@ -264,6 +353,7 @@ class TestSimulator {
 
   private setPhase(phase: GamePhase, seconds: number | null): void {
     this.currentPhase = phase;
+    this.pausedRemainingMs = null;
     this.clearActionTimers();
     const phaseEndsAt = seconds ? Date.now() + seconds * 1000 : null;
 
@@ -271,6 +361,7 @@ class TestSimulator {
       phase,
       round: this.round,
       phaseEndsAt,
+      isPaused: false,
       tieCountInRound: this.tieCount,
       mayorPlayerId: this.mayorPlayerId,
       lastDayVoteSummary: useGameStore.getState().lastDayVoteSummary
@@ -590,10 +681,7 @@ class TestSimulator {
     if (vampireTargetByVotes && vampireTargetByVotes !== this.actions.doctorTarget) {
       const target = this.players.find((p) => p.playerId === vampireTargetByVotes);
       if (target) {
-        target.isAlive = false;
-        if (this.mayorPlayerId === target.playerId) {
-          this.mayorPlayerId = null;
-        }
+        const eliminatedIds = this.eliminateWithLoverChain(target.playerId, "Night");
         this.lastNightEliminated = target.playerId;
         nightOutcome = "killed";
         logGameEvent("test.night.resolve.kill", { target: target.nickname });
@@ -603,6 +691,7 @@ class TestSimulator {
           playerId: target.playerId,
           revealedRole: this.revealedRoleFor(target)
         });
+        this.logLoverChainElimination(eliminatedIds);
       }
     } else if (vampireTargetByVotes && vampireTargetByVotes === this.actions.doctorTarget) {
       nightOutcome = "protected";
@@ -700,8 +789,7 @@ class TestSimulator {
         const randomTarget = tiedTopCandidates[Math.floor(Math.random() * tiedTopCandidates.length)];
         const eliminated = this.players.find((p) => p.playerId === randomTarget);
         if (eliminated) {
-          eliminated.isAlive = false;
-          if (this.mayorPlayerId === eliminated.playerId) this.mayorPlayerId = null;
+          const eliminatedIds = this.eliminateWithLoverChain(eliminated.playerId, "Day");
           useGameStore.getState().setLastDayVoteSummary({
             entries: ranked.map(([playerId, votes]) => ({ playerId, votes })),
             executedPlayerId: eliminated.playerId,
@@ -714,6 +802,7 @@ class TestSimulator {
             playerId: eliminated.playerId,
             revealedRole: this.revealedRoleFor(eliminated)
           });
+          this.logLoverChainElimination(eliminatedIds);
           useGameStore.getState().setPrivateResultText(`Beraberlik tekrarlandı. Rastgele infaz: ${eliminated.nickname}`);
         }
       } else {
@@ -727,10 +816,7 @@ class TestSimulator {
 
     const eliminated = this.players.find((p) => p.playerId === top[0]);
     if (eliminated) {
-      eliminated.isAlive = false;
-      if (this.mayorPlayerId === eliminated.playerId) {
-        this.mayorPlayerId = null;
-      }
+      const eliminatedIds = this.eliminateWithLoverChain(eliminated.playerId, "Day");
       useGameStore.getState().setLastDayVoteSummary({
         entries: ranked.map(([playerId, votes]) => ({ playerId, votes })),
         executedPlayerId: eliminated.playerId,
@@ -745,6 +831,7 @@ class TestSimulator {
         playerId: eliminated.playerId,
         revealedRole: this.revealedRoleFor(eliminated)
       });
+      this.logLoverChainElimination(eliminatedIds);
     }
     this.tieCount = 0;
     this.actions = { vampireTargets: {}, dayVotes: {} };
@@ -862,10 +949,7 @@ class TestSimulator {
     if (!this.actions.hunterTarget) return;
     const target = this.players.find((p) => p.playerId === this.actions.hunterTarget);
     if (!target || !target.isAlive) return;
-    target.isAlive = false;
-    if (this.mayorPlayerId === target.playerId) {
-      this.mayorPlayerId = null;
-    }
+    const eliminatedIds = this.eliminateWithLoverChain(target.playerId, "Day");
     logGameEvent("role.hunter.shot", { round: this.round, targetPlayerId: target.playerId });
     logGameEvent("summary.elimination", {
       round: this.round,
@@ -873,7 +957,65 @@ class TestSimulator {
       playerId: target.playerId,
       revealedRole: this.revealedRoleFor(target)
     });
+    this.logLoverChainElimination(eliminatedIds);
     useGameStore.getState().setRoomState(this.toRoomSnapshot("InGame"));
+  }
+
+  private eliminateWithLoverChain(initialPlayerId: string, source: "Night" | "Day"): string[] {
+    return this.eliminateWithLoverChainFor(this.players, initialPlayerId, source, this.loverLinks, (playerId) => {
+      if (this.mayorPlayerId === playerId) {
+        this.mayorPlayerId = null;
+      }
+    });
+  }
+
+  private eliminateWithLoverChainFor(
+    players: SimPlayer[],
+    initialPlayerId: string,
+    source: "Night" | "Day",
+    loverLinks: Record<string, string>,
+    onEliminate?: (playerId: string) => void
+  ): string[] {
+    const queue = [initialPlayerId];
+    const visited = new Set<string>();
+    const eliminatedIds: string[] = [];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (!currentId || visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const current = players.find((p) => p.playerId === currentId);
+      if (!current || !current.isAlive) continue;
+
+      current.isAlive = false;
+      eliminatedIds.push(current.playerId);
+      onEliminate?.(current.playerId);
+
+      const partnerId = loverLinks[current.playerId];
+      if (partnerId) {
+        const partner = players.find((p) => p.playerId === partnerId);
+        if (partner?.isAlive) {
+          queue.push(partnerId);
+        }
+      }
+    }
+
+    if (eliminatedIds.length > 1) {
+      logGameEvent("test.role.lovers.chain_death", {
+        source,
+        players: eliminatedIds
+      });
+    }
+    return eliminatedIds;
+  }
+
+  private logLoverChainElimination(eliminatedIds: string[]): void {
+    if (eliminatedIds.length <= 1) return;
+    logGameEvent("summary.chain_elimination", {
+      round: this.round,
+      players: eliminatedIds
+    });
   }
 
   private resolveVampireTargetByVotes(alive: SimPlayer[], votes: Record<string, string>): string | null {
@@ -952,6 +1094,7 @@ class TestSimulator {
   private runSingleSimulation(totalPlayers: number, gameNo: number): { winner: Winner | null; roundsPlayed: number; tieRounds: number } {
     const players: SimPlayer[] = this.buildSimPlayers(totalPlayers);
     this.assignRolesForPlayers(players);
+    const loverLinks = this.buildLoverLinks(players);
 
     let roundsPlayed = 0;
     let tieCountInRound = 0;
@@ -1011,7 +1154,7 @@ class TestSimulator {
         if (killed) {
           const firstNightNoKill = totalPlayers === 4 && roundsPlayed === 1;
           if (!firstNightNoKill) {
-            killed.isAlive = false;
+            this.eliminateWithLoverChainFor(players, killed.playerId, "Night", loverLinks);
             killedPlayerId = killed.playerId;
           }
         }
@@ -1106,7 +1249,9 @@ class TestSimulator {
 
       if (finalResult.executedPlayerId) {
         const executed = players.find((p) => p.playerId === finalResult.executedPlayerId);
-        if (executed) executed.isAlive = false;
+        if (executed) {
+          this.eliminateWithLoverChainFor(players, executed.playerId, "Day", loverLinks);
+        }
         logGameEvent("sim.round.day.execution", {
           gameNo,
           round: roundsPlayed,

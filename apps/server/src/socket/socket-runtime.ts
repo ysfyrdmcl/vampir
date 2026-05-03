@@ -11,7 +11,9 @@ import {
   leaveRoomSchema,
   roomConfigSchema,
   readyToggleSchema,
-  startRoomSchema
+  startRoomSchema,
+  gamePauseSchema,
+  gameResumeSchema
 } from "./socket-schema.js";
 
 export class SocketRuntime {
@@ -29,6 +31,8 @@ export class SocketRuntime {
     socket.on(SOCKET_EVENTS.ROOM_READY_TOGGLE, (payload) => this.safe(socket, () => this.onReadyToggle(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, (payload) => this.safe(socket, () => this.onConfigUpdate(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_START, (payload) => this.safe(socket, () => this.onStart(socket, payload)));
+    socket.on(SOCKET_EVENTS.GAME_PAUSE, (payload) => this.safe(socket, () => this.onPause(socket, payload)));
+    socket.on(SOCKET_EVENTS.GAME_RESUME, (payload) => this.safe(socket, () => this.onResume(socket, payload)));
     socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload)));
 
     socket.on("disconnect", () => {
@@ -193,6 +197,35 @@ export class SocketRuntime {
         );
       }
     }
+  }
+
+  private onPause(_socket: Socket, raw: unknown): void {
+    const payload = gamePauseSchema.parse(raw);
+    const room = this.roomManager.requireRoom(payload.roomCode);
+    this.roomManager.assertHost(room, payload.identity.deviceId);
+    if (room.status !== "InGame" || room.game.phase === "GameOver") {
+      throw new Error("INVALID_PHASE");
+    }
+    if (room.game.isPaused) return;
+    room.game.pausedRemainingMs = room.game.phaseEndsAt ? Math.max(0, room.game.phaseEndsAt - Date.now()) : null;
+    room.game.phaseEndsAt = null;
+    room.game.isPaused = true;
+    room.lastActivityAt = Date.now();
+    this.broadcastGamePhase(room);
+  }
+
+  private onResume(_socket: Socket, raw: unknown): void {
+    const payload = gameResumeSchema.parse(raw);
+    const room = this.roomManager.requireRoom(payload.roomCode);
+    this.roomManager.assertHost(room, payload.identity.deviceId);
+    if (room.status !== "InGame" || !room.game.isPaused) {
+      throw new Error("INVALID_PHASE");
+    }
+    room.game.phaseEndsAt = room.game.pausedRemainingMs === null ? null : Date.now() + room.game.pausedRemainingMs;
+    room.game.pausedRemainingMs = null;
+    room.game.isPaused = false;
+    room.lastActivityAt = Date.now();
+    this.broadcastGamePhase(room);
   }
 
   private buildVampireVotePreview(room: RoomState): { vampirePlayerId: string; targetPlayerId: string }[] {
