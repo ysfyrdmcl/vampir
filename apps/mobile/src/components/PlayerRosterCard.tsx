@@ -41,6 +41,8 @@ function PlayerRow({
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const y = useRef(new Animated.Value(8)).current;
+  const connectionText = player.isConnected ? "Bağlı" : "Bağlantı yok";
+  const readyText = player.isReady ? "Hazır" : "Onay bekliyor";
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }),
@@ -67,7 +69,7 @@ function PlayerRow({
         </View>
         <View style={styles.playerIdentity}>
           <Text style={[styles.name, compact ? styles.nameCompact : null]} numberOfLines={1}>{player.nickname}</Text>
-          <Text style={styles.stateLine}>{player.isConnected ? "Bağlı" : "Bağlantı yok"} · {player.isReady ? "Hazır" : "Bekliyor"}</Text>
+          <Text style={styles.stateLine}>{connectionText} · {readyText}</Text>
         </View>
         {isHost ? <Text style={styles.badgeHost}>HOST</Text> : null}
         {isMe ? <Text style={styles.badgeSelf}>SEN</Text> : null}
@@ -118,8 +120,8 @@ export function PlayerRosterCard({ players, mePlayerId, compact = false, hostPla
 
 const styles = StyleSheet.create({
   wrap: {
-    padding: 12,
-    gap: 10
+    padding: 10,
+    gap: 8
   },
   headerRow: {
     flexDirection: "row",
@@ -142,23 +144,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 8
+    rowGap: 7
   },
   playerCard: {
     width: "48.5%",
-    minHeight: 172,
-    borderRadius: 14,
+    minHeight: 150,
+    borderRadius: 13,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.25)",
-    padding: 12,
-    gap: 8,
+    padding: 10,
+    gap: 7,
     backgroundColor: colors.surfaceGlow
   },
   playerCardCompact: {
     width: "100%",
     minHeight: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
     gap: 0
   },
   playerCardMe: {
@@ -188,16 +190,16 @@ const styles = StyleSheet.create({
   playerTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9
+    gap: 8
   },
   badgeSelf: {
     color: colors.backgroundDeep,
     backgroundColor: colors.secondary,
     overflow: "hidden",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
     borderRadius: 999,
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: typography.sansBold
   },
   badgeHost: {
@@ -205,10 +207,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.28)",
     overflow: "hidden",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
     borderRadius: 999,
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: typography.sansBold
   },
   avatar: {
@@ -222,9 +224,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(8,8,8,0.92)"
   },
   avatarCompact: {
-    width: 40,
-    height: 40,
-    borderRadius: 10
+    width: 56,
+    height: 56,
+    borderRadius: 11
   },
   avatarLabel: {
     color: colors.text,
@@ -247,7 +249,8 @@ const styles = StyleSheet.create({
   stateLine: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 11
+    fontSize: 11,
+    lineHeight: 15
   },
   stateDot: {
     width: 10,

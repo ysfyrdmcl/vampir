@@ -47,16 +47,16 @@ export const uiStandard = {
     countdownWarningMs: 10000
   },
   button: {
-    height: 66,
-    compactHeight: 46,
+    height: 56,
+    compactHeight: 48,
     radius: 12,
-    iconSize: 24,
+    iconSize: 21,
     compactIconSize: 18,
-    labelSize: 22,
+    labelSize: 18,
     compactLabelSize: 14,
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffsetY: 10
+    shadowOpacity: 0.26,
+    shadowRadius: 14,
+    shadowOffsetY: 7
   },
   fx: {
     glowSoft: 0.18,
@@ -106,8 +106,13 @@ export const uiStandard = {
       border: "rgba(255,143,130,0.4)",
       text: "#f7d7d3"
     },
+    dangerOutline: {
+      gradient: ["rgba(31,13,14,0.5)", "rgba(20,16,17,0.56)"] as const,
+      border: "rgba(255,143,130,0.34)",
+      text: "#f0b5ad"
+    },
     ghost: {
-      gradient: ["rgba(17,17,19,0.55)", "rgba(17,17,19,0.55)"] as const,
+      gradient: ["rgba(17,17,19,0.38)", "rgba(17,17,19,0.38)"] as const,
       border: "rgba(170,137,132,0.22)",
       text: "#cbc2bc"
     },

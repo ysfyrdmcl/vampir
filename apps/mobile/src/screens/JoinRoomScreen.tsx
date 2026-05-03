@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -25,7 +26,8 @@ export function JoinRoomScreen({ navigation, route }: Props) {
   const errorText = toFriendlyErrorText(errorCode);
   const safeRoomCode = roomCode.trim().toUpperCase();
   const safeNickname = nickname.trim();
-  const canJoin = safeRoomCode.length >= 4 && safeNickname.length >= 2;
+  const joinDisabledReason = safeRoomCode.length < 6 ? "6 haneli oda kodu gir" : safeNickname.length < 2 ? "Oyuncu adını gir" : null;
+  const canJoin = !joinDisabledReason;
 
   const roomCodeSlots = useMemo(
     () => Array.from({ length: 6 }, (_, index) => safeRoomCode[index] ?? "•"),
@@ -52,12 +54,12 @@ export function JoinRoomScreen({ navigation, route }: Props) {
 
   const pasteRoomCode = async () => {
     const text = await Clipboard.getStringAsync();
-    const match = text.toUpperCase().match(/[A-Z0-9]{4,6}/);
+    const match = text.toUpperCase().match(/[A-Z0-9]{6}/);
     if (match) normalizeRoomCode(match[0]);
   };
 
   const joinRoom = () => {
-    if (safeRoomCode.length < 4) {
+    if (safeRoomCode.length < 6) {
       useGameStore.getState().setErrorCode("ROOM_CODE_INVALID");
       return;
     }
@@ -83,46 +85,50 @@ export function JoinRoomScreen({ navigation, route }: Props) {
         <View style={styles.card}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>ODA KODU</Text>
-            <Pressable style={styles.pasteButton} onPress={pasteRoomCode}>
-              <Text style={styles.pasteButtonText}>Yapıştır</Text>
+            <View style={styles.headerActions}>
+              <Pressable style={styles.headerActionButton} onPress={() => navigation.navigate("QrScanner")}>
+                <Ionicons name="qr-code-outline" size={13} color={colors.textDim} />
+                <Text style={styles.headerActionMutedText}>QR Tara</Text>
+              </Pressable>
+              <Pressable style={styles.headerActionButtonStrong} onPress={pasteRoomCode}>
+                <Text style={styles.headerActionStrongText}>Yapıştır</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.codeEntry}>
+            <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
+              {roomCodeSlots.map((char, index) => (
+                <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null]}>
+                  <Text style={[styles.slotChar, char === "•" ? styles.slotPlaceholder : null]}>{char}</Text>
+                </View>
+              ))}
             </Pressable>
+            <TextInput
+              ref={codeInputRef}
+              style={styles.hiddenCodeInput}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              keyboardType="ascii-capable"
+              maxLength={6}
+              value={roomCode}
+              onChangeText={normalizeRoomCode}
+              textContentType="oneTimeCode"
+              caretHidden
+            />
           </View>
-          <View style={styles.codeSlots}>
-            {roomCodeSlots.map((char, index) => (
-              <View key={`${char}-${index}`} style={styles.slot}>
-                <Text style={styles.slotChar}>{char}</Text>
-              </View>
-            ))}
-          </View>
-          <TextInput
-            ref={codeInputRef}
-            style={styles.codeInput}
-            placeholder="Oda kodu"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            keyboardType="ascii-capable"
-            maxLength={6}
-            placeholderTextColor={colors.textDim}
-            value={roomCode}
-            onChangeText={normalizeRoomCode}
-            textContentType="oneTimeCode"
-          />
           <View style={styles.quickActions}>
             {lastRoomCode ? (
               <Pressable style={styles.quickChip} onPress={() => normalizeRoomCode(lastRoomCode)}>
                 <Text style={styles.quickChipText}>Son oda: {lastRoomCode}</Text>
               </Pressable>
             ) : null}
-            <Pressable style={styles.quickChipMuted} onPress={() => navigation.navigate("QrScanner")}>
-              <Text style={styles.quickChipMutedText}>QR Tara</Text>
-            </Pressable>
           </View>
 
           <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
           <TextInput
             style={styles.nameInput}
-            placeholder="Lakapını gir..."
-            placeholderTextColor={colors.textDim}
+            placeholder="Lakapını yaz"
+            placeholderTextColor="rgba(55,47,35,0.58)"
             value={nickname}
             onChangeText={setNickname}
             returnKeyType="join"
@@ -132,10 +138,12 @@ export function JoinRoomScreen({ navigation, route }: Props) {
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} disabled={!canJoin} />
+        {!canJoin ? <Text style={styles.disabledHint}>{joinDisabledReason}</Text> : null}
         <PrimaryButton
           label="Menüye Dön"
           iconName="arrow-back-outline"
-          variant="outline"
+          variant="ghost"
+          compact
           onPress={goBackToMenu}
           style={styles.backButton}
         />
@@ -150,7 +158,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: uiStandard.screen.pageGap,
+    gap: spacing.md,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
@@ -165,9 +173,9 @@ const styles = StyleSheet.create({
     borderColor: uiStandard.surfaces.panel.borderColor,
     borderRadius: uiStandard.screen.cardRadius,
     backgroundColor: uiStandard.surfaces.panel.backgroundColor,
-    paddingHorizontal: uiStandard.screen.cardPaddingX,
-    paddingVertical: uiStandard.screen.cardPaddingY,
-    gap: uiStandard.screen.sectionGap
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    gap: spacing.md
   },
   label: {
     color: colors.secondary,
@@ -181,7 +189,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10
   },
-  pasteButton: {
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7
+  },
+  headerActionButton: {
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    backgroundColor: "rgba(12,12,14,0.42)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4
+  },
+  headerActionMutedText: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11
+  },
+  headerActionButtonStrong: {
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.34)",
     borderRadius: 999,
@@ -189,10 +218,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: "rgba(36,31,20,0.68)"
   },
-  pasteButtonText: {
+  headerActionStrongText: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: 11
+  },
+  codeEntry: {
+    position: "relative"
   },
   codeSlots: {
     flexDirection: "row",
@@ -209,19 +241,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
+  slotActive: {
+    borderColor: "rgba(233,195,73,0.38)",
+    borderWidth: 1
+  },
   slotChar: {
     color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 30
   },
-  codeInput: {
-    height: uiStandard.screen.compactInputHeight,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(233,195,73,0.25)",
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 14,
-    letterSpacing: 1.2
+  slotPlaceholder: {
+    color: "rgba(203,194,188,0.34)"
+  },
+  hiddenCodeInput: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0,
+    color: "transparent"
   },
   quickActions: {
     flexDirection: "row",
@@ -241,36 +276,33 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 12
   },
-  quickChipMuted: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.2)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: "rgba(12,12,14,0.42)"
-  },
-  quickChipMutedText: {
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 12
-  },
   playerLabel: {
     marginTop: 2
   },
   nameInput: {
-    height: uiStandard.screen.inputHeight,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(233,195,73,0.4)",
-    color: colors.text,
+    height: uiStandard.screen.compactInputHeight + 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(87,69,0,0.42)",
+    backgroundColor: "rgba(255,248,232,0.78)",
+    color: colors.parchmentText,
     fontFamily: typography.serifSemi,
-    fontSize: 31 / 1.6
+    fontSize: 18,
+    paddingHorizontal: 13
   },
   error: {
     color: colors.danger,
     fontFamily: typography.sansMedium,
     textAlign: "center"
   },
+  disabledHint: {
+    marginTop: -6,
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    textAlign: "center"
+  },
   backButton: {
-    marginTop: 10
+    marginTop: 2
   }
 });

@@ -87,7 +87,7 @@ export function TestModeSetupScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Seçtiğin rol mümkün değilse rol paketi veya oyuncu sayısına göre kapalı görünür.</Text>
 
         <PrimaryButton label="Test Lobby Başlat" iconName="play-outline" onPress={start} />
-        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" onPress={() => navigation.navigate("Welcome")} />
+        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" compact onPress={() => navigation.navigate("Welcome")} />
       </ScrollView>
     </ScreenShell>
   );

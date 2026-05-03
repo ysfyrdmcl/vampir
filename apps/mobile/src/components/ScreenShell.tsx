@@ -19,6 +19,8 @@ import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
+import { toFriendlyToastText } from "../ui/error-text";
+import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
 
 type SceneType = GameBackgroundVariant;
@@ -53,7 +55,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   const gameState = useGameStore((s) => s.gameState);
   const phase = gameState?.phase ?? null;
   const privateRole = useGameStore((s) => s.privateRole);
-  const privateResultText = useGameStore((s) => s.privateResultText);
+  const errorCode = useGameStore((s) => s.errorCode);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
   const storedRoomCode = useGameStore((s) => s.roomCode);
@@ -116,6 +118,11 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
     };
   }, [backdropScale]);
 
+  useEffect(() => {
+    const toastText = toFriendlyToastText(errorCode);
+    if (toastText) showToast(toastText, "danger", 1800);
+  }, [errorCode]);
+
   const navActive = useMemo(() => activeNavIndex(scene), [scene]);
   const shouldShowTopBar = showTopBar && scene !== "home";
   const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
@@ -145,7 +152,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
           <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
             <View style={[styles.topBarInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
               <View style={styles.topLeft}>
-                <Ionicons name="shield-outline" size={24} color={colors.primaryBright} />
+                <Ionicons name="shield-outline" size={20} color={colors.primaryBright} />
                 <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
               </View>
               {roomCode ? (
@@ -171,7 +178,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
         >
           {children}
         </Animated.View>
-        <GameToast message={privateResultText} />
+        <GameToast />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? 74 + insets.bottom : 0 }]}>
             <View style={styles.pausePanel}>
@@ -185,25 +192,27 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
         {shouldShowBottomNav ? (
           <View style={[styles.bottomNav, { height: 74 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={[styles.bottomNavInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
-              <Pressable style={styles.navItem} onPress={goStatus}>
-                <View style={styles.navIconWrap}>
+              <Pressable style={[styles.navItem, navActive === 0 ? styles.navItemActive : null]} onPress={goStatus}>
+                <View style={[styles.navIconWrap, navActive === 0 ? styles.navIconWrapActive : null]}>
                   <Ionicons name="eye-outline" size={24} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
                   {statusAttention ? <View style={styles.navDotDanger} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
               </Pressable>
-              <Pressable style={styles.navItem} onPress={() => navigateIfReady("GameLog")}>
-                <View style={styles.navIconWrap}>
+              <Pressable style={[styles.navItem, navActive === 1 ? styles.navItemActive : null]} onPress={() => navigateIfReady("GameLog")}>
+                <View style={[styles.navIconWrap, navActive === 1 ? styles.navIconWrapActive : null]}>
                   <Ionicons name="book-outline" size={24} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
                   {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
               </Pressable>
-              <Pressable style={styles.navItem} onPress={() => {
+              <Pressable style={[styles.navItem, navActive === 2 ? styles.navItemActive : null]} onPress={() => {
                 if (isPaused && !isHost) return;
                 navigateIfReady("GameSettings");
               }}>
-                <Ionicons name="settings-outline" size={22} color={navActive === 2 ? colors.primaryBright : "#6e6d72"} />
+                <View style={[styles.navIconWrap, navActive === 2 ? styles.navIconWrapActive : null]}>
+                  <Ionicons name="settings-outline" size={22} color={navActive === 2 ? colors.secondary : "#6e6d72"} />
+                </View>
                 <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
               </Pressable>
             </View>
@@ -250,8 +259,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     color: colors.primaryBright,
     fontFamily: typography.serif,
-    fontSize: 16,
-    letterSpacing: 1.7
+    fontSize: 14,
+    letterSpacing: 1.4
   },
   roomCodeChip: {
     width: 96,
@@ -277,12 +286,18 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     borderTopWidth: 1,
-    borderTopColor: "rgba(233,195,73,0.18)",
-    backgroundColor: "rgba(7,7,8,0.95)",
+    borderTopColor: "rgba(233,195,73,0.22)",
+    backgroundColor: "rgba(10,10,12,0.88)",
     height: 74,
     paddingBottom: 8,
+    paddingTop: 8,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 12
   },
   bottomNavInner: {
     width: "100%",
@@ -290,43 +305,73 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    gap: 6
   },
   navItem: {
-    width: "32%",
+    flex: 1,
+    minWidth: 0,
+    height: 54,
     alignItems: "center",
-    gap: 4
+    justifyContent: "center",
+    gap: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.08)",
+    backgroundColor: "rgba(15,15,17,0.28)",
+    opacity: 0.58
+  },
+  navItemActive: {
+    borderColor: "rgba(233,195,73,0.32)",
+    backgroundColor: "rgba(41,34,18,0.48)",
+    opacity: 1,
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4
   },
   navIconWrap: {
-    minWidth: 26,
-    minHeight: 26,
+    width: 26,
+    height: 25,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    opacity: 0.82
+  },
+  navIconWrapActive: {
+    opacity: 1
   },
   navLabel: {
     color: "#6e6d72",
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: "center"
   },
   navLabelActive: {
-    color: colors.secondary
+    color: colors.secondary,
+    fontFamily: typography.sansBold
   },
   navDotDanger: {
     position: "absolute",
-    top: 1,
-    right: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "rgba(10,10,12,0.9)",
     backgroundColor: colors.primaryBright
   },
   navDotInfo: {
     position: "absolute",
-    top: 1,
-    right: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "rgba(10,10,12,0.9)",
     backgroundColor: colors.secondary
   },
   pauseOverlay: {

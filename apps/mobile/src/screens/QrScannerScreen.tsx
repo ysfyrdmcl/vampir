@@ -48,7 +48,7 @@ export function QrScannerScreen({ navigation }: Props) {
           <Text style={styles.title}>Kamera izni gerekiyor</Text>
           <Text style={styles.copy}>Oda QR kodunu okuyup kod alanına yerleştirmek için kamerayı açmalıyız.</Text>
           <PrimaryButton label="Kameraya İzin Ver" iconName="scan-outline" onPress={requestPermission} />
-          <PrimaryButton label="Geri Dön" iconName="arrow-back-outline" variant="outline" onPress={() => navigation.goBack()} />
+          <PrimaryButton label="Geri Dön" iconName="arrow-back-outline" variant="ghost" compact onPress={() => navigation.goBack()} />
         </View>
       </ScreenShell>
     );

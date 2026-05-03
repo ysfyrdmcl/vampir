@@ -46,8 +46,8 @@ export function HeroBrandArea({ title, subtitle }: HeroBrandAreaProps) {
         ]}
       />
       <View style={styles.badge}>
-        <Ionicons name="moon-outline" size={20} color={colors.secondary} />
-        <Ionicons name="shield-outline" size={38} color={colors.secondary} />
+        <Ionicons name="moon-outline" size={16} color={colors.secondary} />
+        <Ionicons name="shield-outline" size={30} color={colors.secondary} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
@@ -58,20 +58,20 @@ export function HeroBrandArea({ title, subtitle }: HeroBrandAreaProps) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
-    gap: 10
+    gap: 7
   },
   moonHalo: {
     position: "absolute",
-    top: -8,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(181,38,25,0.24)"
+    top: -6,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: "rgba(181,38,25,0.2)"
   },
   badge: {
-    width: uiStandard.screen.heroBadgeSize + 12,
-    height: uiStandard.screen.heroBadgeSize + 12,
-    borderRadius: (uiStandard.screen.heroBadgeSize + 12) / 2,
+    width: uiStandard.screen.heroBadgeSize - 6,
+    height: uiStandard.screen.heroBadgeSize - 6,
+    borderRadius: (uiStandard.screen.heroBadgeSize - 6) / 2,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -83,13 +83,13 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontFamily: typography.serif,
-    fontSize: uiStandard.text.heroTitleSize,
+    fontSize: uiStandard.text.heroTitleSize - 6,
     textAlign: "center"
   },
   subtitle: {
     color: colors.textMuted,
     fontFamily: typography.serifRegular,
-    fontSize: uiStandard.text.heroSubtitleSize,
+    fontSize: uiStandard.text.heroSubtitleSize - 2,
     textAlign: "center"
   }
 });

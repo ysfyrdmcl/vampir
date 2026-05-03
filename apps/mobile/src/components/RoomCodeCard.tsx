@@ -35,31 +35,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.3)",
     backgroundColor: "rgba(25,25,25,0.82)",
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.lg,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
     alignItems: "center",
-    gap: 5
+    gap: 3
   },
   label: {
     color: colors.textMuted,
     fontFamily: typography.sansBold,
     letterSpacing: 2,
-    fontSize: 12
+    fontSize: 10
   },
   code: {
     color: colors.secondary,
     fontFamily: typography.serif,
-    fontSize: 48 / 1.4,
-    letterSpacing: 3
+    fontSize: 32,
+    letterSpacing: 2.5,
+    lineHeight: 36
   },
   hint: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 11
+    fontSize: 10,
+    lineHeight: 13
   },
   actions: {
-    marginTop: 4,
+    marginTop: 3,
     flexDirection: "row",
     gap: 8
   },
@@ -70,13 +72,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.25)",
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    minHeight: 30,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     backgroundColor: "rgba(20,20,20,0.8)"
   },
   miniText: {
     color: colors.text,
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 11
   }
 });

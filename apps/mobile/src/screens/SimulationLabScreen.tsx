@@ -72,7 +72,7 @@ export function SimulationLabScreen({ navigation }: Props) {
           onPress={run}
           disabled={running}
         />
-        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" onPress={() => navigation.navigate("Welcome")} />
+        <PrimaryButton label="Menüye Dön" iconName="arrow-back-outline" variant="ghost" compact onPress={() => navigation.navigate("Welcome")} />
 
         <View style={styles.logCard}>
           <Text style={styles.logTitle}>Son Özet</Text>

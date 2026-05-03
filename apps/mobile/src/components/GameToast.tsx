@@ -1,46 +1,55 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
+import { useToastStore, type GameToastPayload } from "../ui/toast-store";
 
-interface GameToastProps {
-  message: string | null;
-}
-
-function isToastMessage(message: string | null): boolean {
-  if (!message) return false;
-  return message.toLowerCase().includes("kopyaland");
-}
-
-export function GameToast({ message }: GameToastProps) {
-  const [activeMessage, setActiveMessage] = useState<string | null>(null);
+export function GameToast() {
+  const insets = useSafeAreaInsets();
+  const toast = useToastStore((s) => s.toast);
+  const clearToast = useToastStore((s) => s.clearToast);
+  const [activeToast, setActiveToast] = useState<GameToastPayload | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-10)).current;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!isToastMessage(message)) return;
-    setActiveMessage(message);
+    if (!toast) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setActiveToast(toast);
+    opacity.setValue(0);
+    translateY.setValue(-10);
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.timing(translateY, { toValue: 0, duration: 180, useNativeDriver: true })
     ]).start(() => {
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         Animated.parallel([
           Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }),
           Animated.timing(translateY, { toValue: -10, duration: 220, useNativeDriver: true })
-        ]).start(() => setActiveMessage(null));
-      }, 1500);
+        ]).start(() => {
+          setActiveToast(null);
+          clearToast(toast.id);
+        });
+      }, toast.durationMs);
     });
-  }, [message, opacity, translateY]);
 
-  if (!activeMessage) return null;
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [toast, opacity, translateY, clearToast]);
+
+  if (!activeToast) return null;
+
+  const isDanger = activeToast.variant === "danger";
 
   return (
-    <Animated.View style={[styles.wrap, { opacity, transform: [{ translateY }] }]} pointerEvents="none">
-      <View style={styles.toast}>
-        <Ionicons name="checkmark-circle-outline" size={16} color={colors.secondary} />
-        <Text style={styles.text}>{activeMessage}</Text>
+    <Animated.View style={[styles.wrap, { top: 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
+      <View style={[styles.toast, isDanger ? styles.toastDanger : null]}>
+        <Ionicons name={isDanger ? "alert-circle-outline" : "checkmark-circle-outline"} size={16} color={isDanger ? colors.danger : colors.secondary} />
+        <Text style={styles.text}>{activeToast.text}</Text>
       </View>
     </Animated.View>
   );
@@ -49,7 +58,6 @@ export function GameToast({ message }: GameToastProps) {
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    top: 14,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -66,6 +74,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6
+  },
+  toastDanger: {
+    borderColor: "rgba(255,143,130,0.42)",
+    backgroundColor: "rgba(30,13,14,0.94)"
   },
   text: {
     color: colors.text,

@@ -19,13 +19,15 @@ export function WelcomeScreen({ navigation }: Props) {
   const errorCode = useGameStore((s) => s.errorCode);
   const connectionText = toConnectionText(connectionStatus);
   const errorText = toFriendlyErrorText(errorCode);
-  const utilityItems = [
+  const playerUtilityItems = [
     {
       key: "role-guide",
       label: "Roller",
       icon: "library-outline" as const,
       onPress: () => navigation.navigate("RoleGuide", { source: "menu" })
-    },
+    }
+  ];
+  const developerUtilityItems = [
     {
       key: "test-mode",
       label: "Test",
@@ -45,10 +47,6 @@ export function WelcomeScreen({ navigation }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
           <HeroBrandArea title="Vampir Köylü" subtitle="Aynı masada oynanan sosyal çıkarım oyunu" />
-          <View style={styles.statusRow}>
-            <View style={[styles.statusDot, connectionStatus === "connected" ? styles.statusConnected : styles.statusDisconnected]} />
-            <Text style={styles.statusText}>{connectionText}</Text>
-          </View>
           {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         </View>
 
@@ -60,14 +58,31 @@ export function WelcomeScreen({ navigation }: Props) {
 
           <View style={styles.utilityBar}>
             <View style={styles.utilityRail}>
-              {utilityItems.map((item) => (
+              {playerUtilityItems.map((item) => (
                 <Pressable key={item.key} style={styles.utilityButton} onPress={item.onPress}>
                   <Ionicons name={item.icon} size={19} color={colors.textDim} />
                   <Text style={styles.utilityLabel}>{item.label}</Text>
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.metaText}>Bağlantı: {connectionText} · v0.1.0</Text>
+            <View style={styles.developerTools}>
+              <Text style={styles.developerLabel}>GELİŞTİRİCİ ARAÇLARI</Text>
+              <View style={styles.developerRail}>
+                {developerUtilityItems.map((item) => (
+                  <Pressable key={item.key} style={styles.developerButton} onPress={item.onPress}>
+                    <Ionicons name={item.icon} size={15} color={colors.textDim} />
+                    <Text style={styles.developerButtonText}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+            <View style={styles.metaRow}>
+              <View style={styles.statusPill}>
+                <View style={[styles.statusDot, connectionStatus === "connected" ? styles.statusConnected : styles.statusDisconnected]} />
+                <Text style={styles.statusText}>{connectionText}</Text>
+              </View>
+              <Text style={styles.metaText}>v0.1.0</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -81,7 +96,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: uiStandard.screen.pageGap,
+    gap: spacing.md,
     paddingBottom: spacing.xxl
   },
   heroCard: {
@@ -89,20 +104,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: uiStandard.surfaces.hero.borderColor,
     backgroundColor: uiStandard.surfaces.hero.backgroundColor,
-    paddingHorizontal: uiStandard.screen.cardPaddingX,
-    paddingVertical: uiStandard.screen.cardPaddingY,
-    gap: uiStandard.screen.sectionGap,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
     shadowColor: "#000",
     shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 }
   },
-  statusRow: {
-    marginTop: 6,
-    alignSelf: "center",
+  statusPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.18)",
+    backgroundColor: "rgba(12,12,14,0.38)",
+    paddingHorizontal: 9,
+    paddingVertical: 5
   },
   statusDot: {
     width: 8,
@@ -116,9 +135,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textDim
   },
   statusText: {
-    color: colors.secondary,
+    color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 14
+    fontSize: 11
   },
   error: {
     color: colors.danger,
@@ -130,19 +149,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: uiStandard.surfaces.panel.borderColor,
     backgroundColor: uiStandard.surfaces.panel.backgroundColor,
-    paddingHorizontal: uiStandard.screen.cardPaddingX,
-    paddingVertical: uiStandard.screen.cardPaddingY,
-    gap: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    gap: 14,
     shadowColor: "#000",
     shadowOpacity: 0.24,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 }
-  },
-  sectionLabel: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: typography.label,
-    letterSpacing: uiStandard.text.labelSpacing
   },
   actions: {
     gap: 12
@@ -151,28 +164,70 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(170,137,132,0.16)",
     paddingTop: 12,
-    gap: 10
+    gap: 12
   },
   utilityRail: {
     flexDirection: "row",
     gap: 8
   },
   utilityButton: {
-    flex: 1,
-    height: 48,
+    minWidth: 104,
+    height: 44,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.2)",
     backgroundColor: "rgba(12,12,14,0.58)",
     justifyContent: "center",
     alignItems: "center",
-    gap: 3
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12
   },
   utilityLabel: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
     fontSize: 11,
     textAlign: "center"
+  },
+  developerTools: {
+    gap: 7
+  },
+  developerLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.2
+  },
+  developerRail: {
+    flexDirection: "row",
+    gap: 8
+  },
+  developerButton: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.14)",
+    backgroundColor: "rgba(10,10,12,0.36)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10
+  },
+  developerButtonText: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 10
+  },
+  metaRow: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(170,137,132,0.1)",
+    paddingTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
   },
   metaText: {
     color: colors.textDim,

@@ -16,6 +16,8 @@ type ButtonVariant =
   | "outline"
   | "gold"
   | "danger"
+  | "danger-outline"
+  | "dangerOutline"
   | "ghost"
   | "parchment"
   | "locked";
@@ -35,9 +37,10 @@ interface PrimaryButtonProps {
 export function PrimaryButton({ label, onPress, disabled = false, iconName, variant = "primary", size = "regular", style, compact = false }: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const glow = useRef(new Animated.Value(0)).current;
-  const config = uiStandard.buttonVariants[variant];
   const isLocked = variant === "locked";
   const isDisabled = disabled || isLocked;
+  const variantKey = variant === "danger-outline" ? "dangerOutline" : variant;
+  const config = uiStandard.buttonVariants[isDisabled ? "locked" : variantKey];
   const isCompact = compact || size === "compact";
 
   const onPressIn = () => {
@@ -77,7 +80,7 @@ export function PrimaryButton({ label, onPress, disabled = false, iconName, vari
           styles.base,
           isCompact ? styles.baseCompact : null,
           variant === "destructive" || variant === "danger" ? styles.baseDestructive : null,
-          variant === "ghost" ? styles.baseGhost : null,
+          variant === "ghost" || variantKey === "dangerOutline" ? styles.baseGhost : null,
           {
             borderColor: config.border,
             transform: [{ scale }],
@@ -134,7 +137,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: 12
+    gap: 10,
+    paddingHorizontal: 14
   },
   label: {
     color: colors.text,
@@ -148,6 +152,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4
   },
   disabled: {
-    opacity: 0.45
+    opacity: 0.72
   }
 });

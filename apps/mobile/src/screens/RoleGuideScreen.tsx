@@ -38,7 +38,7 @@ export function RoleGuideScreen({ navigation, route }: Props) {
   const roles = focusActiveOnly ? ROLE_GUIDE.filter((role) => activeRoleIds.includes(role.id)) : ROLE_GUIDE;
 
   return (
-    <ScreenShell scene={roomState ? "lobby" : "home"} headerTitle="ROLLER VE KURALLAR" showBottomNav={false}>
+    <ScreenShell scene={roomState ? "lobby" : "home"} headerTitle="ROLLER" showBottomNav={false}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.title}>Roller ve Kurallar</Text>
@@ -76,8 +76,10 @@ export function RoleGuideScreen({ navigation, route }: Props) {
         <PrimaryButton
           label={isFromLobby ? "Lobiye Dön" : "Menüye Dön"}
           iconName="arrow-back-outline"
-          variant="charcoal"
+          variant="ghost"
+          compact
           onPress={() => navigation.navigate(isFromLobby ? "Lobby" : "Welcome")}
+          style={styles.backAction}
         />
       </ScrollView>
     </ScreenShell>
@@ -121,7 +123,9 @@ function RoleRow({
               {isActive ? "Bu odada aktif" : "Bu odada aktif değil"}
             </Text>
           ) : null}
-          <Ionicons name="chevron-forward-outline" size={16} color={colors.textDim} />
+          <View style={styles.arrowBadge}>
+            <Ionicons name="chevron-forward-outline" size={15} color={colors.secondary} />
+          </View>
         </View>
       </View>
     </Pressable>
@@ -195,22 +199,26 @@ const styles = StyleSheet.create({
     fontSize: 12
   },
   list: {
-    gap: 10
+    gap: 8
   },
   card: {
     flexDirection: "row",
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.24)",
-    borderRadius: 14,
-    overflow: "hidden",
+    borderRadius: 12,
     backgroundColor: "rgba(17,16,18,0.9)",
-    minHeight: 130
+    minHeight: 112,
+    padding: 8,
+    gap: 10
   },
   thumbFrame: {
-    width: 106,
-    height: 130,
+    width: 112,
+    height: 112,
+    borderRadius: 10,
     overflow: "hidden",
-    backgroundColor: "#090909"
+    backgroundColor: "#090909",
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)"
   },
   thumb: {
     width: "100%",
@@ -218,9 +226,8 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 6
+    paddingVertical: 2,
+    gap: 5
   },
   cardTop: {
     flexDirection: "row",
@@ -231,7 +238,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: colors.text,
     fontFamily: typography.serifSemi,
-    fontSize: 26 / 1.6
+    fontSize: 15
   },
   badgeSoon: {
     color: colors.backgroundDeep,
@@ -245,7 +252,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6
+    gap: 5
   },
   meta: {
     color: colors.secondary,
@@ -259,9 +266,9 @@ const styles = StyleSheet.create({
   cardDesc: {
     color: colors.textMuted,
     fontFamily: typography.serifRegular,
-    fontSize: 14,
-    lineHeight: 20,
-    minHeight: 40
+    fontSize: 13,
+    lineHeight: 18,
+    minHeight: 36
   },
   statusRow: {
     marginTop: "auto",
@@ -283,5 +290,21 @@ const styles = StyleSheet.create({
   statusOff: {
     backgroundColor: "rgba(170,137,132,0.16)",
     color: colors.textDim
+  },
+  arrowBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    backgroundColor: "rgba(36,31,20,0.46)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  backAction: {
+    alignSelf: "center",
+    minWidth: 156,
+    maxWidth: 220,
+    width: "52%"
   }
 });

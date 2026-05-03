@@ -17,6 +17,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { showToast } from "../ui/toast-store";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lobby">;
 
@@ -104,6 +105,7 @@ export function LobbyScreen({ navigation }: Props) {
   const setRoomRules = useGameStore((s) => s.setRoomRules);
   const setRoomState = useGameStore((s) => s.setRoomState);
   const [advancedRulesOpen, setAdvancedRulesOpen] = useState(false);
+  const [roomSettingsOpen, setRoomSettingsOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [roleInfoOpen, setRoleInfoOpen] = useState(false);
   const [modeInfoOpen, setModeInfoOpen] = useState(false);
@@ -115,6 +117,8 @@ export function LobbyScreen({ navigation }: Props) {
   const minPlayers = roomState?.minPlayers ?? 4;
   const connectedPlayers = players.filter((p) => p.isConnected);
   const setupPlayerCount = Math.max(players.length, minPlayers);
+  const startRoleDeck = buildRoleDeck(Math.max(connectedPlayers.length, minPlayers), rolePreset);
+  const roleDistributionValid = startRoleDeck.length === Math.max(connectedPlayers.length, minPlayers);
   const activeRoleDeck = buildRoleDeck(setupPlayerCount, rolePreset);
   const activeRoleSet = new Set(activeRoleDeck);
   const hasDoctor = activeRoleSet.has("Doctor");
@@ -122,6 +126,8 @@ export function LobbyScreen({ navigation }: Props) {
   const hasMayorMechanic = rolePreset === "socialChaos" && setupPlayerCount >= ROLE_DEFINITIONS.Mayor.minPlayers;
   const hasLoversMechanic = rolePreset === "socialChaos" && setupPlayerCount >= ROLE_DEFINITIONS.Lover.minPlayers;
   const allConnectedReady = connectedPlayers.length >= minPlayers && connectedPlayers.every((p) => p.isReady);
+  const playersNeeded = Math.max(minPlayers - connectedPlayers.length, 0);
+  const lobbyStatusTarget = Math.max(connectedPlayers.length, minPlayers);
   const mePlayer = players.find((p) => p.playerId === me);
   const meReady = Boolean(mePlayer?.isReady);
   const readyCount = connectedPlayers.filter((p) => p.isReady).length;
@@ -131,6 +137,16 @@ export function LobbyScreen({ navigation }: Props) {
   const activeModeInfo = GAME_MODE_DETAILS[gameMode];
   const previewModeInfo = GAME_MODE_DETAILS[previewMode];
   const firstNightForcedByMode = gameMode === "SafeFirstNight";
+  const timingSummary = phaseDurations.useSystemDefaults ? "Sistem süreleri" : "Özel süreler";
+  const summaryItems = [
+    { label: "Rol Paketi", value: toRolePresetLabel(rolePreset) },
+    { label: "Mod", value: toGameModeLabel(gameMode) },
+    { label: "İlk Gece", value: roomRules.firstNightNoKill ? "Ölüm yok" : "Ölüm var" },
+    { label: "Elenen Rol", value: roomRules.revealEliminatedRole ? "Açık" : "Gizli" },
+    { label: "Beraberlik", value: roomRules.tiePolicy === "RevoteThenNoExecution" ? "Tekrar oy" : "Rastgele eleme" },
+    ...(hasMayorMechanic ? [{ label: "Başkanlık", value: roomRules.mayorEnabled ? "Açık" : "Kapalı" }] : []),
+    ...(hasLoversMechanic ? [{ label: "Aşıklar", value: roomRules.loversEnabled ? "Açık" : "Kapalı" }] : [])
+  ];
 
   const leaveRoom = () => {
     emitLeaveRoom();
@@ -139,13 +155,16 @@ export function LobbyScreen({ navigation }: Props) {
 
   const copyRoomCode = async () => {
     await Clipboard.setStringAsync(roomCode);
-    useGameStore.getState().setPrivateResultText("Oda kodu kopyalandı.");
+    showToast("Oda kodu kopyalandı", "gold", 1500);
   };
 
   const shareRoomCode = async () => {
-    await Share.share({
+    const result = await Share.share({
       message: `Vampir Köylü odama katıl: ${roomCode}`
     });
+    if (result.action === Share.sharedAction) {
+      showToast("Oda kodu paylaşıldı", "gold", 1500);
+    }
   };
 
   const updateDuration = (key: keyof typeof phaseDurations, delta: number) => {
@@ -154,12 +173,14 @@ export function LobbyScreen({ navigation }: Props) {
     const next = Math.max(3, Math.min(180, current + delta));
     setPhaseDurations({ [key]: next });
     emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
   };
   const updateRolePreset = (nextPreset: RolePresetId) => {
     setRolePreset(nextPreset);
     setPreviewPreset(nextPreset);
     setRoleInfoOpen(true);
     emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
   };
   const updateGameMode = (nextMode: GameMode) => {
     setGameMode(nextMode);
@@ -167,14 +188,17 @@ export function LobbyScreen({ navigation }: Props) {
     setPreviewMode(nextMode);
     setModeInfoOpen(true);
     emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
   };
   const updateRules = (updater: Partial<RuleSettings>) => {
     setRoomRules(updater);
     emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
   };
   const updateDurationMode = (useSystemDefaults: boolean) => {
     setPhaseDurations({ useSystemDefaults });
     emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
   };
   const toggleReady = () => {
     const nextReady = !meReady;
@@ -187,13 +211,24 @@ export function LobbyScreen({ navigation }: Props) {
       });
     }
     emitReadyToggle(nextReady);
+    showToast("Hazır durumun güncellendi", "gold", 1500);
   };
   const startDisabledReason =
-    connectedPlayers.length < minPlayers
-      ? `Oyunu başlatmak için en az ${minPlayers} bağlı oyuncu gerekli.`
-      : allConnectedReady
-        ? null
-        : "Tüm bağlı oyuncular onay vermelidir.";
+    playersNeeded > 0
+      ? `En az ${minPlayers} bağlı oyuncu gerekli`
+      : !roleDistributionValid
+        ? "Rol dağılımı bu oyuncu sayısı için uygun değil"
+        : allConnectedReady
+          ? null
+          : "Tüm oyuncular onay vermeli";
+  const canStartRoom = !startDisabledReason;
+  const hostStartTitle = canStartRoom
+    ? "Oyun başlatılabilir"
+    : playersNeeded > 0
+      ? "Minimum oyuncu bekleniyor"
+      : !roleDistributionValid
+        ? "Rol dağılımı uygun değil"
+        : "Hazır onayları bekleniyor";
 
   return (
     <ScreenShell scene="lobby" headerTitle="LOBİ">
@@ -206,19 +241,83 @@ export function LobbyScreen({ navigation }: Props) {
           </View>
           <View style={styles.lobbyHeaderText}>
             <Text style={styles.title}>Lobi</Text>
-            <Text style={styles.subtitle}>{connectedPlayers.length}/{minPlayers} bağlı oyuncu hazır bekliyor</Text>
+            <View style={styles.lobbyStatusLines}>
+              <Text style={styles.subtitle}>{connectedPlayers.length}/{lobbyStatusTarget} oyuncu bağlı</Text>
+              <Text style={styles.subtitle}>{readyCount}/{lobbyStatusTarget} oyuncu hazır</Text>
+              <Text style={styles.minimumHint}>
+                {playersNeeded > 0 ? `Oyunu başlatmak için ${playersNeeded} oyuncu daha gerekli` : "Minimum oyuncu tamamlandı"}
+              </Text>
+            </View>
           </View>
-          <StatusBadge label={`${readyCount}/${connectedPlayers.length} Onay`} tone={allConnectedReady ? "ready" : "pending"} compact />
         </View>
+
+        <View style={styles.readyPanel}>
+          <View style={styles.readyCopy}>
+            <Text style={styles.readyTitle}>{meReady ? "Onayın verildi" : "Oyuna hazır mısın?"}</Text>
+            <Text style={styles.readyHint}>Başlamak için minimum {minPlayers} oyuncu ve herkesin onayı gerekir.</Text>
+          </View>
+          <Pressable
+            style={[styles.readyToggle, meReady ? styles.readyToggleActive : null]}
+            onPress={toggleReady}
+          >
+            <Ionicons
+              name={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
+              size={18}
+              color={meReady ? colors.parchmentText : colors.secondary}
+            />
+            <Text style={[styles.readyToggleText, meReady ? styles.readyToggleTextActive : null]}>
+              {meReady ? "Onayı Geri Al" : "Onay Ver"}
+            </Text>
+          </Pressable>
+        </View>
+
+        <PlayerRosterCard players={players} mePlayerId={me} hostPlayerId={roomState?.hostPlayerId ?? players[0]?.playerId ?? null} compact />
+
+        <View style={styles.infoBox}>
+          <Ionicons name="list-outline" size={22} color={colors.textMuted} />
+          <View style={styles.summaryWrap}>
+            <Text style={styles.summaryTitle}>Kural Özeti</Text>
+            <View style={styles.summaryGrid}>
+              {summaryItems.map((item) => (
+                <View key={item.label} style={styles.summaryChip}>
+                  <Text style={styles.summaryLabel}>{item.label}</Text>
+                  <Text style={styles.summaryValue} numberOfLines={2}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.rolePreviewBox}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.summaryTitle}>Aktif Roller</Text>
+            <StatusBadge label={`${setupPlayerCount} kişilik deste`} tone="neutral" compact />
+          </View>
+          <View style={styles.rolePreviewGrid}>
+            {activeRolePreview.map((item) => (
+              <View key={item.id} style={styles.roleMiniCard}>
+                <Text style={styles.roleMiniName} numberOfLines={1}>{item.definition.name}</Text>
+                <View style={styles.roleMiniMetaRow}>
+                  <Text style={styles.roleMiniMeta} numberOfLines={1}>{roleTeamLabel(item.id)} · {rolePhaseLabel(item.id)}</Text>
+                  <Text style={styles.roleMiniCount}>{item.count ? `${item.count}x` : "1x"}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <Pressable style={styles.roleGuideLink} onPress={() => navigation.navigate("RoleGuide", { focusActiveOnly: true, source: "lobby" })}>
+          <Ionicons name="book-outline" size={16} color={colors.secondary} />
+          <Text style={styles.roleGuideText}>Bu oyundaki roller</Text>
+        </Pressable>
 
         {isHost ? (
           <View style={styles.hostDashboard}>
             <View style={styles.sectionHeader}>
               <View>
                 <Text style={styles.hostKicker}>Host Kontrol Paneli</Text>
-                <Text style={styles.hostTitle}>{allConnectedReady ? "Oyun başlatılabilir" : "Oyuncu onayları bekleniyor"}</Text>
+                <Text style={styles.hostTitle}>{hostStartTitle}</Text>
               </View>
-              <StatusBadge label={`${readyCount}/${connectedPlayers.length} Onay`} tone={allConnectedReady ? "ready" : "pending"} compact />
             </View>
             <View style={styles.hostSummaryGrid}>
               <View style={styles.hostSummaryItem}>
@@ -231,170 +330,132 @@ export function LobbyScreen({ navigation }: Props) {
               </View>
             </View>
             <PrimaryButton
-              label={allConnectedReady ? "Oyunu Başlat" : "Onaylar Bekleniyor"}
+              label="Oyunu Başlat"
               iconName="checkmark-circle-outline"
               onPress={emitStartRoom}
-              disabled={!allConnectedReady}
-              compact
+              disabled={!canStartRoom}
+              variant="blood"
             />
-            {startDisabledReason ? <Text style={styles.startHint}>{startDisabledReason}</Text> : null}
+            {startDisabledReason ? (
+              <View style={styles.startReasonBox}>
+                <Ionicons name="alert-circle-outline" size={15} color={colors.secondary} />
+                <Text style={styles.startHint}>{startDisabledReason}</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
 
-        <PlayerRosterCard players={players} mePlayerId={me} hostPlayerId={roomState?.hostPlayerId ?? players[0]?.playerId ?? null} compact />
-
-        <View style={styles.readyPanel}>
-          <View style={styles.readyCopy}>
-            <Text style={styles.readyTitle}>{meReady ? "Onayın verildi" : "Oyuna hazır mısın?"}</Text>
-            <Text style={styles.readyHint}>Başlatmak için minimum {minPlayers} bağlı oyuncu ve herkesin onayı gerekir.</Text>
-          </View>
-          <Pressable
-            style={[styles.readyToggle, meReady ? styles.readyToggleActive : null]}
-            onPress={toggleReady}
-          >
-            <Ionicons
-              name={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
-              size={18}
-              color={meReady ? colors.parchmentText : colors.text}
-            />
-            <Text style={[styles.readyToggleText, meReady ? styles.readyToggleTextActive : null]}>
-              {meReady ? "Geri Al" : "Onay Ver"}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="list-outline" size={22} color={colors.textMuted} />
-          <View style={styles.summaryWrap}>
-            <Text style={styles.summaryTitle}>Kural Özeti</Text>
-            <Text style={styles.summaryLine}>Rol Paketi: {toRolePresetLabel(rolePreset)}</Text>
-            <Text style={styles.summaryLine}>Mod: {toGameModeLabel(gameMode)}</Text>
-            <Text style={styles.summaryLine}>İlk Gece Ölüm: {roomRules.firstNightNoKill ? "Yok" : "Var"}</Text>
-            <Text style={styles.summaryLine}>Elenen Rolü: {roomRules.revealEliminatedRole ? "Açık" : "Gizli"}</Text>
-            <Text style={styles.summaryLine}>Beraberlik: {roomRules.tiePolicy === "RevoteThenNoExecution" ? "Tekrar oy, sonra kimse elenmez" : "Tekrar oy, sonra rastgele elenir"}</Text>
-            {hasMayorMechanic ? <Text style={styles.summaryLine}>Başkanlık: {roomRules.mayorEnabled ? "Açık" : "Kapalı"}</Text> : null}
-            {hasLoversMechanic ? <Text style={styles.summaryLine}>Aşıklar: {roomRules.loversEnabled ? "Açık" : "Kapalı"}</Text> : null}
-          </View>
-        </View>
-
-        <View style={styles.rolePreviewBox}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.summaryTitle}>Aktif Roller</Text>
-            <StatusBadge label={`${setupPlayerCount} kişilik`} tone="neutral" compact />
-          </View>
-          <View style={styles.rolePreviewGrid}>
-            {activeRolePreview.map((item) => (
-              <View key={item.id} style={styles.roleMiniCard}>
-                <View style={styles.roleMiniTop}>
-                  <Text style={styles.roleMiniName}>{item.definition.name}</Text>
-                  <Text style={styles.roleMiniCount}>{item.count ? `${item.count}x` : "Mekanik"}</Text>
-                </View>
-                <Text style={styles.roleMiniMeta}>{roleTeamLabel(item.id)} · {rolePhaseLabel(item.id)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <Pressable style={styles.roleGuideLink} onPress={() => navigation.navigate("RoleGuide", { focusActiveOnly: true, source: "lobby" })}>
-          <Ionicons name="book-outline" size={16} color={colors.secondary} />
-          <Text style={styles.roleGuideText}>Bu oyundaki roller</Text>
-        </Pressable>
-
         {isHost ? (
         <View style={styles.timingBox}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.timingTitle}>Oda Ayarları</Text>
-            <StatusBadge label="Yönetici" tone="ready" compact />
-          </View>
-          <Text style={styles.timingTitle}>Rol Paketi</Text>
-          <Text style={styles.settingHint}>{ROLE_PRESETS[rolePreset].description}</Text>
-          <View style={styles.modeRow}>
-            {[
-              { key: "beginner", label: "Başlangıç" },
-              { key: "classicPlus", label: "Klasik+" },
-              { key: "socialChaos", label: "Sosyal Kaos" }
-            ].map((preset) => (
-              <Pressable
-                key={preset.key}
-                style={[styles.modeChip, rolePreset === preset.key ? styles.modeChipActive : null]}
-                onPress={() => updateRolePreset(preset.key as RolePresetId)}
-              >
-                <Text style={[styles.modeText, rolePreset === preset.key ? styles.modeTextActive : null]}>{preset.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.timingTitle}>Oyun Modu</Text>
-          <View style={styles.modeRow}>
-            {[
-              { key: "Classic", label: GAME_MODE_DETAILS.Classic.label },
-              { key: "SafeFirstNight", label: GAME_MODE_DETAILS.SafeFirstNight.label },
-              { key: "FastParty", label: GAME_MODE_DETAILS.FastParty.label },
-              { key: "MysteryVillage", label: GAME_MODE_DETAILS.MysteryVillage.label }
-            ].map((mode) => (
-              <Pressable
-                key={mode.key}
-                style={[styles.modeChip, gameMode === mode.key ? styles.modeChipActive : null]}
-                onPress={() => updateGameMode(mode.key as GameMode)}
-              >
-                <Text style={[styles.modeText, gameMode === mode.key ? styles.modeTextActive : null]}>{mode.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={styles.settingHint}>{activeModeInfo.description}</Text>
-
-          <Text style={styles.timingTitle}>Oyun Süre Ayarları</Text>
-          <View style={styles.timingModeRow}>
-            <Pressable
-              style={[styles.segmentButton, phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
-              onPress={() => updateDurationMode(true)}
-            >
-              <Ionicons name="sparkles-outline" size={15} color={phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
-              <Text style={[styles.segmentText, phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Sistem</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.segmentButton, !phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
-              onPress={() => updateDurationMode(false)}
-            >
-              <Ionicons name="options-outline" size={15} color={!phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
-              <Text style={[styles.segmentText, !phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Özel</Text>
-            </Pressable>
-          </View>
-          {!phaseDurations.useSystemDefaults ? (
-            <View style={styles.timingList}>
-              {[
-                { key: "dayDiscussion", label: "Tartışma", value: phaseDurations.dayDiscussion },
-                { key: "dayVote", label: "Oylama", value: phaseDurations.dayVote },
-                { key: "vampireVote", label: "Vampir", value: phaseDurations.vampireVote },
-                hasDetective ? { key: "detectiveInspect", label: "Dedektif", value: phaseDurations.detectiveInspect } : null,
-                hasDoctor ? { key: "doctorProtect", label: "Doktor", value: phaseDurations.doctorProtect } : null
-              ].filter((item): item is { key: keyof typeof phaseDurations; label: string; value: number } => Boolean(item)).map((item) => (
-                <View key={item.key} style={styles.timingRow}>
-                  <Text style={styles.timingLabel}>{item.label}</Text>
-                  <View style={styles.timingAdjust}>
-                    <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, -5)}>
-                      <Text style={styles.adjustText}>-</Text>
-                    </Pressable>
-                    <Text style={styles.timingValue}>{item.value}s</Text>
-                    <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, 5)}>
-                      <Text style={styles.adjustText}>+</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
+          <Pressable style={styles.timingHeader} onPress={() => setRoomSettingsOpen((prev) => !prev)}>
+            <View style={styles.timingHeaderCopy}>
+              <View style={styles.timingTitleRow}>
+                <Text style={styles.timingTitle}>Oda Ayarları</Text>
+                <StatusBadge label="Yönetici" tone="ready" compact />
+              </View>
+              <Text style={styles.timingSummary}>{toRolePresetLabel(rolePreset)} · {toGameModeLabel(gameMode)} · {timingSummary}</Text>
             </View>
-          ) : null}
-
-          <Pressable style={styles.advancedHeader} onPress={() => setAdvancedRulesOpen((prev) => !prev)}>
-            <Text style={styles.timingTitle}>Gelişmiş Kurallar</Text>
-            <Ionicons
-              name={advancedRulesOpen ? "chevron-up-outline" : "chevron-down-outline"}
-              size={18}
-              color={colors.secondary}
-            />
+            <View style={styles.timingEditChip}>
+              <Text style={styles.timingEditText}>{roomSettingsOpen ? "Kapat" : "Düzenle"}</Text>
+              <Ionicons
+                name={roomSettingsOpen ? "chevron-up-outline" : "chevron-down-outline"}
+                size={16}
+                color={colors.secondary}
+              />
+            </View>
           </Pressable>
-          {advancedRulesOpen ? (
-            <View style={styles.ruleList}>
+
+          {roomSettingsOpen ? (
+            <View style={styles.timingDetails}>
+              <Text style={styles.timingSubTitle}>Rol Paketi</Text>
+              <Text style={styles.settingHint}>{ROLE_PRESETS[rolePreset].description}</Text>
+              <View style={styles.modeRow}>
+                {[
+                  { key: "beginner", label: "Başlangıç" },
+                  { key: "classicPlus", label: "Klasik+" },
+                  { key: "socialChaos", label: "Sosyal Kaos" }
+                ].map((preset) => (
+                  <Pressable
+                    key={preset.key}
+                    style={[styles.modeChip, rolePreset === preset.key ? styles.modeChipActive : null]}
+                    onPress={() => updateRolePreset(preset.key as RolePresetId)}
+                  >
+                    <Text style={[styles.modeText, rolePreset === preset.key ? styles.modeTextActive : null]}>{preset.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.timingSubTitle}>Oyun Modu</Text>
+              <View style={styles.modeRow}>
+                {[
+                  { key: "Classic", label: GAME_MODE_DETAILS.Classic.label },
+                  { key: "SafeFirstNight", label: GAME_MODE_DETAILS.SafeFirstNight.label },
+                  { key: "FastParty", label: GAME_MODE_DETAILS.FastParty.label },
+                  { key: "MysteryVillage", label: GAME_MODE_DETAILS.MysteryVillage.label }
+                ].map((mode) => (
+                  <Pressable
+                    key={mode.key}
+                    style={[styles.modeChip, gameMode === mode.key ? styles.modeChipActive : null]}
+                    onPress={() => updateGameMode(mode.key as GameMode)}
+                  >
+                    <Text style={[styles.modeText, gameMode === mode.key ? styles.modeTextActive : null]}>{mode.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.settingHint}>{activeModeInfo.description}</Text>
+
+              <Text style={styles.timingSubTitle}>Süre Ayarları</Text>
+              <View style={styles.timingModeRow}>
+                <Pressable
+                  style={[styles.segmentButton, phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
+                  onPress={() => updateDurationMode(true)}
+                >
+                  <Ionicons name="sparkles-outline" size={14} color={phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
+                  <Text style={[styles.segmentText, phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Sistem</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.segmentButton, !phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
+                  onPress={() => updateDurationMode(false)}
+                >
+                  <Ionicons name="options-outline" size={14} color={!phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
+                  <Text style={[styles.segmentText, !phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Özel</Text>
+                </Pressable>
+              </View>
+              {!phaseDurations.useSystemDefaults ? (
+                <View style={styles.timingList}>
+                  {[
+                    { key: "dayDiscussion", label: "Tartışma", value: phaseDurations.dayDiscussion },
+                    { key: "dayVote", label: "Oylama", value: phaseDurations.dayVote },
+                    { key: "vampireVote", label: "Vampir", value: phaseDurations.vampireVote },
+                    hasDetective ? { key: "detectiveInspect", label: "Dedektif", value: phaseDurations.detectiveInspect } : null,
+                    hasDoctor ? { key: "doctorProtect", label: "Doktor", value: phaseDurations.doctorProtect } : null
+                  ].filter((item): item is { key: keyof typeof phaseDurations; label: string; value: number } => Boolean(item)).map((item) => (
+                    <View key={item.key} style={styles.timingRow}>
+                      <Text style={styles.timingLabel}>{item.label}</Text>
+                      <View style={styles.timingAdjust}>
+                        <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, -5)}>
+                          <Text style={styles.adjustText}>-</Text>
+                        </Pressable>
+                        <Text style={styles.timingValue}>{item.value}s</Text>
+                        <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, 5)}>
+                          <Text style={styles.adjustText}>+</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              <Pressable style={styles.advancedHeader} onPress={() => setAdvancedRulesOpen((prev) => !prev)}>
+                <Text style={styles.timingSubTitle}>Gelişmiş Kurallar</Text>
+                <Ionicons
+                  name={advancedRulesOpen ? "chevron-up-outline" : "chevron-down-outline"}
+                  size={18}
+                  color={colors.secondary}
+                />
+              </Pressable>
+              {advancedRulesOpen ? (
+                <View style={styles.ruleList}>
               <Text style={styles.ruleHint}>
                 Bu bölüm yalnızca mevcut oyuncu sayısı ve rol paketinde etkisi olan kuralları gösterir.
               </Text>
@@ -477,6 +538,8 @@ export function LobbyScreen({ navigation }: Props) {
                   <Text style={styles.ruleValue}>{roomRules.loversEnabled ? "Açık" : "Kapalı"}</Text>
                 </Pressable>
               ) : null}
+                </View>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -484,13 +547,14 @@ export function LobbyScreen({ navigation }: Props) {
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
      
-        <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger" onPress={() => setLeaveConfirmOpen(true)} />
+        <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger-outline" compact onPress={() => setLeaveConfirmOpen(true)} />
       </ScrollView>
       <ConfirmActionSheet
         visible={leaveConfirmOpen}
-        title="Lobiden Ayrılsın mı?"
-        description="Odayı terk edersen hazırlık onayın sıfırlanır ve ana menüye dönersin."
-        confirmLabel="Ayrıl"
+        title="Lobiden ayrıl?"
+        description="Ayrılırsan tekrar katılmak için oda kodunu kullanman gerekir."
+        confirmLabel="Lobiden Ayrıl"
+        cancelLabel="Vazgeç"
         variant="danger"
         onConfirm={() => {
           setLeaveConfirmOpen(false);
@@ -501,51 +565,61 @@ export function LobbyScreen({ navigation }: Props) {
       <Modal visible={roleInfoOpen} transparent animationType="fade" onRequestClose={() => setRoleInfoOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.roleModal}>
-            <View style={styles.sectionHeader}>
-              <View>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderText}>
                 <Text style={styles.modalKicker}>Rol Paketi</Text>
                 <Text style={styles.modalTitle}>{ROLE_PRESETS[previewPreset].name}</Text>
               </View>
               <Pressable style={styles.modalClose} onPress={() => setRoleInfoOpen(false)}>
-                <Ionicons name="close-outline" size={20} color={colors.text} />
+                <Ionicons name="close-outline" size={20} color={colors.secondary} />
               </Pressable>
             </View>
-            <Text style={styles.modalText}>{ROLE_PRESETS[previewPreset].description}</Text>
-            <View style={styles.rolePreviewGrid}>
-              {modalRolePreview.map((item) => (
-                <View key={`modal-${item.id}`} style={styles.roleMiniCard}>
-                  <View style={styles.roleMiniTop}>
-                    <Text style={styles.roleMiniName}>{item.definition.name}</Text>
-                    <Text style={styles.roleMiniCount}>{item.count ? `${item.count}x` : "Mekanik"}</Text>
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalText}>{ROLE_PRESETS[previewPreset].description}</Text>
+              <View style={styles.modalRoleGrid}>
+                {modalRolePreview.map((item) => (
+                  <View key={`modal-${item.id}`} style={[styles.roleMiniCard, styles.modalRoleCard]}>
+                    <Text style={styles.roleMiniName} numberOfLines={1}>{item.definition.name}</Text>
+                    <View style={styles.roleMiniMetaRow}>
+                      <Text style={styles.roleMiniMeta} numberOfLines={1}>{roleTeamLabel(item.id)} · {rolePhaseLabel(item.id)}</Text>
+                      <Text style={styles.roleMiniCount}>{item.count ? `${item.count}x` : "1x"}</Text>
+                    </View>
+                    <Text style={styles.roleMiniDesc} numberOfLines={2}>{item.definition.description}</Text>
                   </View>
-                  <Text style={styles.roleMiniMeta}>{roleTeamLabel(item.id)} · {rolePhaseLabel(item.id)}</Text>
-                  <Text style={styles.roleMiniDesc} numberOfLines={2}>{item.definition.description}</Text>
-                </View>
-              ))}
-            </View>
-            <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" onPress={() => setRoleInfoOpen(false)} />
+                ))}
+              </View>
+            </ScrollView>
+            <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" compact style={styles.modalAction} onPress={() => setRoleInfoOpen(false)} />
           </View>
         </View>
       </Modal>
       <Modal visible={modeInfoOpen} transparent animationType="fade" onRequestClose={() => setModeInfoOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.roleModal}>
-            <View style={styles.sectionHeader}>
-              <View>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderText}>
                 <Text style={styles.modalKicker}>Oyun Modu</Text>
                 <Text style={styles.modalTitle}>{previewModeInfo.label}</Text>
               </View>
               <Pressable style={styles.modalClose} onPress={() => setModeInfoOpen(false)}>
-                <Ionicons name="close-outline" size={20} color={colors.text} />
+                <Ionicons name="close-outline" size={20} color={colors.secondary} />
               </Pressable>
             </View>
-            <Text style={styles.modalText}>{previewModeInfo.description}</Text>
-            <View style={styles.modeEffectBox}>
-              <Text style={styles.modeEffectTitle}>Bu modda</Text>
-              <Text style={styles.modeEffectText}>{previewModeInfo.ruleNote}</Text>
-              <Text style={styles.modeEffectText}>Diğer oda kuralları da gönderilen ayarlarla senkron kalır.</Text>
-            </View>
-            <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" onPress={() => setModeInfoOpen(false)} />
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalText}>{previewModeInfo.description}</Text>
+              <View style={styles.modeEffectBox}>
+                <Text style={styles.modeEffectTitle}>Bu modda</Text>
+                <View style={styles.modeEffectRow}>
+                  <Ionicons name="sparkles-outline" size={15} color={colors.secondary} />
+                  <Text style={styles.modeEffectText}>{previewModeInfo.ruleNote}</Text>
+                </View>
+                <View style={styles.modeEffectRow}>
+                  <Ionicons name="sync-outline" size={15} color={colors.secondary} />
+                  <Text style={styles.modeEffectText}>Diğer oda kuralları gönderilen ayarlarla senkron kalır.</Text>
+                </View>
+              </View>
+            </ScrollView>
+            <PrimaryButton label="Anladım" iconName="checkmark-circle-outline" variant="gold" compact style={styles.modalAction} onPress={() => setModeInfoOpen(false)} />
           </View>
         </View>
       </Modal>
@@ -583,28 +657,38 @@ const styles = StyleSheet.create({
   },
   lobbyHeaderText: {
     flex: 1,
-    gap: 2
+    gap: 5
   },
   title: {
     color: colors.text,
     fontFamily: typography.serif,
     fontSize: 28
   },
+  lobbyStatusLines: {
+    gap: 2
+  },
   subtitle: {
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 12,
+    lineHeight: 16
+  },
+  minimumHint: {
+    color: colors.secondary,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 16
   },
   readyPanel: {
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.28)",
-    borderRadius: 14,
-    padding: 12,
-    backgroundColor: "rgba(18,19,21,0.86)",
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 12,
+    padding: 10,
+    backgroundColor: "rgba(18,17,15,0.86)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10
+    gap: 8
   },
   hostDashboard: {
     borderWidth: 1,
@@ -653,40 +737,40 @@ const styles = StyleSheet.create({
   },
   readyCopy: {
     flex: 1,
-    gap: 3
+    gap: 2
   },
   readyTitle: {
     color: colors.text,
     fontFamily: typography.serifSemi,
-    fontSize: 18
+    fontSize: 16
   },
   readyHint: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 12,
-    lineHeight: 17
+    fontSize: 11,
+    lineHeight: 15
   },
   readyToggle: {
-    minWidth: 106,
-    minHeight: 42,
+    minWidth: 128,
+    minHeight: 38,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.35)",
+    borderColor: "rgba(233,195,73,0.3)",
     borderRadius: 10,
-    backgroundColor: "rgba(12,12,14,0.82)",
+    backgroundColor: "rgba(18,18,20,0.9)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingHorizontal: 10
+    paddingHorizontal: 9
   },
   readyToggleActive: {
     borderColor: colors.secondary,
-    backgroundColor: colors.parchment
+    backgroundColor: "rgba(213,169,50,0.9)"
   },
   readyToggleText: {
-    color: colors.text,
+    color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 12
+    fontSize: 11
   },
   readyToggleTextActive: {
     color: colors.parchmentText
@@ -696,19 +780,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.3)",
     borderRadius: 14,
-    padding: 14,
+    padding: 12,
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: 9,
     backgroundColor: "rgba(18,19,21,0.86)"
   },
   rolePreviewBox: {
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.22)",
     borderRadius: 14,
-    padding: 12,
+    padding: 11,
     backgroundColor: "rgba(22,20,16,0.82)",
-    gap: 10
+    gap: 9
   },
   sectionHeader: {
     flexDirection: "row",
@@ -719,7 +803,7 @@ const styles = StyleSheet.create({
   rolePreviewGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8
+    gap: 7
   },
   roleMiniCard: {
     width: "48.5%",
@@ -727,7 +811,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(170,137,132,0.24)",
     borderRadius: 10,
     backgroundColor: "rgba(12,12,14,0.78)",
-    padding: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
     gap: 4
   },
   roleMiniTop: {
@@ -742,12 +827,25 @@ const styles = StyleSheet.create({
     fontFamily: typography.serifSemi,
     fontSize: 15
   },
+  roleMiniMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6
+  },
   roleMiniCount: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 11
+    fontSize: 11,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.28)",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    overflow: "hidden"
   },
   roleMiniMeta: {
+    flex: 1,
     color: colors.textDim,
     fontFamily: typography.sansMedium,
     fontSize: 11
@@ -762,36 +860,86 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.25)",
     borderRadius: 14,
-    padding: 12,
+    padding: 10,
     backgroundColor: "rgba(18,19,21,0.86)",
+    gap: 8
+  },
+  timingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10
+  },
+  timingHeaderCopy: {
+    flex: 1,
+    gap: 4
+  },
+  timingTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap"
   },
   timingTitle: {
     color: colors.secondary,
     fontFamily: typography.serifSemi,
-    fontSize: 21
+    fontSize: 18
+  },
+  timingSubTitle: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 12,
+    letterSpacing: 0.6
+  },
+  timingSummary: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 16
+  },
+  timingEditChip: {
+    minHeight: 32,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(12,12,14,0.44)"
+  },
+  timingEditText: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 11
+  },
+  timingDetails: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(170,137,132,0.18)",
+    paddingTop: 9,
+    gap: 8
   },
   settingHint: {
     color: colors.textDim,
     fontFamily: typography.serifRegular,
-    fontSize: 13,
-    lineHeight: 18
+    fontSize: 12,
+    lineHeight: 17
   },
   timingModeRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 7,
     alignSelf: "flex-start"
   },
   segmentButton: {
-    minHeight: 36,
+    minHeight: 32,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.28)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderRadius: 9,
+    paddingHorizontal: 10,
     backgroundColor: "rgba(12,12,14,0.82)",
     flexDirection: "row",
     alignItems: "center",
-    gap: 6
+    gap: 5
   },
   segmentButtonActive: {
     borderColor: colors.primaryBright,
@@ -800,7 +948,7 @@ const styles = StyleSheet.create({
   segmentText: {
     color: colors.textDim,
     fontFamily: typography.sansBold,
-    fontSize: 12
+    fontSize: 11
   },
   segmentTextActive: {
     color: colors.parchmentText
@@ -808,14 +956,14 @@ const styles = StyleSheet.create({
   modeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8
+    gap: 7
   },
   modeChip: {
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.3)",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
     backgroundColor: "rgba(12,12,14,0.82)"
   },
   modeChipActive: {
@@ -825,7 +973,7 @@ const styles = StyleSheet.create({
   modeText: {
     color: colors.text,
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 11
   },
   modeTextActive: {
     color: colors.parchmentText
@@ -851,8 +999,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.22)",
     borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -935,17 +1083,40 @@ const styles = StyleSheet.create({
   },
   summaryWrap: {
     flex: 1,
-    gap: 2
+    gap: 8
   },
   summaryTitle: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: 13
   },
-  summaryLine: {
+  summaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7
+  },
+  summaryChip: {
+    width: "48%",
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.22)",
+    borderRadius: 10,
+    backgroundColor: "rgba(12,12,14,0.54)",
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    gap: 2
+  },
+  summaryLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 0.4
+  },
+  summaryValue: {
     color: colors.text,
     fontFamily: typography.sansMedium,
-    fontSize: 13
+    fontSize: 12,
+    lineHeight: 16
   },
   roleGuideLink: {
     marginTop: -2,
@@ -954,11 +1125,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.3)",
+    borderColor: "rgba(233,195,73,0.42)",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: "rgba(33,29,16,0.72)"
+    backgroundColor: "rgba(12,12,14,0.32)"
   },
   roleGuideText: {
     color: colors.secondary,
@@ -970,32 +1141,80 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium
   },
   startHint: {
-    color: colors.textDim,
-    textAlign: "center",
+    flex: 1,
+    color: colors.secondary,
     fontFamily: typography.sansMedium,
-    fontSize: 13
+    fontSize: 12,
+    lineHeight: 16
+  },
+  startReasonBox: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 10,
+    backgroundColor: "rgba(33,29,16,0.5)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.72)",
     justifyContent: "center",
-    padding: spacing.lg
+    padding: spacing.md
   },
   roleModal: {
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.32)",
+    borderColor: "rgba(233,195,73,0.28)",
     borderRadius: 16,
-    backgroundColor: "rgba(18,18,20,0.98)",
-    padding: spacing.lg,
-    gap: 12
+    backgroundColor: "rgba(18,19,21,0.98)",
+    padding: 12,
+    gap: 10,
+    maxHeight: "86%"
+  },
+  modalHeader: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.2)",
+    borderRadius: 12,
+    backgroundColor: "rgba(22,20,16,0.86)",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  modalHeaderText: {
+    flex: 1,
+    gap: 2
+  },
+  modalScroll: {
+    flexGrow: 0
+  },
+  modalScrollContent: {
+    gap: 10,
+    paddingBottom: 2
+  },
+  modalRoleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7
+  },
+  modalRoleCard: {
+    minHeight: 78,
+    backgroundColor: "rgba(12,12,14,0.68)"
+  },
+  modalAction: {
+    alignSelf: "stretch"
   },
   modeEffectBox: {
-    gap: 6,
-    padding: 12,
+    gap: 8,
+    padding: 10,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: "rgba(33,29,16,0.48)",
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.12)"
+    borderColor: "rgba(233,195,73,0.2)"
   },
   modeEffectTitle: {
     color: colors.secondary,
@@ -1004,37 +1223,45 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     fontSize: 12
   },
+  modeEffectRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8
+  },
   modeEffectText: {
+    flex: 1,
     color: colors.text,
     fontFamily: typography.sansMedium,
+    fontSize: 13,
     lineHeight: 18
   },
   modalKicker: {
-    color: colors.textDim,
+    color: colors.textMuted,
     fontFamily: typography.sansBold,
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.1,
     textTransform: "uppercase"
   },
   modalTitle: {
     color: colors.secondary,
     fontFamily: typography.serif,
-    fontSize: 28
+    fontSize: 24,
+    lineHeight: 29
   },
   modalText: {
     color: colors.textMuted,
     fontFamily: typography.serifRegular,
-    fontSize: 15,
-    lineHeight: 21
+    fontSize: 14,
+    lineHeight: 20
   },
   modalClose: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.28)",
+    borderColor: "rgba(233,195,73,0.24)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(12,12,14,0.86)"
+    backgroundColor: "rgba(12,12,14,0.72)"
   }
 });

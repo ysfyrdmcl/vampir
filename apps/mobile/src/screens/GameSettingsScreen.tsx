@@ -26,12 +26,12 @@ export function GameSettingsScreen({ navigation }: Props) {
     <ScreenShell scene="result" headerTitle="AYARLAR" showPauseOverlay={false}>
       <View style={styles.root}>
         <Text style={styles.title}>Oyun Ayarları</Text>
-        <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda sadece güvenli çıkış seçeneği aktif."}</Text>
+        <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda yalnızca güvenli çıkış kullanılabilir."}</Text>
         {canPauseControl ? (
           <PrimaryButton
             label={isPaused ? "Oyunu Devam Ettir" : "Oyunu Durdur"}
             iconName={isPaused ? "play-outline" : "pause-outline"}
-            variant={isPaused ? "gold" : "blood"}
+            variant={isPaused ? "gold" : "charcoal"}
             onPress={() => {
               if (isPaused) {
                 emitGameResume();
@@ -44,8 +44,10 @@ export function GameSettingsScreen({ navigation }: Props) {
         <PrimaryButton
           label="Odadan Ayrıl"
           iconName="exit-outline"
-          variant="danger"
+          variant="danger-outline"
+          compact
           onPress={() => setLeaveConfirmOpen(true)}
+          style={styles.leaveButton}
         />
       </View>
       <ConfirmActionSheet
@@ -54,7 +56,7 @@ export function GameSettingsScreen({ navigation }: Props) {
         description="Süre ve tüm oyuncu aksiyonları duraklatılacak."
         confirmLabel="Duraklat"
         cancelLabel="Vazgeç"
-        variant="blood"
+        variant="charcoal"
         onConfirm={() => {
           setPauseConfirmOpen(false);
           emitGamePause();
@@ -63,9 +65,10 @@ export function GameSettingsScreen({ navigation }: Props) {
       />
       <ConfirmActionSheet
         visible={leaveConfirmOpen}
-        title="Odadan Ayrılsın mı?"
-        description="Bu işlem mevcut oyun oturumundan çıkış yapar ve seni ana menüye döndürür."
-        confirmLabel="Ayrıl"
+        title="Odadan ayrıl?"
+        description="Odadan ayrılırsan tekrar katılmak için oda kodunu kullanman gerekir."
+        confirmLabel="Odadan Ayrıl"
+        cancelLabel="Vazgeç"
         variant="danger"
         onConfirm={() => {
           setLeaveConfirmOpen(false);
@@ -95,5 +98,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: typography.sansMedium,
     marginBottom: spacing.sm
+  },
+  leaveButton: {
+    alignSelf: "center",
+    minWidth: 176,
+    maxWidth: 220,
+    width: "58%"
   }
 });

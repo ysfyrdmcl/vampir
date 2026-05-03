@@ -11,7 +11,7 @@ interface ConfirmActionSheetProps {
   description: string;
   confirmLabel: string;
   cancelLabel?: string;
-  variant?: "danger" | "blood" | "gold";
+  variant?: "danger" | "blood" | "gold" | "charcoal";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -35,7 +35,7 @@ export function ConfirmActionSheet({
           <Text style={styles.description}>{description}</Text>
           <View style={styles.actions}>
             <PrimaryButton label={confirmLabel} variant={variant} onPress={onConfirm} />
-            <PrimaryButton label={cancelLabel} variant="ghost" onPress={onCancel} />
+            <PrimaryButton label={cancelLabel} variant="ghost" compact onPress={onCancel} />
           </View>
         </View>
       </View>

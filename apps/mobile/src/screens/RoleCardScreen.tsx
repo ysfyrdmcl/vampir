@@ -73,8 +73,10 @@ export function RoleCardScreen({ navigation, route }: Props) {
         <PrimaryButton
           label="Rollere Dön"
           iconName="arrow-back-outline"
-          variant="charcoal"
+          variant="ghost"
+          compact
           onPress={() => navigation.navigate("RoleGuide", { source: isFromLobby ? "lobby" : "menu", focusActiveOnly: isFromLobby })}
+          style={styles.backAction}
         />
       </ScrollView>
     </ScreenShell>
@@ -195,5 +197,11 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 13,
     lineHeight: 20
+  },
+  backAction: {
+    alignSelf: "center",
+    minWidth: 156,
+    maxWidth: 220,
+    width: "52%"
   }
 });

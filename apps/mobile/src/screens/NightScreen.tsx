@@ -15,6 +15,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { showToast } from "../ui/toast-store";
 import { toRoleLabel } from "../utils/role-label";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Night">;
@@ -177,7 +178,7 @@ export function NightScreen(_: Props) {
     const disabledReason = !player.isAlive
       ? "Elendi"
       : !canAct
-        ? "Kilitli"
+        ? meAlive ? "Bu fazda aksiyon hakkın yok" : "Elendin"
         : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
           ? "Kendini secemezsin"
           : actionConfig?.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire"
@@ -195,6 +196,14 @@ export function NightScreen(_: Props) {
       badgeText: player.playerId === playerId ? "SEN" : null
     };
   });
+  const selectedActionTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
+  const actionDisabledReason = alreadySubmittedThisPhase
+    ? "Bu fazdaki seçimin kilitlendi"
+    : !selectedTargetPlayerId
+      ? "Bir hedef seç"
+      : !selectedActionTarget?.isSelectable
+        ? "Bu hedef seçilemez"
+        : null;
 
   const submitAction = () => {
     if (!actionConfig || !selectedTargetPlayerId || !actionKey || alreadySubmittedThisPhase) {
@@ -202,6 +211,7 @@ export function NightScreen(_: Props) {
     }
     emitGameAction(actionConfig.actionType, selectedTargetPlayerId);
     submittedActionKeyRef.current = actionKey;
+    showToast("Kararın kilitlendi", "gold", 1500);
   };
 
   if (!phase) {
@@ -307,13 +317,14 @@ export function NightScreen(_: Props) {
           <View style={styles.actionSummary}>
             <Text style={styles.actionSummaryLabel}>Hedef</Text>
             <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedTargetName ?? "Seçilmedi"}</Text>
+            {actionDisabledReason ? <Text style={styles.actionDisabledHint} numberOfLines={1}>{actionDisabledReason}</Text> : null}
           </View>
           <PrimaryButton
             label="Seçimi Kilitle"
             iconName="lock-closed-outline"
             variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
             onPress={submitAction}
-            disabled={!selectedTargetPlayerId || alreadySubmittedThisPhase}
+            disabled={Boolean(actionDisabledReason)}
             compact
             style={styles.actionButton}
           />
@@ -372,6 +383,11 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     fontFamily: typography.serifSemi,
     fontSize: 16
+  },
+  actionDisabledHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11
   },
   actionButton: {
     width: 146

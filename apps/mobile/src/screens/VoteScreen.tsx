@@ -15,6 +15,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { toFriendlyErrorText } from "../ui/error-text";
+import { showToast } from "../ui/toast-store";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Vote">;
 
@@ -87,12 +88,21 @@ export function VoteScreen(_: Props) {
       badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
     }))
   ];
+  const selectedVoteTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
+  const voteDisabledReason = !meAlive
+    ? "Elendin, artık aksiyon alamazsın"
+    : !selectedTargetPlayerId
+      ? "Bir hedef seç"
+      : !selectedVoteTarget?.isSelectable
+        ? "Bu hedef seçilemez"
+        : null;
 
   const submitVote = () => {
     if (!meAlive) return;
     if (!selectedTargetPlayerId) return;
     emitGameAction(isMayorElection ? "mayor-vote" : "day-vote", selectedTargetPlayerId);
     setConfirmOpen(false);
+    showToast("Kararın kilitlendi", "gold", 1500);
   };
 
   return (
@@ -151,12 +161,13 @@ export function VoteScreen(_: Props) {
         <View style={styles.actionSummary}>
           <Text style={styles.actionSummaryLabel}>Hedef</Text>
           <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedName ?? "Seçilmedi"}</Text>
+          {voteDisabledReason ? <Text style={styles.actionDisabledHint} numberOfLines={1}>{voteDisabledReason}</Text> : null}
         </View>
         <PrimaryButton
           label={isMayorElection ? "Başkanı Onayla" : "Oylamayı Tamamla"}
           iconName="checkmark-done-outline"
           onPress={() => setConfirmOpen(true)}
-          disabled={!meAlive || !selectedTargetPlayerId}
+          disabled={Boolean(voteDisabledReason)}
           compact
           style={styles.actionButton}
         />
@@ -222,6 +233,11 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     fontFamily: typography.serifSemi,
     fontSize: 16
+  },
+  actionDisabledHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11
   },
   actionButton: {
     width: 150

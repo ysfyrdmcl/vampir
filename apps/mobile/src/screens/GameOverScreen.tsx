@@ -134,14 +134,14 @@ export function GameOverScreen({ navigation }: Props) {
           onPress={emitStartRoom}
           disabled={players.length < minPlayers}
         />
-        <PrimaryButton label="Ana Menü" iconName="home-outline" variant="ghost" onPress={() => setConfirmOpen(true)} />
+        <PrimaryButton label="Ana Menü" iconName="home-outline" variant="ghost" compact onPress={() => setConfirmOpen(true)} />
       </ScrollView>
       <ConfirmActionSheet
         visible={confirmOpen}
         title="Ana Menüye Dön?"
         description="Bu maç kapanır. İstersen yeniden oyun başlatıp lobiye de dönebilirsin."
         confirmLabel="Ana Menüye Dön"
-        variant="blood"
+        variant="danger"
         onConfirm={() => {
           setConfirmOpen(false);
           exitToHome();

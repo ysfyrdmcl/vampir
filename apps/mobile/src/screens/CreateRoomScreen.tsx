@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
@@ -17,9 +18,11 @@ type Props = NativeStackScreenProps<RootStackParamList, "CreateRoom">;
 
 export function CreateRoomScreen({ navigation }: Props) {
   const [nickname, setNickname] = useState("");
+  const [isInputFocused, setInputFocused] = useState(false);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(errorCode);
   const roomCode = useGameStore((s) => s.roomState?.roomCode ?? s.roomCode);
+  const createDisabledReason = nickname.trim().length < 2 ? "Oyuncu adını gir" : null;
 
   const createRoom = () => {
     const value = nickname.trim();
@@ -43,14 +46,19 @@ export function CreateRoomScreen({ navigation }: Props) {
         <View style={styles.formCard}>
           <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Lakap gir..."
-            placeholderTextColor={colors.textDim}
+            style={[styles.input, isInputFocused ? styles.inputFocused : null]}
+            placeholder="Lakapını yaz"
+            placeholderTextColor="rgba(55,47,35,0.58)"
             value={nickname}
             onChangeText={setNickname}
             autoCapitalize="words"
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
           />
-          <Text style={styles.hint}>Oyun minimum 4 oyuncu ile başlar.</Text>
+        </View>
+        <View style={styles.infoChip}>
+          <Ionicons name="people-outline" size={14} color={colors.secondary} />
+          <Text style={styles.hint}>Minimum 4 oyuncu gerekir.</Text>
         </View>
 
         {roomCode ? (
@@ -61,11 +69,13 @@ export function CreateRoomScreen({ navigation }: Props) {
         ) : null}
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        <PrimaryButton label="Odayı Oluştur" iconName="shield-checkmark-outline" onPress={createRoom} />
+        <PrimaryButton label="Odayı Oluştur" iconName="shield-checkmark-outline" onPress={createRoom} disabled={Boolean(createDisabledReason)} />
+        {createDisabledReason ? <Text style={styles.disabledHint}>{createDisabledReason}</Text> : null}
         <PrimaryButton
           label="Menüye Dön"
           iconName="arrow-back-outline"
-          variant="outline"
+          variant="ghost"
+          compact
           onPress={goBackToMenu}
           style={styles.backButton}
         />
@@ -80,7 +90,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: uiStandard.screen.pageGap,
+    gap: spacing.md,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
@@ -92,12 +102,16 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: uiStandard.surfaces.parchment.backgroundColor,
-    borderRadius: uiStandard.screen.cardRadius,
+    borderRadius: uiStandard.screen.panelRadius,
     borderWidth: 1,
     borderColor: uiStandard.surfaces.parchment.borderColor,
-    paddingHorizontal: uiStandard.screen.cardPaddingX,
-    paddingVertical: uiStandard.screen.cardPaddingY,
-    gap: uiStandard.screen.sectionGap
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 }
   },
   fieldLabel: {
     color: colors.parchmentText,
@@ -106,17 +120,36 @@ const styles = StyleSheet.create({
     letterSpacing: uiStandard.text.labelSpacing
   },
   input: {
-    height: uiStandard.screen.inputHeight,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(87,69,0,0.5)",
+    height: uiStandard.screen.compactInputHeight + 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(87,69,0,0.42)",
+    backgroundColor: "rgba(255,248,232,0.48)",
     color: colors.parchmentText,
     fontFamily: typography.serifSemi,
-    fontSize: 34 / 1.7
+    fontSize: 18,
+    paddingHorizontal: 13
+  },
+  inputFocused: {
+    borderColor: "rgba(127,90,9,0.82)",
+    backgroundColor: "rgba(255,251,240,0.78)"
+  },
+  infoChip: {
+    alignSelf: "center",
+    minHeight: 30,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    backgroundColor: "rgba(24,22,18,0.58)",
+    paddingHorizontal: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
   },
   hint: {
-    color: "rgba(52,40,0,0.75)",
+    color: colors.textMuted,
     fontFamily: typography.sansMedium,
-    fontSize: 13
+    fontSize: 12
   },
   codeCard: {
     marginTop: 2,
@@ -144,7 +177,14 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: typography.sansMedium
   },
+  disabledHint: {
+    marginTop: -6,
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    textAlign: "center"
+  },
   backButton: {
-    marginTop: 10
+    marginTop: 2
   }
 });
