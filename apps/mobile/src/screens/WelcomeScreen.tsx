@@ -22,13 +22,13 @@ export function WelcomeScreen({ navigation }: Props) {
   const utilityItems = [
     {
       key: "role-guide",
-      label: "Roller ve Kurallar",
+      label: "Roller",
       icon: "library-outline" as const,
       onPress: () => navigation.navigate("RoleGuide", { source: "menu" })
     },
     {
       key: "test-mode",
-      label: "Test Oyun Kur",
+      label: "Test",
       icon: "flask-outline" as const,
       onPress: () => navigation.navigate("TestModeSetup")
     },
@@ -59,18 +59,16 @@ export function WelcomeScreen({ navigation }: Props) {
             <PrimaryButton label="Odaya Katıl" iconName="people-outline" onPress={() => navigation.navigate("JoinRoom")} variant="charcoal" />
           </View>
 
-          <Text style={styles.sectionLabel}>YARDIMCI</Text>
-          <View style={styles.utilityGrid}>
-            {utilityItems.map((item) => (
-              <Pressable key={item.key} style={styles.utilityCard} onPress={item.onPress}>
-                <Ionicons name={item.icon} size={20} color={colors.secondary} />
-                <Text style={styles.utilityLabel}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={styles.footerMeta}>
-            <Text style={styles.metaText}>Lokal parti oyunu. Sunucuya bağlı modda gerçek zamanlı oynanır.</Text>
-            <Text style={styles.metaText}>Bağlantı: {connectionText} • Sürüm: v0.1.0</Text>
+          <View style={styles.utilityBar}>
+            <View style={styles.utilityRail}>
+              {utilityItems.map((item) => (
+                <Pressable key={item.key} style={styles.utilityButton} onPress={item.onPress}>
+                  <Ionicons name={item.icon} size={19} color={colors.textDim} />
+                  <Text style={styles.utilityLabel}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.metaText}>Bağlantı: {connectionText} · v0.1.0</Text>
           </View>
         </View>
       </ScrollView>
@@ -135,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: uiStandard.surfaces.panel.backgroundColor,
     paddingHorizontal: uiStandard.screen.cardPaddingX,
     paddingVertical: uiStandard.screen.cardPaddingY,
-    gap: uiStandard.screen.sectionGap,
+    gap: 16,
     shadowColor: "#000",
     shadowOpacity: 0.24,
     shadowRadius: 14,
@@ -150,41 +148,37 @@ const styles = StyleSheet.create({
   actions: {
     gap: 12
   },
-  utilityGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  utilityBar: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(170,137,132,0.16)",
+    paddingTop: 12,
     gap: 10
   },
-  utilityCard: {
-    width: "48%",
-    minHeight: 88,
-    borderRadius: 12,
+  utilityRail: {
+    flexDirection: "row",
+    gap: 8
+  },
+  utilityButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.26)",
-    backgroundColor: "rgba(16,16,18,0.76)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: "rgba(170,137,132,0.2)",
+    backgroundColor: "rgba(12,12,14,0.58)",
     justifyContent: "center",
     alignItems: "center",
-    gap: 6
+    gap: 3
   },
   utilityLabel: {
-    color: colors.text,
+    color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 13,
+    fontSize: 11,
     textAlign: "center"
-  },
-  footerMeta: {
-    marginTop: 2,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(170,137,132,0.2)",
-    paddingTop: 10,
-    gap: 6
   },
   metaText: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 12,
-    lineHeight: 18
+    fontSize: 11,
+    textAlign: "center"
   }
 });

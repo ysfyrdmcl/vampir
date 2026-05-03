@@ -211,7 +211,37 @@ export function LobbyScreen({ navigation }: Props) {
           <StatusBadge label={`${readyCount}/${connectedPlayers.length} Onay`} tone={allConnectedReady ? "ready" : "pending"} compact />
         </View>
 
-        <PlayerRosterCard players={players} mePlayerId={me} />
+        {isHost ? (
+          <View style={styles.hostDashboard}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.hostKicker}>Host Kontrol Paneli</Text>
+                <Text style={styles.hostTitle}>{allConnectedReady ? "Oyun başlatılabilir" : "Oyuncu onayları bekleniyor"}</Text>
+              </View>
+              <StatusBadge label={`${readyCount}/${connectedPlayers.length} Onay`} tone={allConnectedReady ? "ready" : "pending"} compact />
+            </View>
+            <View style={styles.hostSummaryGrid}>
+              <View style={styles.hostSummaryItem}>
+                <Text style={styles.hostSummaryLabel}>Rol Paketi</Text>
+                <Text style={styles.hostSummaryValue}>{toRolePresetLabel(rolePreset)}</Text>
+              </View>
+              <View style={styles.hostSummaryItem}>
+                <Text style={styles.hostSummaryLabel}>Mod</Text>
+                <Text style={styles.hostSummaryValue}>{toGameModeLabel(gameMode)}</Text>
+              </View>
+            </View>
+            <PrimaryButton
+              label={allConnectedReady ? "Oyunu Başlat" : "Onaylar Bekleniyor"}
+              iconName="checkmark-circle-outline"
+              onPress={emitStartRoom}
+              disabled={!allConnectedReady}
+              compact
+            />
+            {startDisabledReason ? <Text style={styles.startHint}>{startDisabledReason}</Text> : null}
+          </View>
+        ) : null}
+
+        <PlayerRosterCard players={players} mePlayerId={me} hostPlayerId={roomState?.hostPlayerId ?? players[0]?.playerId ?? null} compact />
 
         <View style={styles.readyPanel}>
           <View style={styles.readyCopy}>
@@ -455,13 +485,7 @@ export function LobbyScreen({ navigation }: Props) {
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         {isHost ? (
           <>
-            <PrimaryButton
-              label={allConnectedReady ? "Oyunu Başlat" : "Tüm Oyuncuların Onayı Bekleniyor"}
-              iconName="checkmark-circle-outline"
-              onPress={emitStartRoom}
-              disabled={!allConnectedReady}
-            />
-            {startDisabledReason ? <Text style={styles.startHint}>{startDisabledReason}</Text> : null}
+            <Text style={styles.startHint}>Başlatma kontrolü üstteki host paneline taşındı; detay ayarları burada kalır.</Text>
           </>
         ) : null}
         <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger" onPress={() => setLeaveConfirmOpen(true)} />
@@ -585,6 +609,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 10
+  },
+  hostDashboard: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.28)",
+    borderRadius: 16,
+    padding: 12,
+    backgroundColor: "rgba(29,24,17,0.88)",
+    gap: 10
+  },
+  hostKicker: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  hostTitle: {
+    color: colors.text,
+    fontFamily: typography.serifSemi,
+    fontSize: 19
+  },
+  hostSummaryGrid: {
+    flexDirection: "row",
+    gap: 8
+  },
+  hostSummaryItem: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.16)",
+    borderRadius: 12,
+    backgroundColor: "rgba(12,12,14,0.44)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2
+  },
+  hostSummaryLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 0.8
+  },
+  hostSummaryValue: {
+    color: colors.secondary,
+    fontFamily: typography.sansMedium,
+    fontSize: 13
   },
   readyCopy: {
     flex: 1,

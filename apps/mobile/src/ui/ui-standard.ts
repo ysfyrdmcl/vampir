@@ -19,6 +19,12 @@ export const uiStandard = {
     cardPaddingX: spacing.lg,
     cardPaddingY: 30
   },
+  card: {
+    radius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.24)",
+    backgroundColor: "rgba(18,19,21,0.84)"
+  },
   text: {
     heroTitleSize: 42,
     heroSubtitleSize: 18,
@@ -60,6 +66,21 @@ export const uiStandard = {
     textureOpacity: 0.08
   },
   buttonVariants: {
+    primary: {
+      gradient: ["#b52619", "#8b0000"] as const,
+      border: "rgba(170,137,132,0.28)",
+      text: colors.text
+    },
+    secondary: {
+      gradient: ["#3a3939", "#2a2a2a"] as const,
+      border: "rgba(170,137,132,0.28)",
+      text: "#dfdfdf"
+    },
+    destructive: {
+      gradient: ["#7f1616", "#4a0707"] as const,
+      border: "rgba(255,143,130,0.4)",
+      text: "#f7d7d3"
+    },
     blood: {
       gradient: ["#b52619", "#8b0000"] as const,
       border: "rgba(170,137,132,0.28)",
@@ -99,6 +120,33 @@ export const uiStandard = {
       gradient: ["rgba(63,63,67,0.9)", "rgba(43,43,47,0.9)"] as const,
       border: "rgba(125,125,125,0.44)",
       text: "#b7b7bc"
+    }
+  },
+  logTones: {
+    phase: {
+      border: "rgba(88,193,182,0.32)",
+      background: "rgba(8,22,24,0.78)",
+      text: "#58c1b6"
+    },
+    vote: {
+      border: "rgba(233,195,73,0.32)",
+      background: "rgba(33,29,16,0.72)",
+      text: colors.secondary
+    },
+    result: {
+      border: "rgba(196,35,35,0.36)",
+      background: "rgba(35,12,13,0.76)",
+      text: colors.primaryBright
+    },
+    private: {
+      border: "rgba(169,123,255,0.32)",
+      background: "rgba(22,16,34,0.76)",
+      text: "#a97bff"
+    },
+    warning: {
+      border: "rgba(255,143,130,0.36)",
+      background: "rgba(38,18,14,0.76)",
+      text: colors.danger
     }
   },
   phaseTheme: {

@@ -7,7 +7,19 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
 
-type ButtonVariant = "blood" | "charcoal" | "outline" | "gold" | "danger" | "ghost" | "parchment" | "locked";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "destructive"
+  | "blood"
+  | "charcoal"
+  | "outline"
+  | "gold"
+  | "danger"
+  | "ghost"
+  | "parchment"
+  | "locked";
+type ButtonSize = "regular" | "compact";
 
 interface PrimaryButtonProps {
   label: string;
@@ -15,16 +27,18 @@ interface PrimaryButtonProps {
   disabled?: boolean;
   iconName?: ComponentProps<typeof Ionicons>["name"];
   variant?: ButtonVariant;
+  size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
   compact?: boolean;
 }
 
-export function PrimaryButton({ label, onPress, disabled = false, iconName, variant = "blood", style, compact = false }: PrimaryButtonProps) {
+export function PrimaryButton({ label, onPress, disabled = false, iconName, variant = "primary", size = "regular", style, compact = false }: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const glow = useRef(new Animated.Value(0)).current;
   const config = uiStandard.buttonVariants[variant];
   const isLocked = variant === "locked";
   const isDisabled = disabled || isLocked;
+  const isCompact = compact || size === "compact";
 
   const onPressIn = () => {
     if (isDisabled) return;
@@ -61,7 +75,9 @@ export function PrimaryButton({ label, onPress, disabled = false, iconName, vari
       <Animated.View
         style={[
           styles.base,
-          compact ? styles.baseCompact : null,
+          isCompact ? styles.baseCompact : null,
+          variant === "destructive" || variant === "danger" ? styles.baseDestructive : null,
+          variant === "ghost" ? styles.baseGhost : null,
           {
             borderColor: config.border,
             transform: [{ scale }],
@@ -78,8 +94,8 @@ export function PrimaryButton({ label, onPress, disabled = false, iconName, vari
           end={{ x: 0, y: 1 }}
           style={styles.gradient}
         >
-          {iconName ? <Ionicons name={iconName} size={compact ? uiStandard.button.compactIconSize : uiStandard.button.iconSize} color={config.text} /> : null}
-          <Text style={[styles.label, compact ? styles.labelCompact : null, { color: config.text }]}>{label}</Text>
+          {iconName ? <Ionicons name={iconName} size={isCompact ? uiStandard.button.compactIconSize : uiStandard.button.iconSize} color={config.text} /> : null}
+          <Text style={[styles.label, isCompact ? styles.labelCompact : null, { color: config.text }]}>{label}</Text>
         </LinearGradient>
       </Animated.View>
     </Pressable>
@@ -103,6 +119,15 @@ const styles = StyleSheet.create({
     height: uiStandard.button.compactHeight,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 }
+  },
+  baseDestructive: {
+    shadowOpacity: 0.2,
+    shadowRadius: 10
+  },
+  baseGhost: {
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 1
   },
   gradient: {
     flex: 1,

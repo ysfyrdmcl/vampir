@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -119,11 +120,22 @@ export function VoteScreen(_: Props) {
             Gardiyan Koruması: {players.find((p) => p.playerId === guardProtectedPlayerId)?.nickname ?? guardProtectedPlayerId} bugün oylanamaz.
           </Text>
         ) : null}
-        <View style={styles.selectedSummary}>
-          <Text style={styles.selectedLabel}>Seçilen Hedef</Text>
-          <Text style={styles.selectedValue}>{selectedName ?? "Henüz hedef seçilmedi."}</Text>
+        <View style={styles.voteMissionCard}>
+          <View style={styles.voteMissionIcon}>
+            <Ionicons name={meAlive ? "people-outline" : "skull-outline"} size={18} color={colors.secondary} />
+          </View>
+          <View style={styles.voteMissionCopy}>
+            <Text style={styles.selectedLabel}>{isMayorElection ? "Sıradaki karar" : "Oylama kararı"}</Text>
+            <Text style={styles.selectedValue}>
+              {!meAlive ? "Elendin; oylamayı izliyorsun." : selectedName ? `${selectedName} seçildi.` : "Bir hedef seç ve alttan onayla."}
+            </Text>
+          </View>
         </View>
-        <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
+        <TargetSelectionList
+          items={targetItems}
+          onSelect={setSelectedTargetPlayerId}
+          disabledSummary="Elendin; oy kullanamazsın, sonuç akışını izleyebilirsin."
+        />
 
         <Text style={styles.help}>
           {!meAlive
@@ -246,13 +258,29 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 13
   },
-  selectedSummary: {
+  voteMissionCard: {
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 14,
+    backgroundColor: "rgba(36,31,20,0.72)",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  voteMissionIcon: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
-    backgroundColor: "rgba(36,31,20,0.62)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.36)",
+    backgroundColor: "rgba(50,40,17,0.42)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  voteMissionCopy: {
+    flex: 1,
+    minWidth: 0,
     gap: 2
   },
   selectedLabel: {

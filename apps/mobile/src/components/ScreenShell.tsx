@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
 import { GameToast } from "../components/GameToast";
+import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -51,6 +52,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   const phase = useGameStore((s) => s.gameState?.phase ?? null);
   const privateRole = useGameStore((s) => s.privateRole);
   const privateResultText = useGameStore((s) => s.privateResultText);
+  const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
   const storedRoomCode = useGameStore((s) => s.roomCode);
   const roomCode = roomState?.roomCode ?? storedRoomCode;
@@ -67,7 +69,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
         phase === "DayVote" ||
         phase === "MayorElection")
   );
-  const hasLogAttention = Boolean(privateResultText);
+  const hasLogAttention = unreadLogCount > 0;
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentY = useRef(new Animated.Value(uiStandard.motion.contentRiseDistance)).current;
@@ -134,7 +136,7 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
           <View style={styles.topBar}>
             <View style={styles.topLeft}>
               <Ionicons name="shield-outline" size={24} color={colors.primaryBright} />
-              <Text style={styles.topLabel}>{label}</Text>
+              <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
             </View>
             {roomCode ? (
               <View style={styles.roomCodeChip}>
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   topBar: {
-    height: 68,
+    height: 64,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(170,137,132,0.16)",
     paddingHorizontal: uiStandard.screen.pagePadding,
@@ -194,24 +196,28 @@ const styles = StyleSheet.create({
     flexDirection: "row"
   },
   topLeft: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm
+    gap: spacing.sm,
+    minWidth: 0
   },
   topLabel: {
+    flexShrink: 1,
     color: colors.primaryBright,
     fontFamily: typography.serif,
     fontSize: 16,
     letterSpacing: 1.7
   },
   roomCodeChip: {
-    minWidth: 90,
+    width: 96,
+    height: 34,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.4)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     borderRadius: uiStandard.screen.chipRadius,
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "rgba(32,31,31,0.8)"
   },
   roomCodeText: {

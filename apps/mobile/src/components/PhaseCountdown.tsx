@@ -6,9 +6,10 @@ import { uiStandard } from "../ui/ui-standard";
 
 interface PhaseCountdownProps {
   phaseEndsAt: number | null;
+  mode?: "dramatic" | "compact";
 }
 
-export function PhaseCountdown({ phaseEndsAt }: PhaseCountdownProps) {
+export function PhaseCountdown({ phaseEndsAt, mode = "dramatic" }: PhaseCountdownProps) {
   const [now, setNow] = useState(Date.now());
   const [maxSeconds, setMaxSeconds] = useState<number | null>(null);
   const pulse = useState(new Animated.Value(0))[0];
@@ -71,23 +72,25 @@ export function PhaseCountdown({ phaseEndsAt }: PhaseCountdownProps) {
   });
 
   return (
-    <View style={styles.wrap}>
-      <Animated.View style={[styles.ring, { borderColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]}>
-        <Text style={styles.value}>{seconds}</Text>
-        <Text style={styles.unit}>{seconds === 0 ? "KİLİTLİ" : "SANİYE"}</Text>
+    <View style={[styles.wrap, mode === "compact" ? styles.wrapCompact : null]}>
+      <Animated.View style={[styles.ring, mode === "compact" ? styles.ringCompact : null, { borderColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]}>
+        <Text style={[styles.value, mode === "compact" ? styles.valueCompact : null]}>{seconds}</Text>
+        <Text style={[styles.unit, mode === "compact" ? styles.unitCompact : null]}>{seconds === 0 ? "KİLİTLİ" : "SANİYE"}</Text>
       </Animated.View>
-      <View style={styles.barTrack}>
-        <View style={[styles.barFill, { width: `${Math.round(percentage * 100)}%`, backgroundColor: accent }]} />
+      <View style={mode === "compact" ? styles.compactCopy : null}>
+        <View style={[styles.barTrack, mode === "compact" ? styles.barTrackCompact : null]}>
+          <View style={[styles.barFill, { width: `${Math.round(percentage * 100)}%`, backgroundColor: accent }]} />
+        </View>
+        <Text style={[styles.text, mode === "compact" ? styles.textCompact : null]}>
+          {seconds === 0
+            ? "Karar kilitlendi."
+            : tone === "red"
+              ? "Karar anı. Son saniyeler."
+              : tone === "orange"
+                ? "Süre azalıyor, hızlı karar ver."
+                : "Süre dolmadan seçimini tamamla."}
+        </Text>
       </View>
-      <Text style={styles.text}>
-        {seconds === 0
-          ? "Karar kilitlendi."
-          : tone === "red"
-            ? "Karar anı. Son saniyeler."
-            : tone === "orange"
-              ? "Süre azalıyor, hızlı karar ver."
-              : "Süre dolmadan seçimini tamamla."}
-      </Text>
     </View>
   );
 }
@@ -96,6 +99,11 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
     gap: 8
+  },
+  wrapCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
   },
   ring: {
     width: 120,
@@ -108,17 +116,36 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }
   },
+  ringCompact: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 3,
+    shadowRadius: 8
+  },
   value: {
     color: colors.text,
     fontFamily: typography.serif,
     fontSize: 50,
     lineHeight: 52
   },
+  valueCompact: {
+    fontSize: 25,
+    lineHeight: 27
+  },
+  compactCopy: {
+    flex: 1,
+    gap: 5
+  },
   unit: {
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 13,
     letterSpacing: 1.2
+  },
+  unitCompact: {
+    fontSize: 8,
+    letterSpacing: 0.6
   },
   barTrack: {
     width: 196,
@@ -127,6 +154,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "rgba(170,137,132,0.25)"
   },
+  barTrackCompact: {
+    width: "100%",
+    height: 5
+  },
   barFill: {
     height: "100%"
   },
@@ -134,5 +165,8 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: typography.sans,
     fontSize: 13
+  },
+  textCompact: {
+    fontSize: 12
   }
 });

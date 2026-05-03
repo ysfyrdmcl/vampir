@@ -1,11 +1,12 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { emitJoinRoom } from "../socket/runtime";
-import { saveNickname } from "../storage/session-storage";
+import { loadLastRoomCode, loadNickname, saveLastRoomCode, saveNickname } from "../storage/session-storage";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -15,20 +16,47 @@ import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JoinRoom">;
 
-export function JoinRoomScreen({ navigation }: Props) {
+export function JoinRoomScreen({ navigation, route }: Props) {
+  const codeInputRef = useRef<TextInput>(null);
   const [roomCode, setRoomCode] = useState("");
   const [nickname, setNickname] = useState("");
+  const [lastRoomCode, setLastRoomCode] = useState<string | null>(null);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(errorCode);
+  const safeRoomCode = roomCode.trim().toUpperCase();
+  const safeNickname = nickname.trim();
+  const canJoin = safeRoomCode.length >= 4 && safeNickname.length >= 2;
 
   const roomCodeSlots = useMemo(
-    () => Array.from({ length: 6 }, (_, index) => roomCode.trim().toUpperCase()[index] ?? "•"),
-    [roomCode]
+    () => Array.from({ length: 6 }, (_, index) => safeRoomCode[index] ?? "•"),
+    [safeRoomCode]
   );
 
+  useEffect(() => {
+    codeInputRef.current?.focus();
+    void Promise.all([loadLastRoomCode(), loadNickname()]).then(([storedRoomCode, storedNickname]) => {
+      if (storedRoomCode) setLastRoomCode(storedRoomCode);
+      if (storedNickname) setNickname(storedNickname);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!route.params?.scannedCode) return;
+    normalizeRoomCode(route.params.scannedCode);
+    navigation.setParams({ scannedCode: undefined });
+  }, [navigation, route.params?.scannedCode]);
+
+  const normalizeRoomCode = (value: string) => {
+    setRoomCode(value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase());
+  };
+
+  const pasteRoomCode = async () => {
+    const text = await Clipboard.getStringAsync();
+    const match = text.toUpperCase().match(/[A-Z0-9]{4,6}/);
+    if (match) normalizeRoomCode(match[0]);
+  };
+
   const joinRoom = () => {
-    const safeRoomCode = roomCode.trim().toUpperCase();
-    const safeNickname = nickname.trim();
     if (safeRoomCode.length < 4) {
       useGameStore.getState().setErrorCode("ROOM_CODE_INVALID");
       return;
@@ -39,6 +67,7 @@ export function JoinRoomScreen({ navigation }: Props) {
     }
     useGameStore.getState().setErrorCode(null);
     void saveNickname(safeNickname);
+    void saveLastRoomCode(safeRoomCode);
     emitJoinRoom(safeRoomCode, safeNickname);
   };
 
@@ -52,7 +81,12 @@ export function JoinRoomScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Karanlık meclise davet edildin.</Text>
 
         <View style={styles.card}>
-          <Text style={styles.label}>ODA KODU</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>ODA KODU</Text>
+            <Pressable style={styles.pasteButton} onPress={pasteRoomCode}>
+              <Text style={styles.pasteButtonText}>Yapıştır</Text>
+            </Pressable>
+          </View>
           <View style={styles.codeSlots}>
             {roomCodeSlots.map((char, index) => (
               <View key={`${char}-${index}`} style={styles.slot}>
@@ -61,14 +95,28 @@ export function JoinRoomScreen({ navigation }: Props) {
             ))}
           </View>
           <TextInput
+            ref={codeInputRef}
             style={styles.codeInput}
             placeholder="Oda kodu"
             autoCapitalize="characters"
+            autoCorrect={false}
+            keyboardType="ascii-capable"
             maxLength={6}
             placeholderTextColor={colors.textDim}
             value={roomCode}
-            onChangeText={setRoomCode}
+            onChangeText={normalizeRoomCode}
+            textContentType="oneTimeCode"
           />
+          <View style={styles.quickActions}>
+            {lastRoomCode ? (
+              <Pressable style={styles.quickChip} onPress={() => normalizeRoomCode(lastRoomCode)}>
+                <Text style={styles.quickChipText}>Son oda: {lastRoomCode}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.quickChipMuted} onPress={() => navigation.navigate("QrScanner")}>
+              <Text style={styles.quickChipMutedText}>QR Tara</Text>
+            </Pressable>
+          </View>
 
           <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
           <TextInput
@@ -77,11 +125,13 @@ export function JoinRoomScreen({ navigation }: Props) {
             placeholderTextColor={colors.textDim}
             value={nickname}
             onChangeText={setNickname}
+            returnKeyType="join"
+            onSubmitEditing={joinRoom}
           />
         </View>
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} />
+        <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} disabled={!canJoin} />
         <PrimaryButton
           label="Menüye Dön"
           iconName="arrow-back-outline"
@@ -125,6 +175,25 @@ const styles = StyleSheet.create({
     fontSize: uiStandard.text.sectionLabelSize,
     letterSpacing: uiStandard.text.labelSpacing
   },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  pasteButton: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(36,31,20,0.68)"
+  },
+  pasteButtonText: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 11
+  },
   codeSlots: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -153,6 +222,37 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 14,
     letterSpacing: 1.2
+  },
+  quickActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  quickChip: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.28)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: "rgba(12,12,14,0.72)"
+  },
+  quickChipText: {
+    color: colors.secondary,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
+  },
+  quickChipMuted: {
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: "rgba(12,12,14,0.42)"
+  },
+  quickChipMutedText: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
   },
   playerLabel: {
     marginTop: 2

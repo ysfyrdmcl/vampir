@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseCountdown } from "../components/PhaseCountdown";
@@ -18,7 +19,10 @@ export function RoleRevealScreen(_: Props) {
   return (
     <ScreenShell scene="role" headerTitle="">
       <View style={styles.root}>
-        <Text style={styles.eyebrow}>GİZLİ KİMLİK</Text>
+        <View style={styles.privacyPill}>
+          <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
+          <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
+        </View>
         <Text style={styles.title}>Rolün</Text>
 
         <RoleRevealCard role={role} />
@@ -35,11 +39,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.md
   },
-  eyebrow: {
+  privacyPill: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "rgba(20,18,14,0.74)"
+  },
+  privacyText: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    textAlign: "center",
-    letterSpacing: 3
+    fontSize: 11,
+    letterSpacing: 1.1,
+    textTransform: "uppercase"
   },
   title: {
     color: colors.text,

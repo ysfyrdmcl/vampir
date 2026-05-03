@@ -14,6 +14,7 @@ import { GameLogScreen } from "../../screens/GameLogScreen";
 import { GameSettingsScreen } from "../../screens/GameSettingsScreen";
 import { RoleGuideScreen } from "../../screens/RoleGuideScreen";
 import { RoleCardScreen } from "../../screens/RoleCardScreen";
+import { QrScannerScreen } from "../../screens/QrScannerScreen";
 import { colors } from "../../theme/colors";
 import { navigationRef } from "./navigation-ref";
 import type { RootStackParamList } from "./routes";
@@ -53,6 +54,7 @@ export function RootNavigator() {
         <Stack.Screen name="GameSettings" component={GameSettingsScreen} />
         <Stack.Screen name="CreateRoom" component={CreateRoomScreen} />
         <Stack.Screen name="JoinRoom" component={JoinRoomScreen} />
+        <Stack.Screen name="QrScanner" component={QrScannerScreen} />
         <Stack.Screen name="Lobby" component={LobbyScreen} />
         <Stack.Screen name="RoleReveal" component={RoleRevealScreen} />
         <Stack.Screen name="Night" component={NightScreen} />

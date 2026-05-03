@@ -4,6 +4,14 @@
     "slug": "vampir-koylu",
     "version": "0.1.0",
     "orientation": "portrait",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Oda QR kodunu taramak için kameraya erişim gerekiyor."
+        }
+      ]
+    ],
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#131313"
@@ -13,4 +21,3 @@
     ]
   }
 }
-

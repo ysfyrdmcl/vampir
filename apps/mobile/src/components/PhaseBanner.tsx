@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import { GothicCard } from "./GothicCard";
 import { PhaseCountdown } from "./PhaseCountdown";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -13,21 +14,17 @@ interface PhaseBannerProps {
 
 export function PhaseBanner({ title, description, phaseEndsAt = null, notice }: PhaseBannerProps) {
   return (
-    <View style={styles.wrap}>
+    <GothicCard style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-      <PhaseCountdown phaseEndsAt={phaseEndsAt} />
-    </View>
+      <PhaseCountdown phaseEndsAt={phaseEndsAt} mode="compact" />
+    </GothicCard>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.25)",
-    borderRadius: 14,
-    backgroundColor: "rgba(12,12,14,0.84)",
     padding: spacing.lg,
     gap: 8
   },

@@ -46,7 +46,7 @@ export function GameOverScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenShell scene="gameover" headerTitle="GÜNDÜZ FAZI">
+    <ScreenShell scene="gameover" headerTitle="">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Oyun Bitti</Text>
 

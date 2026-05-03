@@ -108,6 +108,21 @@ function phaseDescription(phase: GamePhase, tieCount: number): string {
   }
 }
 
+function actionSummaryText(phase: GamePhase, canAct: boolean, meAlive: boolean): { label: string; value: string; icon: keyof typeof Ionicons.glyphMap } {
+  if (!meAlive) {
+    return { label: "Durum", value: "Elendin; fazı izliyorsun.", icon: "skull-outline" };
+  }
+  if (!canAct) {
+    return { label: "Sıradaki karar", value: "Bu fazda aksiyon sende değil.", icon: "time-outline" };
+  }
+  if (phase === "VampireVote") return { label: "Sıradaki karar", value: "Vampir hedefini seç ve kilitle.", icon: "moon-outline" };
+  if (phase === "DetectiveInspect") return { label: "Sıradaki karar", value: "Bir oyuncuyu sorgula.", icon: "search-outline" };
+  if (phase === "DoctorProtect") return { label: "Sıradaki karar", value: "Bu gece korunacak kişiyi seç.", icon: "medkit-outline" };
+  if (phase === "HunterLastBreath") return { label: "Sıradaki karar", value: "Son nefes hedefini seç.", icon: "locate-outline" };
+  if (phase === "GuardProtect") return { label: "Sıradaki karar", value: "Gündüz koruması verilecek oyuncuyu seç.", icon: "shield-outline" };
+  return { label: "Faz durumu", value: phaseDescription(phase, 0), icon: "hourglass-outline" };
+}
+
 function initialsFromName(name: string): string {
   return name
     .split(" ")
@@ -149,6 +164,7 @@ export function NightScreen(_: Props) {
   const mePlayer = players.find((p) => p.playerId === playerId);
   const meAlive = mePlayer?.isAlive ?? true;
   const canAct = !!actionConfig && role === actionConfig.role && (meAlive || actionConfig.actionType === "hunter-shot");
+  const currentActionSummary = actionSummaryText(phase ?? "NightStart", canAct, meAlive);
   const playerNameById = new Map(players.map((p) => [p.playerId, p.nickname] as const));
   const selectedTargetName = selectedTargetPlayerId ? playerNameById.get(selectedTargetPlayerId) ?? "hedef" : null;
   const targetItems: TargetSelectionItem[] = players.map((player) => {
@@ -156,11 +172,12 @@ export function NightScreen(_: Props) {
       !!actionConfig &&
       canAct &&
       player.isAlive &&
-      (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId);
+      (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId) &&
+      !(actionConfig.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire");
     const disabledReason = !player.isAlive
       ? "Elendi"
       : !canAct
-        ? "Bu fazda aksiyon hakkın yok"
+        ? "Kilitli"
         : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
           ? "Kendini secemezsin"
           : actionConfig?.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire"
@@ -205,7 +222,21 @@ export function NightScreen(_: Props) {
           description={phaseDescription(phase, tieCount)}
           phaseEndsAt={gameState?.phaseEndsAt ?? null}
         />
-        <TargetSelectionList items={targetItems} onSelect={setSelectedTargetPlayerId} />
+        <View style={styles.missionCard}>
+          <View style={styles.missionIcon}>
+            <Ionicons name={currentActionSummary.icon} size={18} color={colors.secondary} />
+          </View>
+          <View style={styles.missionCopy}>
+            <Text style={styles.missionLabel}>{currentActionSummary.label}</Text>
+            <Text style={styles.missionValue}>{currentActionSummary.value}</Text>
+          </View>
+          {canAct ? <Text style={styles.missionBadge}>AKTİF</Text> : null}
+        </View>
+        <TargetSelectionList
+          items={targetItems}
+          onSelect={setSelectedTargetPlayerId}
+          disabledSummary={meAlive ? "Bu fazda aksiyon hakkın yok; hedef kartları sadece bilgi için gösteriliyor." : "Elendin; hedef seçemezsin."}
+        />
 
         {canAct ? null : (
           <View style={styles.waitingBox}>
@@ -344,6 +375,53 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: 146
+  },
+  missionCard: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.25)",
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "rgba(24,23,20,0.84)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  missionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.36)",
+    backgroundColor: "rgba(50,40,17,0.42)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  missionCopy: {
+    flex: 1,
+    gap: 2
+  },
+  missionLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  missionValue: {
+    color: colors.text,
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    lineHeight: 19
+  },
+  missionBadge: {
+    color: colors.backgroundDeep,
+    backgroundColor: colors.secondary,
+    overflow: "hidden",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontFamily: typography.sansBold,
+    fontSize: 10
   },
   hero: {
     borderWidth: 1,

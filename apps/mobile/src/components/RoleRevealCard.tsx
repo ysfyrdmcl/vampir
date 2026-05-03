@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Role } from "@vampir-koylu/shared";
+import { ROLE_ART } from "../data/role-guide";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -16,21 +17,38 @@ interface RoleRevealCardProps {
 export function RoleRevealCard({ role }: RoleRevealCardProps) {
   const [revealed, setRevealed] = useState(false);
   const rotate = useRef(new Animated.Value(0)).current;
+  const glow = useRef(new Animated.Value(0)).current;
   const roleTheme = useMemo(() => getRoleTheme(role), [role]);
+  const roleArt = role ? ROLE_ART[role] : null;
 
   useEffect(() => {
     setRevealed(false);
     rotate.setValue(0);
-  }, [role, rotate]);
+    glow.setValue(0);
+  }, [glow, role, rotate]);
 
   const reveal = () => {
     if (revealed) return;
     setRevealed(true);
-    Animated.timing(rotate, {
-      toValue: 1,
-      duration: uiStandard.motion.cardRevealMs,
-      useNativeDriver: true
-    }).start();
+    Animated.parallel([
+      Animated.timing(rotate, {
+        toValue: 1,
+        duration: uiStandard.motion.cardRevealMs,
+        useNativeDriver: true
+      }),
+      Animated.sequence([
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true
+        }),
+        Animated.timing(glow, {
+          toValue: 0.48,
+          duration: 720,
+          useNativeDriver: true
+        })
+      ])
+    ]).start();
   };
 
   const frontRotation = rotate.interpolate({
@@ -45,8 +63,28 @@ export function RoleRevealCard({ role }: RoleRevealCardProps) {
   return (
     <Pressable onPress={reveal} style={styles.wrap}>
       <View style={[styles.card, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.revealGlow,
+            {
+              backgroundColor: roleTheme.glow,
+              opacity: glow,
+              transform: [
+                {
+                  scale: glow.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.85, 1.08]
+                  })
+                }
+              ]
+            }
+          ]}
+        />
         <Animated.View style={[styles.face, styles.front, { transform: [{ rotateY: frontRotation }] }]}>
-          <Ionicons name="albums-outline" size={46} color={colors.secondary} />
+          <View style={styles.seal}>
+            <Ionicons name="albums-outline" size={42} color={colors.secondary} />
+          </View>
           <Text style={styles.backTitle}>GİZLİ KART</Text>
           <Text style={styles.backHint}>{revealed ? "Kart açılıyor..." : "Dokun ve rolünü gör"}</Text>
         </Animated.View>
@@ -58,12 +96,24 @@ export function RoleRevealCard({ role }: RoleRevealCardProps) {
             { transform: [{ rotateY: backRotation }], borderColor: roleTheme.accent }
           ]}
         >
-          <View style={[styles.iconWrap, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
-            <Ionicons name={roleTheme.icon} size={70} color={roleTheme.accent} />
-          </View>
+          {roleArt ? (
+            <ImageBackground source={roleArt} resizeMode="cover" style={styles.art} imageStyle={styles.artImage}>
+              <View style={styles.artShade} />
+              <View style={[styles.roleIconBadge, { borderColor: roleTheme.accent, backgroundColor: roleTheme.glow }]}>
+                <Ionicons name={roleTheme.icon} size={24} color={roleTheme.accent} />
+              </View>
+            </ImageBackground>
+          ) : (
+            <View style={[styles.iconWrap, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
+              <Ionicons name={roleTheme.icon} size={70} color={roleTheme.accent} />
+            </View>
+          )}
           <Text style={[styles.roleTitle, { color: roleTheme.accent }]}>{role ? toRoleLabel(role) : "ROL BEKLENİYOR"}</Text>
           <Text style={styles.mission}>{roleTheme.mission}</Text>
-          <Text style={styles.secretWarning}>Ekranı sadece sen gör. Rolünü kimseyle paylaşma.</Text>
+          <View style={styles.secretPill}>
+            <Ionicons name="eye-off-outline" size={14} color={colors.textDim} />
+            <Text style={styles.secretWarning}>Sadece sen gör</Text>
+          </View>
         </Animated.View>
       </View>
     </Pressable>
@@ -76,13 +126,22 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    minHeight: 408,
+    minHeight: 444,
     borderWidth: 1,
     borderRadius: 18,
     backgroundColor: "rgba(9,10,11,0.84)",
     shadowOpacity: 0.33,
     shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 }
+    shadowOffset: { width: 0, height: 8 },
+    overflow: "hidden"
+  },
+  revealGlow: {
+    position: "absolute",
+    left: 28,
+    right: 28,
+    top: 58,
+    height: 280,
+    borderRadius: 160
   },
   face: {
     position: "absolute",
@@ -118,6 +177,41 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }
   },
+  seal: {
+    width: 104,
+    height: 104,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    backgroundColor: "rgba(35,29,18,0.72)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  art: {
+    width: "100%",
+    height: 230,
+    borderRadius: 16,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)"
+  },
+  artImage: {
+    borderRadius: 16
+  },
+  artShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.22)"
+  },
+  roleIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 12
+  },
   backTitle: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
@@ -145,7 +239,17 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: "center",
     fontFamily: typography.sansMedium,
-    fontSize: 13,
-    lineHeight: 18
+    fontSize: 12
+  },
+  secretPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(8,8,10,0.5)"
   }
 });

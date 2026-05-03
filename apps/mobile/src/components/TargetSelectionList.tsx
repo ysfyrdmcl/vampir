@@ -19,24 +19,36 @@ export interface TargetSelectionItem {
 interface TargetSelectionListProps {
   items: TargetSelectionItem[];
   onSelect: (id: string) => void;
+  disabledSummary?: string | null;
 }
 
-export function TargetSelectionList({ items, onSelect }: TargetSelectionListProps) {
+export function TargetSelectionList({ items, onSelect, disabledSummary }: TargetSelectionListProps) {
   const [graveyardOpen, setGraveyardOpen] = useState(false);
   const aliveItems = items.filter((item) => item.isAlive);
   const deadItems = items.filter((item) => !item.isAlive);
+  const selectableCount = aliveItems.filter((item) => item.isSelectable).length;
 
   return (
     <View style={styles.section}>
+      {disabledSummary && selectableCount === 0 ? (
+        <View style={styles.lockedBand}>
+          <Ionicons name="lock-closed-outline" size={15} color={colors.textDim} />
+          <Text style={styles.lockedBandText}>{disabledSummary}</Text>
+        </View>
+      ) : null}
       <View style={styles.grid}>
         {aliveItems.map((item) => (
         <Pressable
           key={item.id}
-          style={[styles.card, item.isSelected ? styles.cardSelected : null]}
+          style={[
+            styles.card,
+            item.isSelectable ? styles.cardSelectable : styles.cardDisabled,
+            item.isSelected ? styles.cardSelected : null
+          ]}
           disabled={!item.isSelectable}
           onPress={() => onSelect(item.id)}
         >
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
             <Text style={styles.avatarText}>{item.initials}</Text>
           </View>
           <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]}>{item.label}</Text>
@@ -49,9 +61,9 @@ export function TargetSelectionList({ items, onSelect }: TargetSelectionListProp
             {item.isSelectable ? (
               <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
             ) : (
-              <Ionicons name="close-circle-outline" size={16} color={colors.textDim} />
+              <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
             )}
-            <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Seçilemez"}</Text>
+            <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}</Text>
           </View>
         </Pressable>
         ))}
@@ -82,6 +94,24 @@ const styles = StyleSheet.create({
   section: {
     gap: 10
   },
+  lockedBand: {
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.22)",
+    borderRadius: 12,
+    backgroundColor: "rgba(12,12,14,0.58)",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  lockedBandText: {
+    flex: 1,
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 17
+  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -90,7 +120,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48.4%",
-    minHeight: 168,
+    minHeight: 148,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.24)",
@@ -99,6 +129,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 12,
     gap: 7
+  },
+  cardSelectable: {
+    borderColor: "rgba(233,195,73,0.34)",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }
+  },
+  cardDisabled: {
+    opacity: 0.48,
+    backgroundColor: "rgba(18,19,21,0.54)"
   },
   cardSelected: {
     backgroundColor: colors.parchment,
@@ -109,14 +150,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 }
   },
   avatar: {
-    width: 68,
-    height: 68,
+    width: 56,
+    height: 56,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.42)",
     backgroundColor: "rgba(8,8,10,0.9)",
     justifyContent: "center",
     alignItems: "center"
+  },
+  avatarSelectable: {
+    borderColor: "rgba(233,195,73,0.58)"
+  },
+  avatarSelected: {
+    backgroundColor: "rgba(50,40,17,0.72)"
   },
   avatarText: {
     color: colors.text,
