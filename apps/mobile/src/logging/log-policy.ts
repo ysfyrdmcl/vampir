@@ -1,4 +1,10 @@
 import type { LogFeedEntry } from "./log-feed-store";
+import {
+  formatJournalRoundPrefix,
+  formatJournalRoundTur,
+  formatPersonalTurnLogLine,
+  journalPersonalPhaseLabel
+} from "../utils/journal-labels";
 import { toRoleLabel, toWinnerLabel } from "../utils/role-label";
 
 export type LogScope = "general" | "personal";
@@ -73,24 +79,33 @@ function isPersonalOnlyEvent(event: string): boolean {
 
 export function toReadableLogText(event: string, payload?: Record<string, unknown>): string {
   const p = payload ?? {};
+  const rp = formatJournalRoundPrefix(p.round);
+  const rt = formatJournalRoundTur(p.round);
   if (event === "room.joined") return `Odaya katıldın (${String(p.roomCode ?? "-")}).`;
-  if (event === "phase.night_started") return `${String(p.round ?? "-")}. Gece başladı.`;
-  if (event === "phase.day_started") return `${String(p.round ?? "-")}. Gündüz başladı.`;
-  if (event === "vote.started") return `${String(p.round ?? "-")}. gündüz oylaması başladı.`;
-  if (event === "vote.mayor_started") return `${String(p.round ?? "-")}. başkan seçimi başladı.`;
-  if (event === "vote.tie") return `Oylama berabere bitti. En çok oy alanlar: ${formatCandidates(p.tiedTopCandidates)}.`;
-  if (event === "vote.revote_started") return "İkinci oylama başladı.";
-  if (event === "vote.execution") return `Oylama sonucu ${String(p.executedPlayerId ?? "bir oyuncu")} köyden gönderildi.`;
+  if (event === "phase.night_started") return `${rp}Gece başladı.`;
+  if (event === "phase.day_started") return `${rp}Gündüz başladı.`;
+  if (event === "vote.started") return `${rp}Gündüz oylaması başladı.`;
+  if (event === "vote.mayor_started") return `${rp}Başkan seçimi başladı.`;
+  if (event === "vote.tie") {
+    return `${rp}Oylama berabere bitti. En çok oy alanlar: ${formatCandidates(p.tiedTopCandidates)}.`;
+  }
+  if (event === "vote.revote_started") return `${rp}İkinci oylama başladı.`;
+  if (event === "vote.execution") {
+    const who = String(p.executedPlayerId ?? "bir oyuncu");
+    return `${rp}İnfaz: ${who} köyden gönderildi.`;
+  }
   if (event === "summary.elimination") {
     const source = String(p.source ?? "Day") === "Night" ? "Gece sonucu" : "Gündüz sonucu";
     const player = String(p.playerId ?? "bir oyuncu");
     const roleText = p.revealedRole ? ` Rol: ${toRoleLabel(p.revealedRole)}.` : "";
-    return `${source}: ${player} elendi.${roleText}`;
+    return `${rp}Sonuç (${source}): ${player} elendi.${roleText}`;
   }
   if (event === "summary.players_eliminated") return `Elenen oyuncular: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.chain_elimination") return `Aşık bağı tetiklendi. Birbirine bağlı oyuncular elendi: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
-  if (event === "summary.night_no_elimination") return "Gece kimse elenmedi.";
-  if (event === "game.phase.personal_turn_info") return `Sıra bilgisi: ${String(p.phase ?? "-")}.`;
+  if (event === "summary.night_no_elimination") return `${rp}Gece kimse elenmedi.`;
+  if (event === "game.phase.personal_turn_info") {
+    return `${formatPersonalTurnLogLine(p)}.`;
+  }
   if (event === "game.role.assigned") return `Rolün atandı: ${toRoleLabel(p.role as string | null | undefined)}.`;
   if (event === "game.private_result.detective") return `Dedektif sonucu: ${String(p.text ?? "-")}.`;
   if (event === "game.private_result.vampire_preview") return "Vampir oy önizlemesi güncellendi.";
@@ -101,13 +116,16 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   if (event === "personal.doctor.protect_result") return `Koruma sonucu: ${String(p.text ?? "-")}.`;
   if (event === "personal.vampire.target_selected") return `Gece hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
   if (event === "personal.vampire.night_result") return `Gece sonucu: ${String(p.text ?? "-")}.`;
-  if (event === "personal.vampire.vote_preview") return `Vampir ekip oyları güncellendi (${String(p.count ?? 0)} oy).`;
+  if (event === "personal.vampire.vote_preview") {
+    const tally = typeof p.tallyTargets === "number" ? p.tallyTargets : 0;
+    return `Vampir ekip oyları güncellendi (${String(tally)} hedef özeti).`;
+  }
   if (event === "personal.hunter.shot_selected") return `Son nefes hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
   if (event === "personal.guard.protect_selected") return `Gündüz koruma hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
-  if (event === "role.hunter.triggered") return "Avcı son nefes hakkını kullanacak.";
-  if (event === "role.hunter.shot") return `Avcı bir hedef seçti (${String(p.targetPlayerId ?? "-")}).`;
-  if (event === "role.mayor.selected") return `Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;
-  if (event === "role.guard.protect") return `Gardiyan koruma açtı (${String(p.protectedPlayerId ?? "-")}).`;
+  if (event === "role.hunter.triggered") return `${rp}Avcı son nefes hakkını kullanacak.`;
+  if (event === "role.hunter.shot") return `${rp}Avcı bir hedef seçti (${String(p.targetPlayerId ?? "-")}).`;
+  if (event === "role.mayor.selected") return `${rp}Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;
+  if (event === "role.guard.protect") return `${rp}Gardiyan koruma açtı (${String(p.protectedPlayerId ?? "-")}).`;
   if (event === "game.over") return `Oyun bitti. Kazanan: ${toWinnerLabel(p.winner as string | null | undefined)}.`;
   return event;
 }

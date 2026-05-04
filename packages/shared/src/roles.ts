@@ -149,7 +149,7 @@ function baseRoleCounts(playerCount: number): { vampires: number; detective: num
   if (playerCount <= 4) {
     return { vampires: 1, detective: 0, doctor: 0 };
   }
-  if (playerCount <= 6) {
+  if (playerCount <= 5) {
     return { vampires: 1, detective: 1, doctor: 1 };
   }
   if (playerCount <= 10) {

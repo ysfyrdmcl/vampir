@@ -7,7 +7,7 @@ const envSchema = z.object({
   SOCKET_PATH: z.string().default("/socket.io"),
   ROOM_CODE_LENGTH: z.coerce.number().default(6),
   ROOM_MIN_PLAYERS: z.coerce.number().default(4),
-  ROOM_MAX_PLAYERS: z.coerce.number().default(20),
+  ROOM_MAX_PLAYERS: z.coerce.number().default(100),
   ROOM_IDLE_TTL_SECONDS: z.coerce.number().default(1800),
   ROOM_AFTER_GAME_TTL_SECONDS: z.coerce.number().default(300),
   ROLE_REVEAL_SECONDS: z.coerce.number().default(10),

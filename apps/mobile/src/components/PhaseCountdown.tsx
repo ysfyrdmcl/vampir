@@ -7,9 +7,11 @@ import { uiStandard } from "../ui/ui-standard";
 interface PhaseCountdownProps {
   phaseEndsAt: number | null;
   mode?: "dramatic" | "compact";
+  /** Rol açılımı alt bandı: kart genişliğiyle hizalı, metin ortada. */
+  presentation?: "default" | "roleRevealFooter";
 }
 
-export function PhaseCountdown({ phaseEndsAt, mode = "dramatic" }: PhaseCountdownProps) {
+export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
   const [now, setNow] = useState(Date.now());
   const [maxSeconds, setMaxSeconds] = useState<number | null>(null);
   const pulse = useState(new Animated.Value(0))[0];
@@ -71,17 +73,34 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic" }: PhaseCountdow
     outputRange: [0, uiStandard.fx.glowStrong]
   });
 
+  const isRoleFooter = presentation === "roleRevealFooter";
+  const effectiveMode = isRoleFooter ? "compact" : mode;
+
   return (
-    <View style={[styles.wrap, mode === "compact" ? styles.wrapCompact : null]}>
-      <Animated.View style={[styles.ring, mode === "compact" ? styles.ringCompact : null, { borderColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]}>
-        <Text style={[styles.value, mode === "compact" ? styles.valueCompact : null]}>{seconds}</Text>
-        <Text style={[styles.unit, mode === "compact" ? styles.unitCompact : null]}>{seconds === 0 ? "KİLİTLİ" : "SANİYE"}</Text>
+    <View style={[styles.wrap, effectiveMode === "compact" ? styles.wrapCompact : null, isRoleFooter ? styles.wrapRoleFooter : null]}>
+      <Animated.View
+        style={[
+          styles.ring,
+          effectiveMode === "compact" ? styles.ringCompact : null,
+          isRoleFooter ? styles.ringRoleFooter : null,
+          { borderColor: accent, shadowColor: accent, shadowOpacity: warningGlow }
+        ]}
+      >
+        <Text style={[styles.value, effectiveMode === "compact" ? styles.valueCompact : null, isRoleFooter ? styles.valueRoleFooter : null]}>
+          {seconds}
+        </Text>
+        <Text style={[styles.unit, effectiveMode === "compact" ? styles.unitCompact : null, isRoleFooter ? styles.unitRoleFooter : null]}>
+          {seconds === 0 ? "KİLİTLİ" : "SANİYE"}
+        </Text>
       </Animated.View>
-      <View style={mode === "compact" ? styles.compactCopy : null}>
-        <View style={[styles.barTrack, mode === "compact" ? styles.barTrackCompact : null]}>
+      <View style={[effectiveMode === "compact" ? styles.compactCopy : null, isRoleFooter ? styles.compactCopyRoleFooter : null]}>
+        <View style={[styles.barTrack, effectiveMode === "compact" ? styles.barTrackCompact : null, isRoleFooter ? styles.barTrackRoleFooter : null]}>
           <View style={[styles.barFill, { width: `${Math.round(percentage * 100)}%`, backgroundColor: accent }]} />
         </View>
-        <Text style={[styles.text, mode === "compact" ? styles.textCompact : null]}>
+        <Text
+          style={[styles.text, effectiveMode === "compact" ? styles.textCompact : null, isRoleFooter ? styles.textRoleFooter : null]}
+          numberOfLines={isRoleFooter ? 2 : undefined}
+        >
           {seconds === 0
             ? "Karar kilitlendi."
             : tone === "red"
@@ -99,6 +118,15 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
     gap: 8
+  },
+  wrapRoleFooter: {
+    width: "100%",
+    maxWidth: 380,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 4
   },
   wrapCompact: {
     flexDirection: "row",
@@ -123,6 +151,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     shadowRadius: 8
   },
+  ringRoleFooter: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 3,
+    flexShrink: 0
+  },
   value: {
     color: colors.text,
     fontFamily: typography.serif,
@@ -133,9 +168,17 @@ const styles = StyleSheet.create({
     fontSize: 25,
     lineHeight: 27
   },
+  valueRoleFooter: {
+    fontSize: 28,
+    lineHeight: 30
+  },
   compactCopy: {
     flex: 1,
     gap: 5
+  },
+  compactCopyRoleFooter: {
+    minWidth: 0,
+    gap: 8
   },
   unit: {
     color: colors.textMuted,
@@ -146,6 +189,10 @@ const styles = StyleSheet.create({
   unitCompact: {
     fontSize: 8,
     letterSpacing: 0.6
+  },
+  unitRoleFooter: {
+    fontSize: 9,
+    letterSpacing: 0.8
   },
   barTrack: {
     width: 196,
@@ -158,6 +205,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 5
   },
+  barTrackRoleFooter: {
+    width: "100%",
+    maxWidth: "100%",
+    height: 5
+  },
   barFill: {
     height: "100%"
   },
@@ -168,5 +220,11 @@ const styles = StyleSheet.create({
   },
   textCompact: {
     fontSize: 12
+  },
+  textRoleFooter: {
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+    color: colors.textMuted
   }
 });

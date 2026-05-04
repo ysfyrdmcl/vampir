@@ -21,6 +21,12 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
+import {
+  formatJournalRoundTur,
+  formatPersonalTurnLogLine,
+  journalPersonalTurnPeriod,
+  journalPersonalTurnStepLabel
+} from "../utils/journal-labels";
 import { toRoleLabel } from "../utils/role-label";
 
 type Props = NativeStackScreenProps<RootStackParamList, "GameLog">;
@@ -86,7 +92,7 @@ export function GameLogScreen(_: Props) {
     }
     if (previousTopEntryRef.current === currentKey) return;
     previousTopEntryRef.current = currentKey;
-    setEntryToast(`Yeni günlük kaydı: ${eventHeadline(top.event)}`);
+    setEntryToast(`Yeni günlük kaydı: ${eventHeadline(top.event, top.payload)}`);
     Animated.sequence([
       Animated.parallel([
         Animated.timing(toastOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
@@ -115,7 +121,7 @@ export function GameLogScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="day" headerTitle="GÜNLÜK" showPauseOverlay={false}>
+    <ScreenShell scene="day" bottomNavActiveIndex={1} headerTitle="GÜNLÜK" showPauseOverlay={false}>
       <View style={styles.root}>
         {entryToast ? (
           <Animated.View pointerEvents="none" style={[styles.entryToast, { opacity: toastOpacity, transform: [{ translateY: toastY }] }]}>
@@ -153,14 +159,16 @@ export function GameLogScreen(_: Props) {
         ) : (
           <View style={styles.personalSummaryRow}>
             <Text style={styles.personalSummaryText}>Rolün: {role ? toRoleLabel(role) : "Henüz atanmadı"}</Text>
-            <Text style={styles.personalSummaryMeta}>{personalSummary.actionCount} aksiyon · {personalSummary.privateResultCount} özel sonuç</Text>
+            <Text style={styles.personalSummaryMeta}>
+              {personalSummary.actionCount} aksiyon · {personalSummary.privateIntelCount} kişisel kayıt
+            </Text>
           </View>
         )}
         {tab === "general" && gameAnalysis ? (
           <View style={styles.analysisPanel}>
             <Text style={styles.analysisTitle}>Oyun Sonu Analizi</Text>
             <Text style={styles.analysisLine}>Kazanan: {gameAnalysis.winnerText}</Text>
-            <Text style={styles.analysisLine}>Raunt: {gameAnalysis.roundsPlayed || "-"}</Text>
+            <Text style={styles.analysisLine}>En yüksek tur: {gameAnalysis.roundsPlayed || "—"}</Text>
             <Text style={styles.analysisLine}>Eleme: {gameAnalysis.eliminationCount}</Text>
             <Text style={styles.analysisLine}>Beraberlik: {gameAnalysis.tieCount}</Text>
             <Text style={styles.analysisLine}>Hayatta kalanlar: {gameAnalysis.aliveText}</Text>
@@ -232,9 +240,9 @@ export function GameLogScreen(_: Props) {
                   <View style={styles.rowTop}>
                     <View style={styles.eventMeta}>
                       <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
-                      <Text style={styles.headline}>{eventHeadline(entry.event)}</Text>
+                      <Text style={styles.headline}>{eventHeadline(entry.event, entry.payload)}</Text>
                     </View>
-                    <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event)}</Text>
+                    <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event, entry.payload)}</Text>
                   </View>
                   <View style={styles.rowTop}>
                     <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
@@ -351,9 +359,10 @@ const styles = StyleSheet.create({
     fontSize: 12
   },
   personalSummaryMeta: {
-    color: colors.textDim,
+    color: "rgba(150,145,138,0.72)",
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 11,
+    letterSpacing: 0.2
   },
   entryToast: {
     position: "absolute",
@@ -620,8 +629,9 @@ const styles = StyleSheet.create({
   }
 });
 
-function eventTag(event: string): string {
+function eventTag(event: string, payload?: Record<string, unknown>): string {
   if (event.startsWith("warning.") || event.includes("warning")) return "Uyarı";
+  if (event === "game.phase.personal_turn_info") return journalPersonalTurnPeriod(payload?.phase);
   if (event.startsWith("phase.")) return "Faz";
   if (event.startsWith("vote.")) return "Oylama";
   if (event.startsWith("summary.")) return "Sonuç";
@@ -631,18 +641,19 @@ function eventTag(event: string): string {
   return "Oyun";
 }
 
-function eventHeadline(event: string): string {
-  if (event.startsWith("warning.") || event.includes("warning")) return "Uyari";
-  if (event === "phase.night_started") return "Gece Basladi";
-  if (event === "phase.day_started") return "Gunduz Basladi";
-  if (event === "summary.night_no_elimination") return "Kimse Elenmedi";
+function eventHeadline(event: string, payload?: Record<string, unknown>): string {
+  if (event.startsWith("warning.") || event.includes("warning")) return "Uyarı";
+  if (event === "game.phase.personal_turn_info") return journalPersonalTurnStepLabel(payload?.phase);
+  if (event === "phase.night_started") return "Gece başladı";
+  if (event === "phase.day_started") return "Gündüz başladı";
+  if (event === "summary.night_no_elimination") return "Kimse elenmedi";
   if (event.startsWith("vote.tie")) return "Beraberlik";
   if (event.startsWith("vote.")) return "Oylama";
-  if (event.startsWith("summary.")) return "Gun Sonucu";
-  if (event === "game.over") return "Oyun Bitti";
-  if (event.startsWith("personal.")) return "Kisisel Bilgi";
-  if (event.startsWith("role.")) return "Rol Bilgisi";
-  return "Oyun Olayi";
+  if (event.startsWith("summary.")) return "Sonuç";
+  if (event === "game.over") return "Oyun bitti";
+  if (event.startsWith("personal.")) return "Kişisel bilgi";
+  if (event.startsWith("role.")) return "Rol bilgisi";
+  return "Oyun olayı";
 }
 
 function matchesGeneralFilter(entry: LogFeedEntry, tab: Tab, filter: GeneralFilter): boolean {
@@ -674,15 +685,21 @@ function buildTimelineGroups(entries: LogFeedEntry[]): TimelineGroup[] {
 }
 
 function timelineTitleForEntry(entry: LogFeedEntry): string {
-  const round = typeof entry.payload?.round === "number" ? `Tur ${entry.payload.round}` : "Oyun Akışı";
-  if (entry.event === "phase.night_started" || entry.event === "summary.night_no_elimination" || entry.payload?.source === "Night") {
-    return `${round} · Gece`;
+  if (entry.event === "game.phase.personal_turn_info") {
+    return formatPersonalTurnLogLine(entry.payload);
   }
-  if (entry.event.startsWith("vote.")) return `${round} · Oylama`;
-  if (entry.event.startsWith("summary.") || entry.event === "game.over" || entry.event.startsWith("role.")) return `${round} · Sonuç`;
-  if (entry.event.startsWith("personal.") || entry.event.startsWith("game.private_result") || entry.event.startsWith("game.role")) return `${round} · Kişisel`;
-  if (entry.event === "phase.day_started") return `${round} · Gündüz`;
-  return round;
+  const r = entry.payload?.round;
+  const roundPart = typeof r === "number" && r >= 1 ? formatJournalRoundTur(r) : "Oyun akışı";
+  if (entry.event === "phase.night_started" || entry.event === "summary.night_no_elimination" || entry.payload?.source === "Night") {
+    return `${roundPart} · Gece`;
+  }
+  if (entry.event.startsWith("vote.")) return `${roundPart} · Oylama`;
+  if (entry.event.startsWith("summary.") || entry.event === "game.over" || entry.event.startsWith("role.")) return `${roundPart} · Sonuç`;
+  if (entry.event.startsWith("personal.") || entry.event.startsWith("game.private_result") || entry.event.startsWith("game.role")) {
+    return `${roundPart} · Kişisel`;
+  }
+  if (entry.event === "phase.day_started") return `${roundPart} · Gündüz`;
+  return roundPart;
 }
 
 function noteTagLabel(tag: PlayerNoteTag): string {
@@ -693,6 +710,7 @@ function noteTagLabel(tag: PlayerNoteTag): string {
 }
 
 function eventIcon(event: string): keyof typeof Ionicons.glyphMap {
+  if (event === "game.phase.personal_turn_info") return "person-circle-outline";
   if (event === "phase.night_started" || event === "summary.night_no_elimination") return "moon-outline";
   if (event === "phase.day_started") return "sunny-outline";
   if (event.startsWith("vote.")) return "checkbox-outline";
@@ -704,6 +722,7 @@ function eventIcon(event: string): keyof typeof Ionicons.glyphMap {
 
 function eventIconColor(event: string): string {
   if (event.startsWith("warning.") || event.includes("warning")) return uiStandard.logTones.warning.text;
+  if (event === "game.phase.personal_turn_info") return uiStandard.logTones.private.text;
   if (event === "phase.night_started" || event === "summary.night_no_elimination") return uiStandard.logTones.phase.text;
   if (event.startsWith("vote.")) return uiStandard.logTones.vote.text;
   if (event.startsWith("summary.") || event === "game.over") return uiStandard.logTones.result.text;
@@ -713,6 +732,7 @@ function eventIconColor(event: string): string {
 
 function eventToneStyle(event: string) {
   if (event.startsWith("warning.") || event.includes("warning")) return styles.rowWarning;
+  if (event === "game.phase.personal_turn_info") return styles.rowPersonal;
   if (event === "phase.night_started" || event === "summary.night_no_elimination") return styles.rowNight;
   if (event.startsWith("vote.")) return styles.rowVote;
   if (event.startsWith("summary.") || event === "game.over" || event.startsWith("role.")) return styles.rowResult;
@@ -722,6 +742,7 @@ function eventToneStyle(event: string) {
 
 function eventTagStyle(event: string) {
   if (event.startsWith("warning.") || event.includes("warning")) return styles.tagWarning;
+  if (event === "game.phase.personal_turn_info") return styles.tagPersonal;
   if (event === "phase.night_started" || event === "summary.night_no_elimination") return styles.tagNight;
   if (event.startsWith("vote.")) return styles.tagVote;
   if (event.startsWith("summary.") || event === "game.over" || event.startsWith("role.")) return styles.tagResult;
@@ -729,11 +750,18 @@ function eventTagStyle(event: string) {
   return null;
 }
 
+function isPersonalIntelLogEvent(event: string): boolean {
+  if (event.startsWith("game.private_result.")) {
+    return event !== "game.private_result.accepted";
+  }
+  return event === "personal.detective.inspect_result";
+}
+
 function buildPersonalSummary(entries: LogFeedEntry[]) {
   const personal = entries.filter((e) => e.scope === "personal" && shouldShowLogEntry(e, "personal"));
   const actionCount = personal.filter((e) => e.event.includes("selected") || e.event.includes("accepted")).length;
-  const privateResultCount = personal.filter((e) => e.event.includes("private_result") || e.event.includes("_result")).length;
-  return { actionCount, privateResultCount };
+  const privateIntelCount = personal.filter((e) => isPersonalIntelLogEvent(e.event)).length;
+  return { actionCount, privateIntelCount };
 }
 
 function localizePayloadNames(payload: Record<string, unknown> | undefined, playerNameById: Map<string, string>) {

@@ -1,5 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useCallback } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { HeroBrandArea } from "../components/HeroBrandArea";
@@ -9,7 +11,12 @@ import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toConnectionText, toFriendlyErrorText } from "../ui/error-text";
+import {
+  socketErrorAllowedForRoute,
+  socketErrorVisibleForOuterMenu,
+  toConnectionText,
+  toFriendlyErrorText
+} from "../ui/error-text";
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Welcome">;
@@ -18,7 +25,16 @@ export function WelcomeScreen({ navigation }: Props) {
   const connectionStatus = useGameStore((s) => s.connectionStatus);
   const errorCode = useGameStore((s) => s.errorCode);
   const connectionText = toConnectionText(connectionStatus);
-  const errorText = toFriendlyErrorText(errorCode);
+  const errorText = toFriendlyErrorText(socketErrorVisibleForOuterMenu(errorCode));
+
+  useFocusEffect(
+    useCallback(() => {
+      const code = useGameStore.getState().errorCode;
+      if (code && !socketErrorAllowedForRoute(code, "Welcome")) {
+        useGameStore.getState().setErrorCode(null);
+      }
+    }, [])
+  );
   const playerUtilityItems = [
     {
       key: "role-guide",

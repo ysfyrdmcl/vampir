@@ -1,51 +1,81 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, ImageBackground, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Role } from "@vampir-koylu/shared";
 import { ROLE_ART } from "../data/role-guide";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { uiStandard } from "../ui/ui-standard";
 import { getRoleTheme } from "../ui/role-theme";
 import { toRoleLabel } from "../utils/role-label";
 
 interface RoleRevealCardProps {
   role: Role | null;
   loverPartnerName?: string | null;
+  /** Üst sütun genişliği (RoleRevealScreen ile aynı). */
+  maxColumnWidth?: number;
 }
 
-export function RoleRevealCard({ role, loverPartnerName }: RoleRevealCardProps) {
+export function RoleRevealCard({ role, loverPartnerName, maxColumnWidth = 400 }: RoleRevealCardProps) {
   const [revealed, setRevealed] = useState(false);
   const rotate = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
+  const entry = useRef(new Animated.Value(0)).current;
+  const cardPop = useRef(new Animated.Value(0)).current;
+  const { height: winH } = useWindowDimensions();
   const roleTheme = useMemo(() => getRoleTheme(role), [role]);
   const roleArt = role ? ROLE_ART[role] : null;
+
+  const cardMinHeight = useMemo(() => Math.round(Math.min(400, Math.max(280, winH * 0.42))), [winH]);
+  const artHeight = useMemo(() => Math.round(Math.min(220, Math.max(132, winH * 0.24))), [winH]);
+  const titleSize = winH < 700 ? 26 : 30;
+  const missionSize = winH < 700 ? 15 : 17;
 
   useEffect(() => {
     setRevealed(false);
     rotate.setValue(0);
     glow.setValue(0);
-  }, [glow, role, rotate]);
+    cardPop.setValue(0);
+    entry.setValue(0);
+    Animated.timing(entry, {
+      toValue: 1,
+      duration: 560,
+      useNativeDriver: true
+    }).start();
+  }, [cardPop, entry, glow, role, rotate]);
 
   const reveal = () => {
     if (revealed) return;
     setRevealed(true);
     Animated.parallel([
-      Animated.timing(rotate, {
+      Animated.spring(rotate, {
         toValue: 1,
-        duration: uiStandard.motion.cardRevealMs,
+        friction: 9,
+        tension: 32,
         useNativeDriver: true
       }),
       Animated.sequence([
+        Animated.timing(cardPop, {
+          toValue: 1,
+          duration: 280,
+          useNativeDriver: true
+        }),
+        Animated.spring(cardPop, {
+          toValue: 0,
+          friction: 7,
+          tension: 68,
+          useNativeDriver: true
+        })
+      ]),
+      Animated.sequence([
         Animated.timing(glow, {
           toValue: 1,
-          duration: 520,
+          duration: 420,
           useNativeDriver: true
         }),
         Animated.timing(glow, {
-          toValue: 0.48,
-          duration: 720,
+          toValue: 0.5,
+          duration: 640,
           useNativeDriver: true
         })
       ])
@@ -61,98 +91,152 @@ export function RoleRevealCard({ role, loverPartnerName }: RoleRevealCardProps) 
     outputRange: ["180deg", "360deg"]
   });
 
+  const entryStyle = {
+    opacity: entry,
+    transform: [
+      {
+        translateY: entry.interpolate({
+          inputRange: [0, 1],
+          outputRange: [22, 0]
+        })
+      },
+      {
+        scale: entry.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.94, 1]
+        })
+      }
+    ]
+  };
+
+  const popScale = cardPop.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.06]
+  });
+
   return (
-    <Pressable onPress={reveal} style={styles.wrap}>
-      <View style={[styles.card, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
+    <Animated.View style={[styles.outer, { maxWidth: maxColumnWidth, width: "100%" }, entryStyle]}>
+      <Pressable onPress={reveal} style={styles.press}>
         <Animated.View
-          pointerEvents="none"
           style={[
-            styles.revealGlow,
+            styles.card,
             {
-              backgroundColor: roleTheme.glow,
-              opacity: glow,
-              transform: [
-                {
-                  scale: glow.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.85, 1.08]
-                  })
-                }
-              ]
+              borderColor: roleTheme.accent,
+              shadowColor: roleTheme.accent,
+              transform: [{ scale: popScale }]
             }
           ]}
-        />
-        <Animated.View style={[styles.face, styles.front, { transform: [{ rotateY: frontRotation }] }]}>
-          <View style={styles.seal}>
-            <Ionicons name="albums-outline" size={42} color={colors.secondary} />
-          </View>
-          <Text style={styles.backTitle}>GİZLİ KART</Text>
-          <Text style={styles.backHint}>{revealed ? "Kart açılıyor..." : "Dokun ve rolünü gör"}</Text>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.face,
-            styles.back,
-            { transform: [{ rotateY: backRotation }], borderColor: roleTheme.accent }
-          ]}
         >
-          {roleArt ? (
-            <ImageBackground source={roleArt} resizeMode="cover" style={styles.art} imageStyle={styles.artImage}>
-              <View style={styles.artShade} />
-              <View style={[styles.roleIconBadge, { borderColor: roleTheme.accent, backgroundColor: roleTheme.glow }]}>
-                <Ionicons name={roleTheme.icon} size={24} color={roleTheme.accent} />
+          <View style={[styles.flipStage, { height: cardMinHeight }]}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.revealGlow,
+                {
+                  backgroundColor: roleTheme.glow,
+                  opacity: glow,
+                  transform: [
+                    {
+                      scale: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.82, 1.12]
+                      })
+                    }
+                  ]
+                }
+              ]}
+            />
+            <Animated.View style={[styles.face, styles.front, { transform: [{ rotateY: frontRotation }] }]}>
+              <View style={styles.seal}>
+                <Ionicons name="moon-outline" size={36} color={colors.secondary} />
               </View>
-            </ImageBackground>
-          ) : (
-            <View style={[styles.iconWrap, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
-              <Ionicons name={roleTheme.icon} size={70} color={roleTheme.accent} />
-            </View>
-          )}
-          <Text style={[styles.roleTitle, { color: roleTheme.accent }]}>{role ? toRoleLabel(role) : "ROL BEKLENİYOR"}</Text>
-          <Text style={styles.mission}>{roleTheme.mission}</Text>
-          {loverPartnerName ? (
-            <View style={styles.loverPanel}>
-              <View style={styles.loverHeader}>
-                <Ionicons name="link-outline" size={16} color={colors.secondary} />
-                <Text style={styles.loverLabel}>Aşık Bağı</Text>
+              <Text style={styles.backTitle}>GİZLİ KİMLİK</Text>
+              <Text style={styles.backHint}>{revealed ? "Açılıyor…" : "Dokun — rolün ortaya çıksın"}</Text>
+            </Animated.View>
+
+            <Animated.View
+              style={[
+                styles.face,
+                styles.back,
+                { transform: [{ rotateY: backRotation }], borderColor: roleTheme.accent }
+              ]}
+            >
+              {roleArt ? (
+                <ImageBackground
+                  source={roleArt}
+                  resizeMode="cover"
+                  style={[styles.art, { height: artHeight }]}
+                  imageStyle={styles.artImage}
+                >
+                  <View style={styles.artShade} />
+                  <View style={[styles.roleIconBadge, { borderColor: roleTheme.accent, backgroundColor: roleTheme.glow }]}>
+                    <Ionicons name={roleTheme.icon} size={24} color={roleTheme.accent} />
+                  </View>
+                </ImageBackground>
+              ) : (
+                <View style={[styles.iconWrap, { borderColor: roleTheme.accent, shadowColor: roleTheme.accent }]}>
+                  <Ionicons name={roleTheme.icon} size={70} color={roleTheme.accent} />
+                </View>
+              )}
+              <Text style={[styles.roleTitle, { color: roleTheme.accent, fontSize: titleSize }]}>
+                {role ? toRoleLabel(role) : "ROL BEKLENİYOR"}
+              </Text>
+              <Text style={[styles.mission, { fontSize: missionSize, lineHeight: missionSize + 9 }]} numberOfLines={4}>
+                {roleTheme.mission}
+              </Text>
+              {loverPartnerName ? (
+                <View style={styles.loverPanel}>
+                  <View style={styles.loverHeader}>
+                    <Ionicons name="link-outline" size={16} color={colors.secondary} />
+                    <Text style={styles.loverLabel}>Aşık Bağı</Text>
+                  </View>
+                  <Text style={styles.loverName} numberOfLines={1}>
+                    {loverPartnerName}
+                  </Text>
+                  <Text style={styles.loverHint}>Bağlı oyuncun. Rolü gizli kalır.</Text>
+                </View>
+              ) : null}
+              <View style={styles.secretPill}>
+                <Ionicons name="eye-off-outline" size={14} color={colors.textDim} />
+                <Text style={styles.secretWarning}>Sadece sen gör</Text>
               </View>
-              <Text style={styles.loverName}>{loverPartnerName}</Text>
-              <Text style={styles.loverHint}>Bağlı oyuncun. Rolü gizli kalır.</Text>
-            </View>
-          ) : null}
-          <View style={styles.secretPill}>
-            <Ionicons name="eye-off-outline" size={14} color={colors.textDim} />
-            <Text style={styles.secretWarning}>Sadece sen gör</Text>
+            </Animated.View>
           </View>
         </Animated.View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    alignItems: "center"
+  outer: {
+    alignSelf: "center"
+  },
+  press: {
+    width: "100%"
   },
   card: {
     width: "100%",
-    minHeight: 444,
     borderWidth: 1,
-    borderRadius: 18,
-    backgroundColor: "rgba(9,10,11,0.84)",
-    shadowOpacity: 0.33,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    borderRadius: 20,
+    backgroundColor: "rgba(9,10,11,0.9)",
+    shadowOpacity: 0.38,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
     overflow: "hidden"
+  },
+  flipStage: {
+    width: "100%",
+    transform: [{ perspective: 1400 }]
   },
   revealGlow: {
     position: "absolute",
-    left: 28,
-    right: 28,
-    top: 58,
-    height: 280,
-    borderRadius: 160
+    left: "8%",
+    right: "8%",
+    top: "12%",
+    bottom: "18%",
+    borderRadius: 160,
+    zIndex: 0
   },
   face: {
     position: "absolute",
@@ -160,59 +244,59 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    borderRadius: 18,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    backfaceVisibility: "hidden"
+    backfaceVisibility: "hidden",
+    zIndex: 1
   },
   front: {
-    gap: 12,
-    backgroundColor: "rgba(11,11,13,0.95)"
+    gap: 14,
+    backgroundColor: "rgba(11,11,13,0.97)"
   },
   back: {
-    gap: 12,
-    backgroundColor: "rgba(10,11,13,0.95)",
+    gap: 10,
+    backgroundColor: "rgba(10,11,13,0.97)",
     borderWidth: 1
   },
   iconWrap: {
-    width: 148,
-    height: 148,
-    borderRadius: 16,
+    width: 132,
+    height: 132,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: "rgba(18,18,20,0.82)",
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 }
+    backgroundColor: "rgba(18,18,20,0.88)",
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 5 }
   },
   seal: {
-    width: 104,
-    height: 104,
-    borderRadius: 22,
+    width: 108,
+    height: 108,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.34)",
-    backgroundColor: "rgba(35,29,18,0.72)",
+    borderColor: "rgba(233,195,73,0.38)",
+    backgroundColor: "rgba(35,29,18,0.78)",
     alignItems: "center",
     justifyContent: "center"
   },
   art: {
     width: "100%",
-    height: 230,
     borderRadius: 16,
     overflow: "hidden",
     justifyContent: "flex-end",
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.22)"
+    borderColor: "rgba(233,195,73,0.24)"
   },
   artImage: {
     borderRadius: 16
   },
   artShade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.22)"
+    backgroundColor: "rgba(0,0,0,0.26)"
   },
   roleIconBadge: {
     width: 44,
@@ -226,51 +310,54 @@ const styles = StyleSheet.create({
   backTitle: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    letterSpacing: 2.2
+    fontSize: 13,
+    letterSpacing: 2.4,
+    textTransform: "uppercase"
   },
   backHint: {
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
-    fontSize: 13
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: spacing.md
   },
   roleTitle: {
     fontFamily: typography.serif,
-    fontSize: 62 / 1.5,
     textAlign: "center",
-    letterSpacing: 1.1
+    letterSpacing: 0.8
   },
   mission: {
     color: colors.textMuted,
     textAlign: "center",
     fontFamily: typography.serifRegular,
-    fontSize: 18,
-    lineHeight: 28
+    paddingHorizontal: spacing.xs
   },
   secretWarning: {
     color: colors.textDim,
     textAlign: "center",
     fontFamily: typography.sansMedium,
-    fontSize: 12
+    fontSize: 11
   },
   secretPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.2)",
+    borderColor: "rgba(170,137,132,0.22)",
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(8,8,10,0.5)"
+    paddingVertical: 5,
+    backgroundColor: "rgba(8,8,10,0.55)",
+    marginTop: 2
   },
   loverPanel: {
     width: "100%",
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
+    borderColor: "rgba(233,195,73,0.26)",
     borderRadius: 14,
-    padding: 12,
-    gap: 5,
-    backgroundColor: "rgba(35,29,18,0.54)"
+    padding: 10,
+    gap: 4,
+    backgroundColor: "rgba(35,29,18,0.56)"
   },
   loverHeader: {
     flexDirection: "row",
@@ -288,13 +375,13 @@ const styles = StyleSheet.create({
   loverName: {
     color: colors.text,
     fontFamily: typography.serif,
-    fontSize: 22,
+    fontSize: 20,
     textAlign: "center"
   },
   loverHint: {
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 12,
+    fontSize: 11,
     textAlign: "center"
   }
 });

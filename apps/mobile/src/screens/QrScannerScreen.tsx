@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from "expo-camera";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -16,14 +16,22 @@ export function QrScannerScreen({ navigation }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [isLocked, setIsLocked] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const lastNavigateRef = useRef<{ code: string; at: number } | null>(null);
 
   const handleBarcodeScanned = (result: BarcodeScanningResult) => {
     if (isLocked) return;
-    const roomCode = extractRoomCode(result.data);
+    const raw = (result.data ?? "").trim();
+    const roomCode = extractRoomCode(raw);
     if (!roomCode) {
       setErrorText("Bu QR kodunda geçerli oda kodu bulunamadı.");
       return;
     }
+    const now = Date.now();
+    const prev = lastNavigateRef.current;
+    if (prev && prev.code === roomCode && now - prev.at < 2500) {
+      return;
+    }
+    lastNavigateRef.current = { code: roomCode, at: now };
     setIsLocked(true);
     navigation.navigate("JoinRoom", { scannedCode: roomCode });
   };
@@ -61,7 +69,6 @@ export function QrScannerScreen({ navigation }: Props) {
           <CameraView
             style={styles.camera}
             facing="back"
-            barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
             onBarcodeScanned={isLocked ? undefined : handleBarcodeScanned}
           />
           <View style={styles.scanOverlay}>
@@ -85,13 +92,17 @@ export function QrScannerScreen({ navigation }: Props) {
 }
 
 function extractRoomCode(value: string): string | null {
-  const upperValue = value.toUpperCase();
-  const urlMatch = upperValue.match(/[?&#](?:ROOM|ROOMCODE|ROOM_CODE|CODE)=([A-Z0-9]{4,6})/);
-  if (urlMatch) return urlMatch[1];
-  const pathMatch = upperValue.match(/(?:JOIN|ROOM|ODA)[/:=-]([A-Z0-9]{4,6})/);
-  if (pathMatch) return pathMatch[1];
-  const directMatch = upperValue.match(/\b[A-Z0-9]{4,6}\b/);
-  return directMatch?.[0] ?? null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const upperValue = trimmed.toUpperCase();
+  const urlMatch = upperValue.match(/[?&#](?:ROOMCODE|ROOM_CODE|ROOM|CODE|ODA|ROOMID|ROOM_ID)=([A-Z0-9]{4,8})/);
+  if (urlMatch?.[1]) return urlMatch[1];
+  const pathMatch = upperValue.match(/(?:\/JOIN\/|\/ROOM\/|\/ODA\/|JOIN\/|ROOM\/|ODA\/)([A-Z0-9]{4,8})\b/);
+  if (pathMatch?.[1]) return pathMatch[1];
+  const pathMatch2 = upperValue.match(/(?:JOIN|ROOM|ODA)[/:=-]([A-Z0-9]{4,8})\b/);
+  if (pathMatch2?.[1]) return pathMatch2[1];
+  const directMatch = upperValue.match(/\b([A-Z0-9]{4,8})\b/);
+  return directMatch?.[1] ?? null;
 }
 
 const styles = StyleSheet.create({

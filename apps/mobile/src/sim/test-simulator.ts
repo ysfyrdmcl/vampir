@@ -1,6 +1,18 @@
-import { buildRoleDeck, ROLE_DEFINITIONS, type ActionType, type GamePhase, type GameStateSnapshotPublic, type Role, type RolePresetId, type RoomStateSnapshot } from "@vampir-koylu/shared";
+import {
+  buildRoleDeck,
+  ROLE_DEFINITIONS,
+  type ActionType,
+  type GamePhase,
+  type GameStateSnapshotPublic,
+  type Role,
+  type RolePresetId,
+  type RoomStateSnapshot,
+  type VampireVotePreview,
+  type VampireVotePreviewVote
+} from "@vampir-koylu/shared";
 import { logGameEvent, logPersonalEvent } from "../logging/game-logger";
 import { useGameStore } from "../store/game-store";
+import { showToast } from "../ui/toast-store";
 
 type Winner = "Vampires" | "Villagers";
 
@@ -118,7 +130,7 @@ class TestSimulator {
       isPaused: false,
       tieCountInRound: 0
     });
-    store.setPrivateResultText(`Test modu aktif. ${botCount} dummy oyuncu eklendi.`);
+    showToast(`Test modu aktif. ${botCount} dummy oyuncu eklendi.`, "gold", 2400);
     store.setLastDayVoteSummary(null);
     store.setGameWinner(null);
     store.setPrivateRole(null);
@@ -140,6 +152,46 @@ class TestSimulator {
     this.loverLinks = {};
     useGameStore.getState().setTestMode(false);
     logGameEvent("test.simulation.leave");
+  }
+
+  /** GameOver → Lobby (parallels server `room:reset-to-lobby`). */
+  resetToLobbyAfterGameOver(): void {
+    if (!this.isEnabled()) return;
+    this.clearTimers();
+    this.currentPhase = "Lobby";
+    this.round = 0;
+    this.tieCount = 0;
+    this.actions = { vampireTargets: {}, dayVotes: {} };
+    this.lastNightEliminated = null;
+    this.doctorLastSelfProtect = false;
+    this.mayorPlayerId = null;
+    this.loverLinks = {};
+    this.pausedRemainingMs = null;
+    this.players = this.players.map((p) => ({
+      ...p,
+      isAlive: true,
+      isReady: p.isBot,
+      role: "Villager" as Role
+    }));
+    const store = useGameStore.getState();
+    store.setGameWinner(null);
+    store.setPrivateRole(null);
+    store.setLoverPartnerPlayerId(null);
+    store.setPrivateResultText(null);
+    store.setVampireVotePreview(null);
+    store.setLastDayVoteSummary(null);
+    store.setErrorCode(null);
+    store.clearBotSpeech();
+    store.clearBotSpeechHistory();
+    store.setRoomState(this.toRoomSnapshot("Lobby"));
+    store.setGameState({
+      phase: "Lobby",
+      round: 0,
+      phaseEndsAt: null,
+      isPaused: false,
+      tieCountInRound: 0
+    });
+    logGameEvent("test.room.reset_to_lobby", { roomCode: this.roomCode });
   }
 
   startGame(): void {
@@ -217,50 +269,48 @@ class TestSimulator {
     if (actionType === "vampire-target" && me.role === "Vampire" && this.currentPhase === "VampireVote") {
       if (target.role === "Vampire") return;
       this.actions.vampireTargets[me.playerId] = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Hedef seçildi.");
-      useGameStore.getState().setVampireVotePreview(
-        Object.entries(this.actions.vampireTargets).map(([vampirePlayerId, targetPlayerId]) => ({ vampirePlayerId, targetPlayerId }))
-      );
+      showToast("Hedef seçildi.", "gold", 1400);
+      useGameStore.getState().setVampireVotePreview(this.buildTestVampireVotePreview());
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       logPersonalEvent("personal.vampire.target_selected", { targetPlayerId, round: this.round });
       return;
     }
     if (actionType === "detective-inspect" && me.role === "Detective" && this.currentPhase === "DetectiveInspect") {
       this.actions.detectiveTarget = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Sorgu hedefi seçildi.");
+      showToast("Sorgu hedefi seçildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       return;
     }
     if (actionType === "doctor-protect" && me.role === "Doctor" && this.currentPhase === "DoctorProtect") {
       this.actions.doctorTarget = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Koruma hedefi seçildi.");
+      showToast("Koruma hedefi seçildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       logPersonalEvent("personal.doctor.protect_selected", { targetPlayerId, round: this.round });
       return;
     }
     if (actionType === "day-vote" && this.currentPhase === "DayVote") {
       this.actions.dayVotes[me.playerId] = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Oyun kaydedildi.");
+      showToast("Oyun kaydedildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       return;
     }
     if (actionType === "mayor-vote" && this.currentPhase === "MayorElection") {
       this.actions.dayVotes[me.playerId] = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Başkan tercihin kaydedildi.");
+      showToast("Başkan tercihin kaydedildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       return;
     }
     if (actionType === "guard-protect" && me.role === "Guard" && this.currentPhase === "GuardProtect") {
       if (targetPlayerId === me.playerId) return;
       this.actions.guardTarget = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Koruma hedefi kaydedildi.");
+      showToast("Koruma hedefi kaydedildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
       return;
     }
     if (actionType === "hunter-shot" && me.role === "Hunter" && this.currentPhase === "HunterLastBreath") {
       if (targetPlayerId === me.playerId) return;
       this.actions.hunterTarget = targetPlayerId;
-      useGameStore.getState().setPrivateResultText("Son nefes hedefi kaydedildi.");
+      showToast("Son nefes hedefi kaydedildi.", "gold", 1400);
       logGameEvent("test.action.player", { actionType, actor: me.nickname, targetPlayerId });
     }
   }
@@ -326,7 +376,7 @@ class TestSimulator {
     useGameStore.getState().setLoverPartnerPlayerId(partnerId);
     const partnerName = this.players.find((p) => p.playerId === partnerId)?.nickname ?? partnerId;
     const text = `Aşık bağı: ${partnerName}. Bu oyuncu ölürse sen de ölürsün.`;
-    useGameStore.getState().setPrivateResultText(text);
+    useGameStore.getState().setPrivateResultText(text, "lover");
     logPersonalEvent("game.private_result.lover_link", {
       loverPartnerPlayerId: partnerId,
       text
@@ -394,8 +444,10 @@ class TestSimulator {
     } else if (phase === "DayStart") {
       if (this.lastNightEliminated) {
         const eliminated = this.players.find((p) => p.playerId === this.lastNightEliminated);
-        useGameStore.getState().setPrivateResultText(
-          eliminated ? `Gece sonucu: ${eliminated.nickname} elendi.` : "Gece sonucu açıklandı."
+        showToast(
+          eliminated ? `Gece sonucu: ${eliminated.nickname} elendi.` : "Gece sonucu açıklandı.",
+          "gold",
+          2200
         );
       }
     } else if (phase === "WinCheck") {
@@ -517,12 +569,46 @@ class TestSimulator {
     this.setPhase(step.next, step.seconds);
   }
 
+  /** Test modunda sunucu önizlemesine yakın yapı (yalnızca yerel UI). */
+  private buildTestVampireVotePreview(): VampireVotePreview {
+    const round = this.round;
+    const vampires = this.players.filter((p) => p.isAlive && p.role === "Vampire");
+    const votes = vampires.map((v) => {
+      const tid = this.actions.vampireTargets[v.playerId];
+      const target = tid ? this.players.find((p) => p.playerId === tid) : undefined;
+      const row: VampireVotePreviewVote = {
+        voterPlayerId: v.playerId,
+        voterName: v.nickname
+      };
+      if (tid) {
+        row.targetPlayerId = tid;
+        row.targetName = target?.nickname ?? tid;
+      }
+      if (v.isBot) {
+        row.isBot = true;
+      }
+      return row;
+    });
+    const pendingVoterPlayerIds = vampires.filter((v) => !this.actions.vampireTargets[v.playerId]).map((v) => v.playerId);
+    const countByTarget = new Map<string, number>();
+    for (const tid of Object.values(this.actions.vampireTargets)) {
+      countByTarget.set(tid, (countByTarget.get(tid) ?? 0) + 1);
+    }
+    const targetCounts = Array.from(countByTarget.entries())
+      .map(([targetPlayerId, count]) => {
+        const p = this.players.find((pl) => pl.playerId === targetPlayerId);
+        return { targetPlayerId, targetName: p?.nickname ?? targetPlayerId, count };
+      })
+      .sort((a, b) => b.count - a.count || a.targetName.localeCompare(b.targetName));
+    return { round, votes, targetCounts, pendingVoterPlayerIds };
+  }
+
   private scheduleBotBehavior(phase: GamePhase): void {
     const aliveBots = this.players.filter((p) => p.isBot && p.isAlive);
     const randomDelay = () => 1000 + Math.floor(Math.random() * 5000);
 
     if (phase === "VampireVote") {
-      useGameStore.getState().setVampireVotePreview([]);
+      useGameStore.getState().setVampireVotePreview(this.buildTestVampireVotePreview());
       const vampires = aliveBots.filter((p) => p.role === "Vampire");
       for (const vamp of vampires) {
         this.actionTimers.push(
@@ -531,9 +617,7 @@ class TestSimulator {
             const target = candidates[Math.floor(Math.random() * candidates.length)];
             if (target) {
               this.actions.vampireTargets[vamp.playerId] = target.playerId;
-              useGameStore.getState().setVampireVotePreview(
-                Object.entries(this.actions.vampireTargets).map(([vampirePlayerId, targetPlayerId]) => ({ vampirePlayerId, targetPlayerId }))
-              );
+              useGameStore.getState().setVampireVotePreview(this.buildTestVampireVotePreview());
               logGameEvent("test.action.bot", { actionType: "vampire-target", actor: vamp.nickname, target: target.nickname });
             }
           }, randomDelay())
@@ -590,7 +674,7 @@ class TestSimulator {
       for (const bot of aliveBots) {
         this.actionTimers.push(
           setTimeout(() => {
-            const candidates = this.players.filter((p) => p.isAlive);
+            const candidates = this.players.filter((p) => p.isAlive && p.playerId !== bot.playerId);
             const target = candidates[Math.floor(Math.random() * candidates.length)];
             if (target) {
               this.actions.dayVotes[bot.playerId] = target.playerId;
@@ -663,9 +747,7 @@ class TestSimulator {
       const inspected = this.players.find((p) => p.playerId === this.actions.detectiveTarget);
       if (inspected) {
         const text = inspected.role === "Vampire" ? `${inspected.nickname}: Vampir` : `${inspected.nickname}: Vampir değil`;
-        useGameStore.getState().setPrivateResultText(
-          inspected.role === "Vampire" ? "Sorgu Sonucu: Vampir" : "Sorgu Sonucu: Vampir değil"
-        );
+        useGameStore.getState().setPrivateResultText(text, "detective");
         logPersonalEvent("personal.detective.inspect_result", {
           detectiveTargetPlayerId: inspected.playerId,
           detectiveResult: inspected.role === "Vampire" ? "Vampire" : "NotVampire",
@@ -772,7 +854,7 @@ class TestSimulator {
         executedPlayerId: null,
         tiedTopCandidates: ranked.filter(([, votes]) => votes === top[1]).map(([playerId]) => playerId)
       });
-      useGameStore.getState().setPrivateResultText("Beraberlik çıktı. Köy tekrar oylayacak.");
+      showToast("Beraberlik çıktı. Köy tekrar oylayacak.", "gold", 2200);
       this.actions = { vampireTargets: {}, dayVotes: {} };
       logGameEvent("test.dayvote.tie", { tieCount: this.tieCount });
       logGameEvent("vote.tie", {
@@ -803,10 +885,10 @@ class TestSimulator {
             revealedRole: this.revealedRoleFor(eliminated)
           });
           this.logLoverChainElimination(eliminatedIds);
-          useGameStore.getState().setPrivateResultText(`Beraberlik tekrarlandı. Rastgele infaz: ${eliminated.nickname}`);
+          showToast(`Beraberlik tekrarlandı. Rastgele infaz: ${eliminated.nickname}`, "gold", 2400);
         }
       } else {
-        useGameStore.getState().setPrivateResultText("Beraberlik tekrarlandı. Kimse elenmedi.");
+        showToast("Beraberlik tekrarlandı. Kimse elenmedi.", "gold", 2200);
       }
       this.tieCount = 0;
       this.actions = { vampireTargets: {}, dayVotes: {} };
@@ -822,7 +904,7 @@ class TestSimulator {
         executedPlayerId: eliminated.playerId,
         tiedTopCandidates: []
       });
-      useGameStore.getState().setPrivateResultText(`Gündüz sonucu: ${eliminated.nickname} köyden gönderildi.`);
+      showToast(`Gündüz sonucu: ${eliminated.nickname} köyden gönderildi.`, "gold", 2400);
       logGameEvent("test.dayvote.executed", { target: eliminated.nickname, voteCount: top[1] });
       logGameEvent("vote.execution", { round: this.round, executedPlayerId: eliminated.playerId, voteCount: top[1] });
       logGameEvent("summary.elimination", {
@@ -863,8 +945,10 @@ class TestSimulator {
     const selectedMayorId = tiedTopCandidates[Math.floor(Math.random() * tiedTopCandidates.length)] ?? top[0];
     this.mayorPlayerId = selectedMayorId;
     this.actions = { vampireTargets: {}, dayVotes: {} };
-    useGameStore.getState().setPrivateResultText(
-      `Başkan seçildi: ${this.players.find((p) => p.playerId === selectedMayorId)?.nickname ?? "Bilinmiyor"}`
+    showToast(
+      `Başkan seçildi: ${this.players.find((p) => p.playerId === selectedMayorId)?.nickname ?? "Bilinmiyor"}`,
+      "gold",
+      2400
     );
     logGameEvent("role.mayor.selected", { round: this.round, mayorPlayerId: selectedMayorId });
   }

@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseCountdown } from "../components/PhaseCountdown";
 import { RoleRevealCard } from "../components/RoleRevealCard";
@@ -12,6 +13,8 @@ import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RoleReveal">;
 
+const CARD_COLUMN_MAX = 400;
+
 export function RoleRevealScreen(_: Props) {
   const role = useGameStore((s) => s.privateRole);
   const gameState = useGameStore((s) => s.gameState);
@@ -22,18 +25,34 @@ export function RoleRevealScreen(_: Props) {
       ? roomState?.players.find((player) => player.playerId === loverPartnerPlayerId)?.nickname ?? loverPartnerPlayerId
       : null;
 
+  const insets = useSafeAreaInsets();
+  const footerPadBottom = Math.max(insets.bottom, spacing.md) + spacing.sm;
+
   return (
-    <ScreenShell scene="role" headerTitle="">
+    <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="">
       <View style={styles.root}>
-        <View style={styles.privacyPill}>
-          <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
-          <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <View style={styles.column}>
+            <View style={styles.privacyPill}>
+              <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
+              <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
+            </View>
+            <Text style={styles.title}>Rolün</Text>
+            <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
+            <RoleRevealCard role={role} loverPartnerName={loverPartnerName} maxColumnWidth={CARD_COLUMN_MAX} />
+          </View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: footerPadBottom }]}>
+          <View style={styles.footerDivider} />
+          <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} presentation="roleRevealFooter" />
         </View>
-        <Text style={styles.title}>Rolün</Text>
-
-        <RoleRevealCard role={role} loverPartnerName={loverPartnerName} />
-
-        <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} />
       </View>
     </ScreenShell>
   );
@@ -41,12 +60,42 @@ export function RoleRevealScreen(_: Props) {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1
+  },
+  scroll: {
     flex: 1,
-    justifyContent: "center",
-    gap: spacing.md
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md
+  },
+  column: {
+    width: "100%",
+    maxWidth: CARD_COLUMN_MAX,
+    alignSelf: "center",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  footer: {
+    width: "100%",
+    maxWidth: CARD_COLUMN_MAX,
+    alignSelf: "center",
+    paddingTop: spacing.md,
+    paddingHorizontal: 2
+  },
+  footerDivider: {
+    height: 1,
+    width: "100%",
+    marginBottom: spacing.md,
+    backgroundColor: "rgba(233,195,73,0.14)"
   },
   privacyPill: {
-    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
@@ -65,10 +114,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase"
   },
   title: {
+    marginTop: spacing.xs,
     color: colors.text,
     fontFamily: typography.serif,
-    fontSize: 54 / 1.5,
-    textAlign: "center"
+    fontSize: 34,
+    lineHeight: 40,
+    textAlign: "center",
+    letterSpacing: 0.5
   },
-  
+  subtitle: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm
+  }
 });

@@ -7,12 +7,12 @@ import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { emitJoinRoom } from "../socket/runtime";
-import { loadLastRoomCode, loadNickname, saveLastRoomCode, saveNickname } from "../storage/session-storage";
+import { loadLastRoomCode, loadNickname, saveNickname } from "../storage/session-storage";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toFriendlyErrorText } from "../ui/error-text";
+import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JoinRoom">;
@@ -23,7 +23,7 @@ export function JoinRoomScreen({ navigation, route }: Props) {
   const [nickname, setNickname] = useState("");
   const [lastRoomCode, setLastRoomCode] = useState<string | null>(null);
   const errorCode = useGameStore((s) => s.errorCode);
-  const errorText = toFriendlyErrorText(errorCode);
+  const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "JoinRoom"));
   const safeRoomCode = roomCode.trim().toUpperCase();
   const safeNickname = nickname.trim();
   const joinDisabledReason = safeRoomCode.length < 6 ? "6 haneli oda kodu gir" : safeNickname.length < 2 ? "Oyuncu adını gir" : null;
@@ -69,11 +69,11 @@ export function JoinRoomScreen({ navigation, route }: Props) {
     }
     useGameStore.getState().setErrorCode(null);
     void saveNickname(safeNickname);
-    void saveLastRoomCode(safeRoomCode);
     emitJoinRoom(safeRoomCode, safeNickname);
   };
 
   const goBackToMenu = () => {
+    useGameStore.getState().setErrorCode(null);
     navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
   };
 

@@ -40,7 +40,6 @@ export interface RuleSettings {
   revealEliminatedRole: boolean;
   allowDoctorSelfProtect: boolean;
   allowDoctorConsecutiveProtectSameTarget: boolean;
-  allowDetectiveRepeatInspectSameTarget: boolean;
   tiePolicy: TiePolicy;
   noLynchEnabled: boolean;
   mayorEnabled?: boolean;
@@ -53,7 +52,6 @@ export function resolveRuleSettings(gameMode: GameMode, rules?: Partial<RuleSett
     revealEliminatedRole: rules?.revealEliminatedRole ?? false,
     allowDoctorSelfProtect: rules?.allowDoctorSelfProtect ?? true,
     allowDoctorConsecutiveProtectSameTarget: rules?.allowDoctorConsecutiveProtectSameTarget ?? false,
-    allowDetectiveRepeatInspectSameTarget: rules?.allowDetectiveRepeatInspectSameTarget ?? false,
     tiePolicy: rules?.tiePolicy ?? "RevoteThenNoExecution",
     noLynchEnabled: rules?.noLynchEnabled ?? false,
     mayorEnabled: rules?.mayorEnabled ?? false,
@@ -66,6 +64,16 @@ export interface ClientIdentity {
   playerSessionToken?: string;
 }
 
+export type BotIntelligence = "random" | "balanced" | "deceptive";
+
+export type BotPersonality =
+  | "quiet"
+  | "defensive"
+  | "accuser"
+  | "analyst"
+  | "chaotic"
+  | "leader";
+
 export interface RoomPlayerView {
   playerId: string;
   nickname: string;
@@ -73,6 +81,9 @@ export interface RoomPlayerView {
   isConnected: boolean;
   isReady?: boolean;
   role?: Role | null;
+  isBot?: boolean;
+  botIntelligence?: BotIntelligence;
+  botPersonality?: BotPersonality;
 }
 
 export interface RoomStateSnapshot {
@@ -103,13 +114,32 @@ export interface GameStatePrivateDelta {
   role?: Role;
   loverPartnerPlayerId?: string;
   detectiveResult?: "Vampire" | "NotVampire";
+  /** Dedektifin bu oyunda daha önce sorguladığı oyuncu kimlikleri (yeniden sorgu yok). */
+  detectiveInspectedPlayerIds?: string[];
   isActionAllowed?: boolean;
   reason?: string;
 }
 
-export interface VampireVotePreviewEntry {
-  vampirePlayerId: string;
+/** Vampir oyunculara özel; VampireVote fazında koordinasyon için (sunucu üretir). */
+export interface VampireVotePreviewVote {
+  voterPlayerId: string;
+  voterName: string;
+  targetPlayerId?: string;
+  targetName?: string;
+  isBot?: boolean;
+}
+
+export interface VampireVotePreviewTargetCount {
   targetPlayerId: string;
+  targetName: string;
+  count: number;
+}
+
+export interface VampireVotePreview {
+  round: number;
+  votes: VampireVotePreviewVote[];
+  targetCounts: VampireVotePreviewTargetCount[];
+  pendingVoterPlayerIds: string[];
 }
 
 export interface DayVoteSummaryEntry {
@@ -134,7 +164,7 @@ export interface GamePrivateResultPayload {
   accepted?: boolean;
   detectiveResult?: "Vampire" | "NotVampire";
   detectiveTargetPlayerId?: string;
-  vampireVotePreview?: VampireVotePreviewEntry[];
+  vampireVotePreview?: VampireVotePreview;
 }
 
 export interface ActionSubmission {
@@ -143,4 +173,28 @@ export interface ActionSubmission {
   targetPlayerId?: string;
   phase: GamePhase;
   round: number;
+}
+
+export type BotSpeechTone = "calm" | "sharp" | "neutral" | "playful";
+
+export type BotSpeechIntent =
+  | "self_defense"
+  | "accuse_soft"
+  | "support_soft"
+  | "vote_hint"
+  | "generic_observation";
+
+/** Server → all clients in room. Template-only; no LLM. */
+export interface BotSpeechEvent {
+  roomCode: string;
+  /** Stable tag for this phase instance, e.g. `DayDiscussion:2`. */
+  phaseId: string;
+  speakerPlayerId: string;
+  speakerName: string;
+  message: string;
+  tone: BotSpeechTone;
+  intent: BotSpeechIntent;
+  targetPlayerId?: string;
+  durationMs: number;
+  createdAt: number;
 }

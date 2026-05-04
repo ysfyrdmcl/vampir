@@ -13,13 +13,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
+import { BotSpeechOverlay } from "../components/BotSpeechOverlay";
 import { GameToast } from "../components/GameToast";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toFriendlyToastText } from "../ui/error-text";
+import { socketErrorAllowedForRoute, toFriendlyToastText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
 
@@ -27,6 +28,8 @@ type SceneType = GameBackgroundVariant;
 
 interface ScreenShellProps extends PropsWithChildren {
   scene?: SceneType;
+  /** Alt menüde hangi sekmenin vurgulanacağı (görsel `scene` ile karışmasın — örn. gündüz atmosferi + Durum sekmesi). */
+  bottomNavActiveIndex?: 0 | 1 | 2;
   headerTitle?: string;
   showTopBar?: boolean;
   showBottomNav?: boolean;
@@ -50,12 +53,21 @@ function activeNavIndex(scene: SceneType): number {
   return 0;
 }
 
-export function ScreenShell({ children, scene = "night", headerTitle, showTopBar = true, showBottomNav = true, showPauseOverlay = true }: ScreenShellProps) {
+export function ScreenShell({
+  children,
+  scene = "night",
+  bottomNavActiveIndex,
+  headerTitle,
+  showTopBar = true,
+  showBottomNav = true,
+  showPauseOverlay = true
+}: ScreenShellProps) {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const phase = gameState?.phase ?? null;
   const privateRole = useGameStore((s) => s.privateRole);
   const errorCode = useGameStore((s) => s.errorCode);
+  const connectionStatus = useGameStore((s) => s.connectionStatus);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
   const insets = useSafeAreaInsets();
@@ -76,9 +88,28 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   );
   const hasLogAttention = unreadLogCount > 0;
 
+  const lastErrorToastRef = useRef<{ code: string | null; at: number }>({ code: null, at: 0 });
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentY = useRef(new Animated.Value(uiStandard.motion.contentRiseDistance)).current;
   const backdropScale = useRef(new Animated.Value(1)).current;
+  const connectionPulse = useRef(new Animated.Value(0)).current;
+  const showConnectionBanner = Boolean(roomState) && connectionStatus !== "connected" && connectionStatus !== "idle";
+
+  useEffect(() => {
+    if (!showConnectionBanner) {
+      connectionPulse.stopAnimation();
+      connectionPulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(connectionPulse, { toValue: 1, duration: 720, useNativeDriver: true }),
+        Animated.timing(connectionPulse, { toValue: 0, duration: 720, useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [connectionPulse, showConnectionBanner]);
 
   useEffect(() => {
     Animated.parallel([
@@ -117,11 +148,25 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   }, [backdropScale]);
 
   useEffect(() => {
+    if (!errorCode) return;
+    const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
+    if (!socketErrorAllowedForRoute(errorCode, route)) return;
     const toastText = toFriendlyToastText(errorCode);
-    if (toastText) showToast(toastText, "danger", 1800);
+    if (!toastText) return;
+    const now = Date.now();
+    if (
+      errorCode &&
+      errorCode === lastErrorToastRef.current.code &&
+      now - lastErrorToastRef.current.at < 2800
+    ) {
+      return;
+    }
+    lastErrorToastRef.current = { code: errorCode, at: now };
+    showToast(toastText, "danger", 2200);
   }, [errorCode]);
 
-  const navActive = useMemo(() => activeNavIndex(scene), [scene]);
+  const navFromScene = useMemo(() => activeNavIndex(scene), [scene]);
+  const navActive = bottomNavActiveIndex ?? navFromScene;
   const shouldShowTopBar = showTopBar && scene !== "home";
   const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
   const horizontalPadding = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
@@ -148,7 +193,16 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
 
         {shouldShowTopBar ? (
           <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
-            <View style={[styles.topBarInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
+            <View
+              style={[
+                styles.topBarInner,
+                {
+                  maxWidth: contentMaxWidth,
+                  paddingLeft: horizontalPadding,
+                  paddingRight: Math.max(horizontalPadding, insets.right) + 108
+                }
+              ]}
+            >
               <View style={styles.topLeft}>
                 <Ionicons name="shield-outline" size={20} color={colors.primaryBright} />
                 <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
@@ -171,6 +225,29 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
         >
           {children}
         </Animated.View>
+        <BotSpeechOverlay layoutTopOffset={shouldShowTopBar ? topBarHeight : insets.top + spacing.sm} />
+        {showConnectionBanner ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.connectionBanner,
+              {
+                top: shouldShowTopBar ? topBarHeight : insets.top,
+                opacity: connectionPulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] })
+              }
+            ]}
+          >
+            <View
+              style={[
+                styles.connectionDot,
+                connectionStatus === "error" ? styles.connectionDotError : styles.connectionDotPending
+              ]}
+            />
+            <Text style={styles.connectionText} numberOfLines={1}>
+              {connectionStatus === "error" ? "Bağlantı hatası — tekrar deneniyor" : "Bağlantı yeniden kuruluyor"}
+            </Text>
+          </Animated.View>
+        ) : null}
         <GameToast />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? 74 + insets.bottom : 0 }]}>
@@ -380,5 +457,36 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 13,
     textAlign: "center"
+  },
+  connectionBanner: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    backgroundColor: "rgba(20,12,12,0.92)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(229,57,53,0.32)"
+  },
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4
+  },
+  connectionDotPending: {
+    backgroundColor: colors.secondary
+  },
+  connectionDotError: {
+    backgroundColor: colors.danger
+  },
+  connectionText: {
+    color: colors.text,
+    fontFamily: typography.sansBold,
+    fontSize: 11,
+    letterSpacing: 0.6
   }
 });

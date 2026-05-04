@@ -4,7 +4,9 @@ import { ROLE_DEFINITIONS, ROLE_PRESETS, buildRoleDeck, type GameMode, type Role
 import { useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../app/navigation/routes";
+import { BotControlCard } from "../components/BotControlCard";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PlayerRosterCard } from "../components/PlayerRosterCard";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -12,13 +14,23 @@ import { RoomCodeCard } from "../components/RoomCodeCard";
 import { ScreenShell } from "../components/ScreenShell";
 import { SimpleQrCode } from "../components/SimpleQrCode";
 import { StatusBadge } from "../components/StatusBadge";
-import { emitLeaveRoom, emitReadyToggle, emitRoomConfigUpdate, emitStartRoom } from "../socket/runtime";
+import {
+  emitAddBot,
+  emitFillBotsToMinimum,
+  emitLeaveRoom,
+  emitReadyToggle,
+  emitRemoveBot,
+  emitRoomConfigUpdate,
+  emitStartRoom
+} from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toFriendlyErrorText } from "../ui/error-text";
+import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
+
+const LOBBY_STICKY_ACTION_RESERVE = 172;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lobby">;
 
@@ -92,9 +104,10 @@ function rolePreview(preset: RolePresetId, playerCount: number, rules: RuleSetti
 }
 
 export function LobbyScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const roomState = useGameStore((s) => s.roomState);
   const errorCode = useGameStore((s) => s.errorCode);
-  const errorText = toFriendlyErrorText(errorCode);
+  const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Lobby"));
   const me = useGameStore((s) => s.playerId);
   const phaseDurations = useGameStore((s) => s.phaseDurations);
   const setPhaseDurations = useGameStore((s) => s.setPhaseDurations);
@@ -105,6 +118,8 @@ export function LobbyScreen({ navigation }: Props) {
   const roomRules = useGameStore((s) => s.roomRules);
   const setRoomRules = useGameStore((s) => s.setRoomRules);
   const setRoomState = useGameStore((s) => s.setRoomState);
+  const botIntelligence = useGameStore((s) => s.botIntelligence);
+  const setBotIntelligence = useGameStore((s) => s.setBotIntelligence);
   const [advancedRulesOpen, setAdvancedRulesOpen] = useState(false);
   const [roomSettingsOpen, setRoomSettingsOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
@@ -224,17 +239,18 @@ export function LobbyScreen({ navigation }: Props) {
           ? null
           : "Tüm oyuncular onay vermeli";
   const canStartRoom = !startDisabledReason;
-  const hostStartTitle = canStartRoom
-    ? "Oyun başlatılabilir"
-    : playersNeeded > 0
-      ? "Minimum oyuncu bekleniyor"
-      : !roleDistributionValid
-        ? "Rol dağılımı uygun değil"
-        : "Hazır onayları bekleniyor";
 
   return (
     <ScreenShell scene="lobby" headerTitle="LOBİ">
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.lobbyRoot}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: spacing.xl + LOBBY_STICKY_ACTION_RESERVE + Math.max(insets.bottom, 8) }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <RoomCodeCard roomCode={roomCode} onCopy={copyRoomCode} onShare={shareRoomCode} onShowQr={() => setRoomQrOpen(true)} />
 
         <View style={styles.lobbyHeader}>
@@ -253,27 +269,31 @@ export function LobbyScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <View style={styles.readyPanel}>
-          <View style={styles.readyCopy}>
-            <Text style={styles.readyTitle}>{meReady ? "Onayın verildi" : "Oyuna hazır mısın?"}</Text>
-            <Text style={styles.readyHint}>Başlamak için minimum {minPlayers} oyuncu ve herkesin onayı gerekir.</Text>
-          </View>
-          <Pressable
-            style={[styles.readyToggle, meReady ? styles.readyToggleActive : null]}
-            onPress={toggleReady}
-          >
-            <Ionicons
-              name={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
-              size={18}
-              color={meReady ? colors.parchmentText : colors.secondary}
-            />
-            <Text style={[styles.readyToggleText, meReady ? styles.readyToggleTextActive : null]}>
-              {meReady ? "Onayı Geri Al" : "Onay Ver"}
-            </Text>
-          </Pressable>
-        </View>
-
         <PlayerRosterCard players={players} mePlayerId={me} hostPlayerId={roomState?.hostPlayerId ?? players[0]?.playerId ?? null} compact />
+
+        {isHost ? (
+          <BotControlCard
+            bots={players.filter((p) => p.isBot)}
+            intelligence={botIntelligence}
+            onSelectIntelligence={(value) => {
+              setBotIntelligence(value);
+              showToast("Bot zekâsı güncellendi", "gold", 1500);
+            }}
+            onAddBot={() => {
+              emitAddBot(botIntelligence, 1);
+              showToast("Bot eklendi", "gold", 1500);
+            }}
+            onFillMinimum={() => {
+              emitFillBotsToMinimum(botIntelligence);
+              showToast("Eksik oyuncular botlarla tamamlandı", "gold", 1500);
+            }}
+            onRemoveBot={(botPlayerId) => {
+              emitRemoveBot(botPlayerId);
+              showToast("Bot çıkarıldı", "gold", 1500);
+            }}
+            playersNeeded={playersNeeded}
+          />
+        ) : null}
 
         <View style={styles.infoBox}>
           <Ionicons name="list-outline" size={22} color={colors.textMuted} />
@@ -312,40 +332,6 @@ export function LobbyScreen({ navigation }: Props) {
           <Ionicons name="book-outline" size={16} color={colors.secondary} />
           <Text style={styles.roleGuideText}>Bu oyundaki roller</Text>
         </Pressable>
-
-        {isHost ? (
-          <View style={styles.hostDashboard}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.hostKicker}>Host Kontrol Paneli</Text>
-                <Text style={styles.hostTitle}>{hostStartTitle}</Text>
-              </View>
-            </View>
-            <View style={styles.hostSummaryGrid}>
-              <View style={styles.hostSummaryItem}>
-                <Text style={styles.hostSummaryLabel}>Rol Paketi</Text>
-                <Text style={styles.hostSummaryValue}>{toRolePresetLabel(rolePreset)}</Text>
-              </View>
-              <View style={styles.hostSummaryItem}>
-                <Text style={styles.hostSummaryLabel}>Mod</Text>
-                <Text style={styles.hostSummaryValue}>{toGameModeLabel(gameMode)}</Text>
-              </View>
-            </View>
-            <PrimaryButton
-              label="Oyunu Başlat"
-              iconName="checkmark-circle-outline"
-              onPress={emitStartRoom}
-              disabled={!canStartRoom}
-              variant="blood"
-            />
-            {startDisabledReason ? (
-              <View style={styles.startReasonBox}>
-                <Ionicons name="alert-circle-outline" size={15} color={colors.secondary} />
-                <Text style={styles.startHint}>{startDisabledReason}</Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
 
         {isHost ? (
         <View style={styles.timingBox}>
@@ -497,19 +483,6 @@ export function LobbyScreen({ navigation }: Props) {
                   </Pressable>
                 </>
               ) : null}
-              {hasDetective ? (
-                <Pressable
-                  style={styles.ruleRow}
-                  onPress={() =>
-                    updateRules({
-                      allowDetectiveRepeatInspectSameTarget: !roomRules.allowDetectiveRepeatInspectSameTarget
-                    })
-                  }
-                >
-                  <Text style={styles.ruleLabel}>Dedektif aynı kişiyi tekrar sorgulayabilir</Text>
-                  <Text style={styles.ruleValue}>{roomRules.allowDetectiveRepeatInspectSameTarget ? "Açık" : "Kapalı"}</Text>
-                </Pressable>
-              ) : null}
               <Pressable
                 style={styles.ruleRow}
                 onPress={() =>
@@ -551,6 +524,71 @@ export function LobbyScreen({ navigation }: Props) {
      
         <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger-outline" compact onPress={() => setLeaveConfirmOpen(true)} />
       </ScrollView>
+
+      <View
+        style={[
+          styles.lobbyStickyBar,
+          {
+            paddingBottom: Math.max(insets.bottom, 10)
+          }
+        ]}
+      >
+        <Text style={styles.stickyReadySummary}>
+          {readyCount} kişi hazır · {Math.max(0, connectedPlayers.length - readyCount)} kişi bekleniyor
+        </Text>
+        {isHost ? (
+          <View style={styles.stickyCol}>
+            {!meReady ? (
+              <Pressable style={styles.stickyHostReadyPill} onPress={toggleReady}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={colors.secondary} />
+                <Text style={styles.stickyHostReadyText} numberOfLines={2}>
+                  Onay Ver — oyunu başlatmak için sen de hazır olmalısın
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.stickyHostReadyDone}>Hazırsın</Text>
+            )}
+            <PrimaryButton
+              label="Oyunu Başlat"
+              iconName="checkmark-circle-outline"
+              onPress={emitStartRoom}
+              disabled={!canStartRoom}
+              variant="blood"
+              compact
+            />
+            {startDisabledReason ? (
+              <View style={styles.stickyStartReason}>
+                <Ionicons name="alert-circle-outline" size={14} color={colors.secondary} />
+                <Text style={styles.stickyStartReasonText} numberOfLines={3}>
+                  {startDisabledReason}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.stickyCol}>
+            <Pressable
+              style={[styles.stickyGuestToggle, meReady ? styles.stickyGuestToggleOn : null]}
+              onPress={toggleReady}
+            >
+              <Ionicons
+                name={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
+                size={18}
+                color={meReady ? colors.parchmentText : colors.secondary}
+              />
+              <Text style={[styles.stickyGuestToggleText, meReady ? styles.stickyGuestToggleTextOn : null]}>
+                {meReady ? "Onayı Geri Al" : "Onay Ver"}
+              </Text>
+            </Pressable>
+            {meReady ? (
+              <Text style={styles.stickyGuestDone}>Hazırsın — host oyunu başlatınca masaya geçilir.</Text>
+            ) : (
+              <Text style={styles.stickyGuestHint}>Başlamak için en az {minPlayers} oyuncu ve herkesin onayı gerekir.</Text>
+            )}
+          </View>
+        )}
+      </View>
+      </View>
       <ConfirmActionSheet
         visible={leaveConfirmOpen}
         title="Lobiden ayrıl?"
@@ -648,12 +686,121 @@ export function LobbyScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  lobbyRoot: {
+    flex: 1
+  },
   scroll: {
     flex: 1
   },
   content: {
     paddingBottom: spacing.xl,
     gap: 12
+  },
+  lobbyStickyBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(233,195,73,0.26)",
+    backgroundColor: "rgba(10,10,12,0.97)",
+    paddingTop: 10,
+    paddingHorizontal: 2,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -6 },
+    elevation: 18
+  },
+  stickyReadySummary: {
+    textAlign: "center",
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 16
+  },
+  stickyCol: {
+    gap: 8
+  },
+  stickyHostReadyPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.35)",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: "rgba(24,23,20,0.75)"
+  },
+  stickyHostReadyText: {
+    flex: 1,
+    color: colors.secondary,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 16
+  },
+  stickyHostReadyDone: {
+    color: colors.success,
+    fontFamily: typography.sansBold,
+    fontSize: 12,
+    letterSpacing: 0.4
+  },
+  stickyStartReason: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    backgroundColor: "rgba(33,29,16,0.45)"
+  },
+  stickyStartReasonText: {
+    flex: 1,
+    color: colors.secondary,
+    fontFamily: typography.sansMedium,
+    fontSize: 11,
+    lineHeight: 15
+  },
+  stickyGuestToggle: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.32)",
+    borderRadius: 12,
+    backgroundColor: "rgba(18,18,20,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 12
+  },
+  stickyGuestToggleOn: {
+    borderColor: colors.secondary,
+    backgroundColor: "rgba(213,169,50,0.92)"
+  },
+  stickyGuestToggleText: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 13
+  },
+  stickyGuestToggleTextOn: {
+    color: colors.parchmentText
+  },
+  stickyGuestDone: {
+    textAlign: "center",
+    color: colors.success,
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  stickyGuestHint: {
+    textAlign: "center",
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11,
+    lineHeight: 15
   },
   lobbyHeader: {
     borderWidth: 1,
@@ -698,102 +845,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 12,
     lineHeight: 16
-  },
-  readyPanel: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
-    borderRadius: 12,
-    padding: 10,
-    backgroundColor: "rgba(18,17,15,0.86)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8
-  },
-  hostDashboard: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.28)",
-    borderRadius: 16,
-    padding: 12,
-    backgroundColor: "rgba(29,24,17,0.88)",
-    gap: 10
-  },
-  hostKicker: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: "uppercase"
-  },
-  hostTitle: {
-    color: colors.text,
-    fontFamily: typography.serifSemi,
-    fontSize: 19
-  },
-  hostSummaryGrid: {
-    flexDirection: "row",
-    gap: 8
-  },
-  hostSummaryItem: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.16)",
-    borderRadius: 12,
-    backgroundColor: "rgba(12,12,14,0.44)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 2
-  },
-  hostSummaryLabel: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    letterSpacing: 0.8
-  },
-  hostSummaryValue: {
-    color: colors.secondary,
-    fontFamily: typography.sansMedium,
-    fontSize: 13
-  },
-  readyCopy: {
-    flex: 1,
-    gap: 2
-  },
-  readyTitle: {
-    color: colors.text,
-    fontFamily: typography.serifSemi,
-    fontSize: 16
-  },
-  readyHint: {
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 11,
-    lineHeight: 15
-  },
-  readyToggle: {
-    minWidth: 128,
-    minHeight: 38,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.3)",
-    borderRadius: 10,
-    backgroundColor: "rgba(18,18,20,0.9)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: 9
-  },
-  readyToggleActive: {
-    borderColor: colors.secondary,
-    backgroundColor: "rgba(213,169,50,0.9)"
-  },
-  readyToggleText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 11
-  },
-  readyToggleTextActive: {
-    color: colors.parchmentText
   },
   infoBox: {
     marginTop: 4,
@@ -1159,24 +1210,6 @@ const styles = StyleSheet.create({
   error: {
     color: colors.danger,
     fontFamily: typography.sansMedium
-  },
-  startHint: {
-    flex: 1,
-    color: colors.secondary,
-    fontFamily: typography.sansMedium,
-    fontSize: 12,
-    lineHeight: 16
-  },
-  startReasonBox: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
-    borderRadius: 10,
-    backgroundColor: "rgba(33,29,16,0.5)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7
   },
   modalBackdrop: {
     flex: 1,

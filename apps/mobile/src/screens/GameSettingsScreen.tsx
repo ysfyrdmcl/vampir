@@ -23,7 +23,7 @@ export function GameSettingsScreen({ navigation }: Props) {
   const canPauseControl = isHost && roomState?.status === "InGame" && gameState?.phase !== "GameOver";
   const isPaused = Boolean(gameState?.isPaused);
   return (
-    <ScreenShell scene="result" headerTitle="AYARLAR" showPauseOverlay={false}>
+    <ScreenShell scene="result" bottomNavActiveIndex={2} headerTitle="AYARLAR" showPauseOverlay={false}>
       <View style={styles.root}>
         <Text style={styles.title}>Oyun Ayarları</Text>
         <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda yalnızca güvenli çıkış kullanılabilir."}</Text>

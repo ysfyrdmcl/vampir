@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -11,7 +12,7 @@ import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toFriendlyErrorText } from "../ui/error-text";
+import { socketErrorAllowedForRoute, socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CreateRoom">;
@@ -20,9 +21,18 @@ export function CreateRoomScreen({ navigation }: Props) {
   const [nickname, setNickname] = useState("");
   const [isInputFocused, setInputFocused] = useState(false);
   const errorCode = useGameStore((s) => s.errorCode);
-  const errorText = toFriendlyErrorText(errorCode);
+  const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "CreateRoom"));
   const roomCode = useGameStore((s) => s.roomState?.roomCode ?? s.roomCode);
   const createDisabledReason = nickname.trim().length < 2 ? "Oyuncu adını gir" : null;
+
+  useFocusEffect(
+    useCallback(() => {
+      const code = useGameStore.getState().errorCode;
+      if (code && !socketErrorAllowedForRoute(code, "CreateRoom")) {
+        useGameStore.getState().setErrorCode(null);
+      }
+    }, [])
+  );
 
   const createRoom = () => {
     const value = nickname.trim();
@@ -36,6 +46,7 @@ export function CreateRoomScreen({ navigation }: Props) {
   };
 
   const goBackToMenu = () => {
+    useGameStore.getState().setErrorCode(null);
     navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
   };
 

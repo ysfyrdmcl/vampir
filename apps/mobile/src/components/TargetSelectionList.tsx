@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
@@ -38,34 +38,7 @@ export function TargetSelectionList({ items, onSelect, disabledSummary }: Target
       ) : null}
       <View style={styles.grid}>
         {aliveItems.map((item) => (
-        <Pressable
-          key={item.id}
-          style={[
-            styles.card,
-            item.isSelectable ? styles.cardSelectable : styles.cardDisabled,
-            item.isSelected ? styles.cardSelected : null
-          ]}
-          disabled={!item.isSelectable}
-          onPress={() => onSelect(item.id)}
-        >
-          <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
-            <Text style={styles.avatarText}>{item.initials}</Text>
-          </View>
-          <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]}>{item.label}</Text>
-          {item.badgeText ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.badgeText}</Text>
-            </View>
-          ) : null}
-          <View style={styles.selectRow}>
-            {item.isSelectable ? (
-              <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
-            ) : (
-              <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
-            )}
-            <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}</Text>
-          </View>
-        </Pressable>
+          <TargetCard key={item.id} item={item} onSelect={onSelect} />
         ))}
       </View>
       {deadItems.length ? (
@@ -87,6 +60,73 @@ export function TargetSelectionList({ items, onSelect, disabledSummary }: Target
         </View>
       ) : null}
     </View>
+  );
+}
+
+interface TargetCardProps {
+  item: TargetSelectionItem;
+  onSelect: (id: string) => void;
+}
+
+function TargetCard({ item, onSelect }: TargetCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const wasSelected = useRef(item.isSelected);
+
+  useEffect(() => {
+    if (item.isSelected && !wasSelected.current) {
+      Animated.sequence([
+        Animated.spring(scale, { toValue: 1.06, speed: 30, bounciness: 12, useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, speed: 18, bounciness: 8, useNativeDriver: true })
+      ]).start();
+    }
+    wasSelected.current = item.isSelected;
+  }, [item.isSelected, scale]);
+
+  const onPressIn = () => {
+    if (!item.isSelectable) return;
+    Animated.spring(scale, { toValue: 0.96, speed: 40, bounciness: 4, useNativeDriver: true }).start();
+  };
+
+  const onPressOut = () => {
+    if (!item.isSelectable) return;
+    Animated.spring(scale, { toValue: 1, speed: 22, bounciness: 8, useNativeDriver: true }).start();
+  };
+
+  return (
+    <Pressable
+      disabled={!item.isSelectable}
+      onPress={() => onSelect(item.id)}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={styles.cardWrap}
+    >
+      <Animated.View
+        style={[
+          styles.card,
+          item.isSelectable ? styles.cardSelectable : styles.cardDisabled,
+          item.isSelected ? styles.cardSelected : null,
+          { transform: [{ scale }] }
+        ]}
+      >
+        <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
+          <Text style={styles.avatarText}>{item.initials}</Text>
+        </View>
+        <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]}>{item.label}</Text>
+        {item.badgeText ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{item.badgeText}</Text>
+          </View>
+        ) : null}
+        <View style={styles.selectRow}>
+          {item.isSelectable ? (
+            <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
+          ) : (
+            <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
+          )}
+          <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}</Text>
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -118,8 +158,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     rowGap: 10
   },
+  cardWrap: {
+    width: "48.4%"
+  },
   card: {
-    width: "48.4%",
+    width: "100%",
     minHeight: 148,
     borderRadius: 14,
     borderWidth: 1,

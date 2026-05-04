@@ -15,7 +15,6 @@ const ruleSettingsSchema = z.object({
   revealEliminatedRole: z.boolean().optional(),
   allowDoctorSelfProtect: z.boolean().optional(),
   allowDoctorConsecutiveProtectSameTarget: z.boolean().optional(),
-  allowDetectiveRepeatInspectSameTarget: z.boolean().optional(),
   tiePolicy: z.enum(["RevoteThenNoExecution", "RevoteThenRandomExecution"]).optional(),
   noLynchEnabled: z.boolean().optional(),
   mayorEnabled: z.boolean().optional(),
@@ -63,6 +62,39 @@ export const roomConfigSchema = z.object({
 });
 
 export const startRoomSchema = roomConfigSchema;
+
+export const roomResetToLobbySchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8)
+});
+
+const botIntelligenceSchema = z.enum(["random", "balanced", "deceptive"]);
+
+export const roomBotAddSchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8),
+  intelligence: botIntelligenceSchema,
+  count: z.number().int().min(1).max(50).optional()
+});
+
+export const roomBotRemoveSchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8),
+  botPlayerId: z.string().min(1)
+});
+
+export const roomBotSetIntelligenceSchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8),
+  botPlayerId: z.string().min(1),
+  intelligence: botIntelligenceSchema
+});
+
+export const roomBotFillMinimumSchema = z.object({
+  identity: identitySchema,
+  roomCode: z.string().min(4).max(8),
+  intelligence: botIntelligenceSchema
+});
 
 export const gamePauseSchema = z.object({
   identity: identitySchema,

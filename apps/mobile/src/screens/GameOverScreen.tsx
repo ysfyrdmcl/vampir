@@ -15,7 +15,7 @@ import { buildGameAnalysis } from "../logging/game-analysis";
 import { shouldShowLogEntry, toReadableLogText } from "../logging/log-policy";
 import type { LogFeedEntry } from "../logging/log-feed-store";
 import { useLogFeedStore } from "../logging/log-feed-store";
-import { emitLeaveRoom, emitStartRoom } from "../socket/runtime";
+import { emitLeaveRoom, emitResetRoomToLobby } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -29,7 +29,8 @@ export function GameOverScreen({ navigation }: Props) {
   const roomState = useGameStore((s) => s.roomState);
   const players = roomState?.players ?? [];
   const logs = useLogFeedStore((s) => s.entries);
-  const minPlayers = roomState?.minPlayers ?? 4;
+  const mePlayerId = useGameStore((s) => s.playerId);
+  const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === mePlayerId);
   const timeline = buildTimeline(logs, players);
   const analysis = buildGameAnalysis(logs, winner, players);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -42,11 +43,12 @@ export function GameOverScreen({ navigation }: Props) {
 
   const exitToHome = () => {
     emitLeaveRoom();
+    useGameStore.getState().setErrorCode(null);
     navigation.navigate("Welcome");
   };
 
   return (
-    <ScreenShell scene="gameover" headerTitle="">
+    <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Oyun Bitti</Text>
 
@@ -128,12 +130,11 @@ export function GameOverScreen({ navigation }: Props) {
           )}
         </View>
 
-        <PrimaryButton
-          label="Yeni Oyun"
-          iconName="refresh-outline"
-          onPress={emitStartRoom}
-          disabled={players.length < minPlayers}
-        />
+        {isHost ? (
+          <PrimaryButton label="Yeni Oyun" iconName="refresh-outline" onPress={emitResetRoomToLobby} />
+        ) : (
+          <Text style={styles.hostHint}>Yeni masayı lobiye almak için host &quot;Yeni Oyun&quot;a basmalı.</Text>
+        )}
         <PrimaryButton label="Ana Menü" iconName="home-outline" variant="ghost" compact onPress={() => setConfirmOpen(true)} />
       </ScrollView>
       <ConfirmActionSheet
@@ -343,6 +344,14 @@ const styles = StyleSheet.create({
     fontFamily: typography.serifRegular,
     fontSize: 15,
     padding: spacing.md
+  },
+  hostHint: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: spacing.md,
+    lineHeight: 20
   }
 });
 

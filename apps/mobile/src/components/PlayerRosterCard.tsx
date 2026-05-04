@@ -41,8 +41,16 @@ function PlayerRow({
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const y = useRef(new Animated.Value(8)).current;
-  const connectionText = player.isConnected ? "Bağlı" : "Bağlantı yok";
+  const connectionText = player.isBot ? "Bot" : player.isConnected ? "Bağlı" : "Bağlantı yok";
   const readyText = player.isReady ? "Hazır" : "Onay bekliyor";
+  const botIntelText =
+    player.botIntelligence === "random"
+      ? "Rastgele"
+      : player.botIntelligence === "deceptive"
+        ? "Kurnaz"
+        : player.botIntelligence === "balanced"
+          ? "Dengeli"
+          : null;
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }),
@@ -69,8 +77,14 @@ function PlayerRow({
         </View>
         <View style={styles.playerIdentity}>
           <Text style={[styles.name, compact ? styles.nameCompact : null]} numberOfLines={1}>{player.nickname}</Text>
-          <Text style={styles.stateLine}>{connectionText} · {readyText}</Text>
+          <Text style={styles.stateLine}>
+            {connectionText}
+            {player.isBot && botIntelText ? ` · ${botIntelText}` : ""}
+            {" · "}
+            {readyText}
+          </Text>
         </View>
+        {player.isBot ? <Text style={styles.badgeBot}>BOT</Text> : null}
         {isHost ? <Text style={styles.badgeHost}>HOST</Text> : null}
         {isMe ? <Text style={styles.badgeSelf}>SEN</Text> : null}
         <View style={[styles.stateDot, player.isReady ? styles.stateDotReady : styles.stateDotPending, !player.isConnected ? styles.stateDotOffline : null]} />
@@ -206,6 +220,16 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.28)",
+    overflow: "hidden",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 999,
+    fontSize: 9,
+    fontFamily: typography.sansBold
+  },
+  badgeBot: {
+    color: colors.parchmentText,
+    backgroundColor: "rgba(170,137,132,0.85)",
     overflow: "hidden",
     paddingHorizontal: 6,
     paddingVertical: 1,

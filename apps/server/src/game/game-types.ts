@@ -1,4 +1,15 @@
-import type { ActionType, EliminationSummary, GameMode, GamePhase, Role, RolePresetId, RuleSettings } from "@vampir-koylu/shared";
+import type {
+  ActionType,
+  BotIntelligence,
+  BotPersonality,
+  EliminationSummary,
+  GameMode,
+  GamePhase,
+  Role,
+  RolePresetId,
+  RuleSettings,
+  VampireVotePreview
+} from "@vampir-koylu/shared";
 
 export interface PlayerState {
   playerId: string;
@@ -13,6 +24,9 @@ export interface PlayerState {
   lastProtectedRound: number | null;
   lastProtectedTargetPlayerId: string | null;
   guardUsedInGame: boolean;
+  isBot: boolean;
+  botIntelligence?: BotIntelligence;
+  botPersonality?: BotPersonality;
 }
 
 export interface GameActionEntry {
@@ -41,7 +55,7 @@ export interface GameState {
       }
     | {
         playerId: string;
-        vampireVotePreview: { vampirePlayerId: string; targetPlayerId: string }[];
+        vampireVotePreview: VampireVotePreview;
       }
   >;
   lastDayVoteSummary: {

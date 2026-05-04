@@ -4,13 +4,18 @@ import {
   buildRoleDeck,
   resolveRuleSettings,
   type ActionType,
+  type BotIntelligence,
+  type BotSpeechEvent,
   type GamePrivateResultPayload,
   type RolePresetId,
   type RuleSettings
 } from "@vampir-koylu/shared";
+import { navigationRef } from "../app/navigation/navigation-ref";
 import { getSocket } from "./client";
 import { useGameStore } from "../store/game-store";
 import { clearRoomSession, saveLastRoomCode, saveSessionToken } from "../storage/session-storage";
+import { socketErrorAllowedForRoute } from "../ui/error-text";
+import { showToast } from "../ui/toast-store";
 import { testSimulator } from "../sim/test-simulator";
 import { logGameEvent, logPersonalEvent } from "../logging/game-logger";
 import { useLogFeedStore } from "../logging/log-feed-store";
@@ -25,6 +30,32 @@ let lastVoteTieRoundLogged: number | null = null;
 let lastExecutionRoundLogged: number | null = null;
 let lastEliminationKeyLogged: string | null = null;
 let pendingReadyResync = false;
+/** After a real disconnect, reconnect should re-emit join; first cold `connect` must not duplicate bootstrap join. */
+let joinAfterNextSocketConnect = false;
+/** Last emit path for ROOM_NOT_FOUND handling (manual join vs silent restore). */
+export type JoinEmitIntent = "manual" | "bootstrap" | "resync";
+let lastJoinEmitIntent: JoinEmitIntent = "manual";
+let roomConfigEmitTimer: ReturnType<typeof setTimeout> | null = null;
+
+const SOCKET_ERROR_DEDUP_MS = 2800;
+let lastSocketErrorDedup: { code: string; at: number } | null = null;
+
+function shouldDebounceDuplicateSocketError(code: string): boolean {
+  const now = Date.now();
+  if (lastSocketErrorDedup && lastSocketErrorDedup.code === code && now - lastSocketErrorDedup.at < SOCKET_ERROR_DEDUP_MS) {
+    return true;
+  }
+  lastSocketErrorDedup = { code, at: now };
+  return false;
+}
+
+function resetSocketErrorDedup(): void {
+  lastSocketErrorDedup = null;
+}
+
+function markJoinEmitIntent(intent: JoinEmitIntent): void {
+  lastJoinEmitIntent = intent;
+}
 
 function ensureConnected() {
   const socket = getSocket();
@@ -38,6 +69,7 @@ function resyncRoomAfterReconnect(): void {
   if (state.testMode || !state.deviceId || !state.roomCode || !state.playerSessionToken) return;
   const me = state.roomState?.players.find((player) => player.playerId === state.playerId);
   pendingReadyResync = Boolean(state.roomState?.status === "Lobby" && me?.isReady);
+  markJoinEmitIntent("resync");
   getSocket().emit(SOCKET_EVENTS.ROOM_JOIN, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -59,11 +91,15 @@ export function initSocketRuntime(): void {
   socket.on("connect", () => {
     store.getState().setConnectionStatus("connected");
     store.getState().setErrorCode(null);
-    resyncRoomAfterReconnect();
+    if (joinAfterNextSocketConnect) {
+      joinAfterNextSocketConnect = false;
+      resyncRoomAfterReconnect();
+    }
     logGameEvent("socket.connected", { socketId: socket.id });
   });
 
   socket.on("disconnect", () => {
+    joinAfterNextSocketConnect = true;
     store.getState().setConnectionStatus("connecting");
     logGameEvent("socket.disconnected");
   });
@@ -85,6 +121,7 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.ROOM_JOIN, async (payload: { roomCode: string; playerId: string; playerSessionToken: string }) => {
+    lastEmittedRoomConfigKey = null;
     store.getState().setSession({
       playerId: payload.playerId,
       playerSessionToken: payload.playerSessionToken,
@@ -113,6 +150,9 @@ export function initSocketRuntime(): void {
     }
 
     store.getState().setRoomState(payload);
+    if (payload.status === "Lobby") {
+      lastEmittedRoomConfigKey = computeRoomConfigEmitKey();
+    }
     logGameEvent("room.state", {
       roomCode: payload.roomCode,
       status: payload.status,
@@ -154,12 +194,14 @@ export function initSocketRuntime(): void {
       lastVoteTieRoundLogged = null;
       lastExecutionRoundLogged = null;
       lastEliminationKeyLogged = null;
+      store.getState().clearBotSpeechHistory();
     }
     const prevPhaseForLog = lastPhase;
+    store.getState().clearBotSpeech();
     store.getState().setGameState(payload);
     store.getState().setSelectedTargetPlayerId(null);
     if (payload.phase !== "VampireVote") {
-      store.getState().setVampireVotePreview([]);
+      store.getState().setVampireVotePreview(null);
     }
     const secondsLeft = payload.phaseEndsAt ? Math.max(0, Math.ceil((payload.phaseEndsAt - Date.now()) / 1000)) : null;
     logGameEvent("game.phase", {
@@ -217,7 +259,14 @@ export function initSocketRuntime(): void {
         }
       }
     }
-    if (payload.phase === "DoctorProtect" || payload.phase === "DetectiveInspect" || payload.phase === "VampireVote" || payload.phase === "GuardProtect") {
+    if (
+      payload.phase === "DoctorProtect" ||
+      payload.phase === "DetectiveInspect" ||
+      payload.phase === "VampireVote" ||
+      payload.phase === "GuardProtect" ||
+      payload.phase === "DayVote" ||
+      payload.phase === "MayorElection"
+    ) {
       logPersonalEvent("game.phase.personal_turn_info", {
         phase: payload.phase,
         round: payload.round
@@ -252,10 +301,29 @@ export function initSocketRuntime(): void {
     lastPhase = payload.phase;
   });
 
-  socket.on(SOCKET_EVENTS.GAME_PRIVATE_ROLE, (payload: { role?: "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard"; loverPartnerPlayerId?: string }) => {
+  socket.on(SOCKET_EVENTS.GAME_BOT_SPEECH, (payload: BotSpeechEvent) => {
+    store.getState().pushBotSpeech(payload);
+    logGameEvent("game.bot.speech", {
+      speakerPlayerId: payload.speakerPlayerId,
+      speakerName: payload.speakerName,
+      intent: payload.intent,
+      phaseId: payload.phaseId
+    });
+  });
+
+  socket.on(
+    SOCKET_EVENTS.GAME_PRIVATE_ROLE,
+    (payload: {
+      role?: "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard";
+      loverPartnerPlayerId?: string;
+      detectiveInspectedPlayerIds?: string[];
+    }) => {
     if (payload.role) {
       store.getState().setPrivateRole(payload.role);
       logPersonalEvent("game.role.assigned", { role: payload.role });
+    }
+    if (payload.detectiveInspectedPlayerIds) {
+      store.getState().setDetectiveInspectedPlayerIds(payload.detectiveInspectedPlayerIds);
     }
     if (payload.loverPartnerPlayerId) {
       store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId);
@@ -263,7 +331,7 @@ export function initSocketRuntime(): void {
       const partnerName =
         roomState?.players.find((p) => p.playerId === payload.loverPartnerPlayerId)?.nickname ?? payload.loverPartnerPlayerId;
       const text = `Aşık bağı: ${partnerName}. Bu oyuncu ölürse sen de ölürsün.`;
-      store.getState().setPrivateResultText(text);
+      store.getState().setPrivateResultText(text, "lover");
       logPersonalEvent("game.private_result.lover_link", {
         loverPartnerPlayerId: payload.loverPartnerPlayerId,
         text
@@ -274,22 +342,35 @@ export function initSocketRuntime(): void {
   socket.on(SOCKET_EVENTS.GAME_PRIVATE_RESULT, (payload: GamePrivateResultPayload) => {
     if (payload.vampireVotePreview) {
       store.getState().setVampireVotePreview(payload.vampireVotePreview);
-      logPersonalEvent("game.private_result.vampire_preview", { count: payload.vampireVotePreview.length });
+      const v = payload.vampireVotePreview;
+      logPersonalEvent("game.private_result.vampire_preview", {
+        round: v.round,
+        voters: v.votes.length,
+        pending: v.pendingVoterPlayerIds.length
+      });
       logPersonalEvent("personal.vampire.vote_preview", {
-        count: payload.vampireVotePreview.length
+        round: v.round,
+        tallyTargets: v.targetCounts.length
       });
     }
     if (payload.detectiveResult) {
       const roomState = store.getState().roomState;
+      const tid = payload.detectiveTargetPlayerId;
+      if (tid) {
+        const prev = store.getState().detectiveInspectedPlayerIds;
+        if (!prev.includes(tid)) {
+          store.getState().setDetectiveInspectedPlayerIds([...prev, tid]);
+        }
+      }
       const targetName =
-        payload.detectiveTargetPlayerId
-          ? roomState?.players.find((p) => p.playerId === payload.detectiveTargetPlayerId)?.nickname ?? payload.detectiveTargetPlayerId
+        tid
+          ? roomState?.players.find((p) => p.playerId === tid)?.nickname ?? tid
           : "Hedef";
       const text =
         payload.detectiveResult === "Vampire"
           ? `${targetName}: Vampir`
           : `${targetName}: Vampir değil`;
-      store.getState().setPrivateResultText(text);
+      store.getState().setPrivateResultText(text, "detective");
       logPersonalEvent("game.private_result.detective", {
         detectiveResult: payload.detectiveResult,
         detectiveTargetPlayerId: payload.detectiveTargetPlayerId ?? null,
@@ -303,23 +384,65 @@ export function initSocketRuntime(): void {
       return;
     }
     if (payload.accepted) {
-      store.getState().setPrivateResultText("Aksiyon gonderildi");
+      showToast("Aksiyon gönderildi", "gold", 1400);
       logPersonalEvent("game.private_result.accepted");
     }
   });
 
   socket.on(SOCKET_EVENTS.GAME_OVER, (payload: { winner: "Vampires" | "Villagers" }) => {
     store.getState().setGameWinner(payload.winner);
+    store.getState().clearBotSpeech();
     logGameEvent("game.over", { winner: payload.winner });
   });
 
   socket.on(SOCKET_EVENTS.ERROR_EVENT, (payload: { code: string }) => {
-    store.getState().setErrorCode(payload.code);
-    logGameEvent("socket.error_event", { code: payload.code });
     if (payload.code === "ROOM_NOT_FOUND") {
+      const intent = lastJoinEmitIntent;
+      lastJoinEmitIntent = "manual";
       void clearRoomSession();
       store.getState().restoreSession({ playerSessionToken: null, roomCode: null });
+      if (intent === "manual") {
+        const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
+        if (!route || !socketErrorAllowedForRoute("ROOM_NOT_FOUND", route)) {
+          logGameEvent("socket.error_event.suppressed", { code: payload.code, route, joinIntent: intent });
+          return;
+        }
+        if (shouldDebounceDuplicateSocketError("ROOM_NOT_FOUND")) {
+          logGameEvent("socket.error_event.debounced", { code: payload.code, joinIntent: intent });
+          return;
+        }
+        logGameEvent("socket.error_event", { code: payload.code, joinIntent: intent });
+        store.getState().setErrorCode("ROOM_NOT_FOUND");
+        return;
+      }
+      /** bootstrap | resync: kalıcı oda zaten temizlendi; toast / genel log spam yok. */
+      resetSocketErrorDedup();
+      store.getState().setErrorCode(null);
+      store.getState().clearBotSpeechHistory();
+      if (navigationRef.isReady()) {
+        navigationRef.reset({ index: 0, routes: [{ name: "Welcome" }] });
+      }
+      return;
     }
+    const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
+    if (!route) {
+      logGameEvent("socket.error_event.suppressed", { code: payload.code, reason: "no_route", joinIntent: lastJoinEmitIntent });
+      lastJoinEmitIntent = "manual";
+      return;
+    }
+    if (!socketErrorAllowedForRoute(payload.code, route)) {
+      logGameEvent("socket.error_event.suppressed", { code: payload.code, route, joinIntent: lastJoinEmitIntent });
+      lastJoinEmitIntent = "manual";
+      return;
+    }
+    if (shouldDebounceDuplicateSocketError(payload.code)) {
+      logGameEvent("socket.error_event.debounced", { code: payload.code, route, joinIntent: lastJoinEmitIntent });
+      lastJoinEmitIntent = "manual";
+      return;
+    }
+    logGameEvent("socket.error_event", { code: payload.code, joinIntent: lastJoinEmitIntent });
+    lastJoinEmitIntent = "manual";
+    store.getState().setErrorCode(payload.code);
   });
 }
 
@@ -376,7 +499,6 @@ function buildGameConfigPayload() {
 function sanitizeRulesForSetup(rules: RuleSettings, playerCount: number, rolePreset: RolePresetId): RuleSettings {
   const activeRoles = new Set(buildRoleDeck(playerCount, rolePreset));
   const hasDoctor = activeRoles.has("Doctor");
-  const hasDetective = activeRoles.has("Detective");
   const hasMayorMechanic = rolePreset === "socialChaos" && playerCount >= ROLE_DEFINITIONS.Mayor.minPlayers;
   const hasLoversMechanic = rolePreset === "socialChaos" && playerCount >= ROLE_DEFINITIONS.Lover.minPlayers;
 
@@ -384,10 +506,26 @@ function sanitizeRulesForSetup(rules: RuleSettings, playerCount: number, rolePre
     ...rules,
     allowDoctorSelfProtect: hasDoctor ? rules.allowDoctorSelfProtect : true,
     allowDoctorConsecutiveProtectSameTarget: hasDoctor ? rules.allowDoctorConsecutiveProtectSameTarget : false,
-    allowDetectiveRepeatInspectSameTarget: hasDetective ? rules.allowDetectiveRepeatInspectSameTarget : false,
     mayorEnabled: hasMayorMechanic ? rules.mayorEnabled : false,
     loversEnabled: hasLoversMechanic ? rules.loversEnabled : false
   };
+}
+
+/** Aynı oda ayarı tekrar tekrar sunucuya gitmesin (ROOM_STATE ile baseline senkron). */
+let lastEmittedRoomConfigKey: string | null = null;
+
+function computeRoomConfigEmitKey(): string | null {
+  const s = useGameStore.getState();
+  if (!s.roomCode || s.testMode) return null;
+  const phaseDurations = buildPhaseDurationsPayload();
+  const config = buildGameConfigPayload();
+  return JSON.stringify({
+    rolePreset: config.rolePreset,
+    gameMode: config.gameMode,
+    customDurations: Boolean(phaseDurations),
+    phaseDurations: phaseDurations ?? null,
+    rules: config.rules
+  });
 }
 
 export function emitCreateRoom(nickname: string): void {
@@ -414,23 +552,25 @@ export function emitCreateRoom(nickname: string): void {
   });
 }
 
-export function emitJoinRoom(roomCode: string, nickname: string): void {
+export function emitJoinRoom(roomCode: string, nickname: string, intent: JoinEmitIntent = "manual"): void {
   if (useGameStore.getState().testMode) {
     return;
   }
   ensureConnected();
   useGameStore.getState().setNickname(nickname);
+  markJoinEmitIntent(intent);
   getSocket().emit(SOCKET_EVENTS.ROOM_JOIN, {
     identity: identityPayload(),
     roomCode,
     nickname
   });
-  logGameEvent("emit.room_join", { roomCode, nickname });
+  logGameEvent("emit.room_join", { roomCode, nickname, intent });
 }
 
 export function emitLeaveRoom(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
+  resetSocketErrorDedup();
   if (state.testMode) {
     testSimulator.leave();
     state.resetRoom();
@@ -447,9 +587,40 @@ export function emitLeaveRoom(): void {
   logGameEvent("emit.room_leave", { roomCode: state.roomCode });
 }
 
+export function emitResetRoomToLobby(): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode) return;
+  if (state.testMode) {
+    testSimulator.resetToLobbyAfterGameOver();
+    logGameEvent("emit.room_reset_to_lobby.test_mode");
+    return;
+  }
+  if (state.roomState?.status !== "GameOver") {
+    logGameEvent("emit.room_reset_to_lobby.skipped", {
+      roomCode: state.roomCode,
+      status: state.roomState?.status ?? null
+    });
+    return;
+  }
+  ensureConnected();
+  state.setErrorCode(null);
+  getSocket().emit(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, {
+    identity: identityPayload(),
+    roomCode: state.roomCode
+  });
+  logGameEvent("emit.room_reset_to_lobby", { roomCode: state.roomCode });
+}
+
 export function emitStartRoom(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
+  if (state.roomState?.status !== "Lobby") {
+    logGameEvent("emit.room_start.skipped", {
+      roomCode: state.roomCode,
+      status: state.roomState?.status ?? null
+    });
+    return;
+  }
   useLogFeedStore.getState().clear();
   if (state.testMode) {
     testSimulator.startGame();
@@ -479,22 +650,35 @@ export function emitRoomConfigUpdate(): void {
   const state = useGameStore.getState();
   if (!state.roomCode || state.testMode) return;
   ensureConnected();
-  const phaseDurations = buildPhaseDurationsPayload();
-  const config = buildGameConfigPayload();
-  getSocket().emit(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, {
-    identity: identityPayload(),
-    roomCode: state.roomCode,
-    phaseDurations,
-    gameMode: config.gameMode,
-    rolePreset: config.rolePreset,
-    rules: config.rules
-  });
-  logGameEvent("emit.room_config_update", {
-    roomCode: state.roomCode,
-    rolePreset: config.rolePreset,
-    gameMode: config.gameMode,
-    customDurations: Boolean(phaseDurations)
-  });
+  if (roomConfigEmitTimer) {
+    clearTimeout(roomConfigEmitTimer);
+  }
+  roomConfigEmitTimer = setTimeout(() => {
+    roomConfigEmitTimer = null;
+    const s = useGameStore.getState();
+    if (!s.roomCode || s.testMode) return;
+    const phaseDurations = buildPhaseDurationsPayload();
+    const config = buildGameConfigPayload();
+    const dedupeKey = computeRoomConfigEmitKey();
+    if (dedupeKey !== null && dedupeKey === lastEmittedRoomConfigKey) {
+      return;
+    }
+    getSocket().emit(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, {
+      identity: identityPayload(),
+      roomCode: s.roomCode,
+      phaseDurations,
+      gameMode: config.gameMode,
+      rolePreset: config.rolePreset,
+      rules: config.rules
+    });
+    lastEmittedRoomConfigKey = dedupeKey;
+    logGameEvent("emit.room_config_update", {
+      roomCode: s.roomCode,
+      rolePreset: config.rolePreset,
+      gameMode: config.gameMode,
+      customDurations: Boolean(phaseDurations)
+    });
+  }, 450);
 }
 
 export function emitGamePause(): void {
@@ -595,6 +779,56 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
       round: state.gameState.round
     });
   }
+}
+
+export function emitAddBot(intelligence: BotIntelligence, count = 1): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode || state.testMode) return;
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.ROOM_BOT_ADD, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    intelligence,
+    count
+  });
+  logGameEvent("emit.room_bot_add", { roomCode: state.roomCode, intelligence, count });
+}
+
+export function emitRemoveBot(botPlayerId: string): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode || state.testMode) return;
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.ROOM_BOT_REMOVE, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    botPlayerId
+  });
+  logGameEvent("emit.room_bot_remove", { roomCode: state.roomCode, botPlayerId });
+}
+
+export function emitSetBotIntelligence(botPlayerId: string, intelligence: BotIntelligence): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode || state.testMode) return;
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    botPlayerId,
+    intelligence
+  });
+  logGameEvent("emit.room_bot_set_intelligence", { roomCode: state.roomCode, botPlayerId, intelligence });
+}
+
+export function emitFillBotsToMinimum(intelligence: BotIntelligence): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode || state.testMode) return;
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.ROOM_BOT_FILL_MINIMUM, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    intelligence
+  });
+  logGameEvent("emit.room_bot_fill_minimum", { roomCode: state.roomCode, intelligence });
 }
 
 export function startTestSimulation(nickname: string, totalPlayers: 4 | 6 | 8 | 10 = 4, preferredRole: "random" | "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard" = "random"): void {

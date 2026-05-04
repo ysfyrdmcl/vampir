@@ -1,4 +1,12 @@
-import type { ActionSubmission, GamePhase, GameStatePrivateDelta, GameStateSnapshotPublic } from "@vampir-koylu/shared";
+import {
+  ROLE_DEFINITIONS,
+  ROLE_PRESETS,
+  type ActionSubmission,
+  type GamePhase,
+  type GameStatePrivateDelta,
+  type GameStateSnapshotPublic,
+  type Role
+} from "@vampir-koylu/shared";
 import { env } from "../config/env.js";
 import { resolveNight } from "./night-resolver.js";
 import { assignRoles } from "./role-assignment.js";
@@ -45,11 +53,18 @@ export class GameEngine {
 
     this.setupLovers(room);
 
-    return room.players.map((p) => ({
-      role: p.role ?? "Villager",
-      loverPartnerPlayerId: room.game.loverLinks[p.playerId] ?? undefined,
-      isActionAllowed: true
-    }));
+    return room.players.map((p) => {
+      const role = p.role ?? "Villager";
+      const delta: GameStatePrivateDelta = {
+        role,
+        loverPartnerPlayerId: room.game.loverLinks[p.playerId] ?? undefined,
+        isActionAllowed: true
+      };
+      if (role === "Detective") {
+        delta.detectiveInspectedPlayerIds = [];
+      }
+      return delta;
+    });
   }
 
   submitAction(room: RoomState, actorPlayerId: string, submission: ActionSubmission): void {
@@ -110,9 +125,11 @@ export class GameEngine {
         return "VampireVote";
       case "VampireVote":
         room.game.actions = room.game.actions.filter((a) => a.actionType !== "detective-inspect");
-        return room.players.some((p) => p.isAlive && p.role === "Detective") ? "DetectiveInspect" : "DoctorProtect";
+        if (this.hasAlivePlayerWithRole(room, "Detective") && this.hasDetectiveLegalInspectTargets(room)) return "DetectiveInspect";
+        if (this.hasAlivePlayerWithRole(room, "Doctor")) return "DoctorProtect";
+        return "NightResolve";
       case "DetectiveInspect":
-        return room.players.some((p) => p.isAlive && p.role === "Doctor") ? "DoctorProtect" : "NightResolve";
+        return this.hasAlivePlayerWithRole(room, "Doctor") ? "DoctorProtect" : "NightResolve";
       case "DoctorProtect":
         return "NightResolve";
       case "NightResolve": {
@@ -151,7 +168,7 @@ export class GameEngine {
       }
       case "DayStart":
         room.game.actions = [];
-        if (room.game.rules.mayorEnabled && !this.hasAliveMayor(room)) {
+        if (this.shouldScheduleMayorElection(room)) {
           return "MayorElection";
         }
         if (this.hasGuardAvailable(room)) {
@@ -335,6 +352,12 @@ export class GameEngine {
         if (!room.game.rules.noLynchEnabled) throw new Error("NO_LYNCH_DISABLED");
         return;
       }
+      if (
+        (submission.actionType === "day-vote" || submission.actionType === "mayor-vote") &&
+        submission.targetPlayerId === actor.playerId
+      ) {
+        throw new Error("INVALID_TARGET");
+      }
       if (submission.actionType === "day-vote" && room.game.guardProtectedPlayerId && submission.targetPlayerId === room.game.guardProtectedPlayerId) {
         throw new Error("TARGET_PROTECTED_BY_GUARD");
       }
@@ -357,8 +380,9 @@ export class GameEngine {
         }
       }
       if (submission.actionType === "detective-inspect") {
+        if (target.playerId === actor.playerId) throw new Error("INVALID_TARGET");
         const inspected = room.game.detectiveInspectedTargets[actor.playerId] ?? [];
-        if (!room.game.rules.allowDetectiveRepeatInspectSameTarget && inspected.includes(target.playerId)) {
+        if (inspected.includes(target.playerId)) {
           throw new Error("DETECTIVE_REPEAT_BLOCKED");
         }
       }
@@ -400,6 +424,28 @@ export class GameEngine {
     if (!room.game.mayorPlayerId) return false;
     const mayor = room.players.find((p) => p.playerId === room.game.mayorPlayerId);
     return Boolean(mayor?.isAlive);
+  }
+
+  /** Başkanlık bu oda kurulumunda (preset + oyuncu sayısı) tanımlıysa ve seçili başkan yoksa seçim fazı açılır. */
+  private shouldScheduleMayorElection(room: RoomState): boolean {
+    if (!room.game.rules.mayorEnabled || this.hasAliveMayor(room)) return false;
+    const preset = ROLE_PRESETS[room.game.rolePreset];
+    if (!preset.roleIds.includes("Mayor")) return false;
+    return room.players.length >= ROLE_DEFINITIONS.Mayor.minPlayers;
+  }
+
+  private hasAlivePlayerWithRole(room: RoomState, role: Role): boolean {
+    return room.players.some((p) => p.isAlive && p.role === role);
+  }
+
+  /** Hayatta dedektif var ve sorgulanmamış hayatta başka oyuncu kaldıysa true. */
+  private hasDetectiveLegalInspectTargets(room: RoomState): boolean {
+    const detective = room.players.find((p) => p.isAlive && p.role === "Detective");
+    if (!detective) return false;
+    const inspected = new Set(room.game.detectiveInspectedTargets[detective.playerId] ?? []);
+    return room.players.some(
+      (p) => p.isAlive && p.playerId !== detective.playerId && !inspected.has(p.playerId)
+    );
   }
 
   private hasGuardAvailable(room: RoomState): boolean {

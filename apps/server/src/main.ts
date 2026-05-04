@@ -13,16 +13,39 @@ const io = new Server(app.server, {
   }
 });
 
-const runtime = new SocketRuntime(io);
+const runtime = new SocketRuntime(io, app.log);
 
 io.on("connection", (socket) => {
   app.log.info({ socketId: socket.id }, "socket connected");
   runtime.registerConnection(socket);
 });
 
-setInterval(() => {
-  runtime.tick();
+const tickInterval = setInterval(() => {
+  try {
+    runtime.tick();
+  } catch (error) {
+    app.log.error({ err: error }, "runtime tick crashed");
+  }
 }, 500);
+
+process.on("uncaughtException", (error) => {
+  app.log.error({ err: error }, "uncaughtException");
+});
+
+process.on("unhandledRejection", (reason) => {
+  app.log.error({ err: reason }, "unhandledRejection");
+});
+
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, "shutdown signal received");
+  clearInterval(tickInterval);
+  io.close();
+  await app.close();
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
 
 await app.listen({
   port: env.PORT,

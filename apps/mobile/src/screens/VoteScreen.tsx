@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PhaseBanner } from "../components/PhaseBanner";
+import { PrivateInfoCard } from "../components/PrivateInfoCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { TargetSelectionList, type TargetSelectionItem } from "../components/TargetSelectionList";
@@ -14,7 +15,7 @@ import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { toFriendlyErrorText } from "../ui/error-text";
+import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Vote">;
@@ -36,8 +37,9 @@ export function VoteScreen(_: Props) {
   const selectedTargetPlayerId = useGameStore((s) => s.selectedTargetPlayerId);
   const setSelectedTargetPlayerId = useGameStore((s) => s.setSelectedTargetPlayerId);
   const privateResultText = useGameStore((s) => s.privateResultText);
+  const privateResultKind = useGameStore((s) => s.privateResultKind);
   const errorCode = useGameStore((s) => s.errorCode);
-  const errorText = toFriendlyErrorText(errorCode);
+  const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Vote"));
   const noLynchEnabled = roomState?.rules?.noLynchEnabled ?? false;
   const isMayorElection = gameState?.phase === "MayorElection";
   const mayorPlayerId = gameState?.mayorPlayerId ?? null;
@@ -56,7 +58,7 @@ export function VoteScreen(_: Props) {
 
   const candidates = players.filter((p) => {
     if (!p.isAlive) return false;
-    if (!isMayorElection && p.playerId === playerId) return false;
+    if (p.playerId === playerId) return false;
     if (!isMayorElection && p.playerId === guardProtectedPlayerId) return false;
     if (hasTieRevote && !tieCandidateSet.has(p.playerId)) return false;
     return true;
@@ -106,7 +108,7 @@ export function VoteScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="vote" headerTitle="GÜNDÜZ FAZI">
+    <ScreenShell scene="vote" bottomNavActiveIndex={0} headerTitle="GÜNDÜZ FAZI">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <PhaseBanner
           title={isMayorElection ? "Baskan Secimi" : "Oylama"}
@@ -154,7 +156,9 @@ export function VoteScreen(_: Props) {
               ? "Süre bitmeden başkan tercihini değiştirebilirsin."
               : "Süre bitmeden önce seçimini değiştirebilirsin."}
         </Text>
-        {privateResultText ? <Text style={styles.result}>{privateResultText}</Text> : null}
+        {privateResultText && privateResultKind === "lover" ? (
+          <PrivateInfoCard kind="lover" body={privateResultText} />
+        ) : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
       </ScrollView>
       <View style={[styles.stickyAction, { bottom: 84 + insets.bottom }]}>
@@ -315,11 +319,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: typography.serifRegular,
     fontSize: 17
-  },
-  result: {
-    color: colors.secondary,
-    textAlign: "center",
-    fontFamily: typography.sansMedium
   },
   error: {
     color: colors.danger,

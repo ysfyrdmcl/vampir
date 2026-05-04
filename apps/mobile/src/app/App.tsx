@@ -61,7 +61,7 @@ export default function App() {
         }
 
         if (roomCode) {
-          emitJoinRoom(roomCode, savedNickname ?? "Oyuncu");
+          emitJoinRoom(roomCode, savedNickname ?? "Oyuncu", "bootstrap");
         }
         logGameEvent("app.bootstrap.done", {
           deviceId: currentDeviceId,
