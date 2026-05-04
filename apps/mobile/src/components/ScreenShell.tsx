@@ -58,8 +58,6 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
   const errorCode = useGameStore((s) => s.errorCode);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
-  const storedRoomCode = useGameStore((s) => s.roomCode);
-  const roomCode = roomState?.roomCode ?? storedRoomCode;
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const label = headerTitle ?? phaseLabelFromState(phase);
@@ -155,11 +153,6 @@ export function ScreenShell({ children, scene = "night", headerTitle, showTopBar
                 <Ionicons name="shield-outline" size={20} color={colors.primaryBright} />
                 <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
               </View>
-              {roomCode ? (
-                <View style={styles.roomCodeChip}>
-                  <Text style={styles.roomCodeText}>#{roomCode}</Text>
-                </View>
-              ) : null}
             </View>
           </View>
         ) : null}
@@ -261,23 +254,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.serif,
     fontSize: 14,
     letterSpacing: 1.4
-  },
-  roomCodeChip: {
-    width: 96,
-    height: 34,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.4)",
-    paddingHorizontal: spacing.sm,
-    borderRadius: uiStandard.screen.chipRadius,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(32,31,31,0.8)"
-  },
-  roomCodeText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: typography.small,
-    letterSpacing: 1.3
   },
   content: {
     flex: 1,

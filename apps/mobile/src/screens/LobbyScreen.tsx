@@ -10,6 +10,7 @@ import { PlayerRosterCard } from "../components/PlayerRosterCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { RoomCodeCard } from "../components/RoomCodeCard";
 import { ScreenShell } from "../components/ScreenShell";
+import { SimpleQrCode } from "../components/SimpleQrCode";
 import { StatusBadge } from "../components/StatusBadge";
 import { emitLeaveRoom, emitReadyToggle, emitRoomConfigUpdate, emitStartRoom } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
@@ -109,6 +110,7 @@ export function LobbyScreen({ navigation }: Props) {
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [roleInfoOpen, setRoleInfoOpen] = useState(false);
   const [modeInfoOpen, setModeInfoOpen] = useState(false);
+  const [roomQrOpen, setRoomQrOpen] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<RolePresetId>(rolePreset);
   const [previewMode, setPreviewMode] = useState<GameMode>(gameMode);
 
@@ -233,7 +235,7 @@ export function LobbyScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="lobby" headerTitle="LOBİ">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <RoomCodeCard roomCode={roomCode} onCopy={copyRoomCode} onShare={shareRoomCode} />
+        <RoomCodeCard roomCode={roomCode} onCopy={copyRoomCode} onShare={shareRoomCode} onShowQr={() => setRoomQrOpen(true)} />
 
         <View style={styles.lobbyHeader}>
           <View style={styles.lobbyHeaderIcon}>
@@ -562,6 +564,24 @@ export function LobbyScreen({ navigation }: Props) {
         }}
         onCancel={() => setLeaveConfirmOpen(false)}
       />
+      <Modal visible={roomQrOpen} transparent animationType="fade" onRequestClose={() => setRoomQrOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.qrModal}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderText}>
+                <Text style={styles.modalKicker}>Oda QR</Text>
+                <Text style={styles.modalTitle}>{roomCode}</Text>
+              </View>
+              <Pressable style={styles.modalClose} onPress={() => setRoomQrOpen(false)}>
+                <Ionicons name="close-outline" size={20} color={colors.secondary} />
+              </Pressable>
+            </View>
+            <SimpleQrCode value={roomCode} moduleSize={8} />
+            <Text style={styles.qrHint}>Katılacak oyuncu Odaya Katıl ekranından QR Tara ile okutabilir.</Text>
+            <PrimaryButton label="Kapat" iconName="checkmark-circle-outline" variant="gold" compact onPress={() => setRoomQrOpen(false)} />
+          </View>
+        </View>
+      </Modal>
       <Modal visible={roleInfoOpen} transparent animationType="fade" onRequestClose={() => setRoleInfoOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.roleModal}>
@@ -1172,6 +1192,22 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 10,
     maxHeight: "86%"
+  },
+  qrModal: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.28)",
+    borderRadius: 16,
+    backgroundColor: "rgba(18,19,21,0.98)",
+    padding: 12,
+    gap: 12,
+    alignItems: "stretch"
+  },
+  qrHint: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center"
   },
   modalHeader: {
     borderWidth: 1,

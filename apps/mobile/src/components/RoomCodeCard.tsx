@@ -8,9 +8,10 @@ interface RoomCodeCardProps {
   roomCode: string;
   onCopy: () => void;
   onShare: () => void;
+  onShowQr: () => void;
 }
 
-export function RoomCodeCard({ roomCode, onCopy, onShare }: RoomCodeCardProps) {
+export function RoomCodeCard({ roomCode, onCopy, onShare, onShowQr }: RoomCodeCardProps) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>ODA KODU</Text>
@@ -24,6 +25,10 @@ export function RoomCodeCard({ roomCode, onCopy, onShare }: RoomCodeCardProps) {
         <Pressable style={styles.miniBtn} onPress={onShare}>
           <Ionicons name="share-social-outline" size={14} color={colors.secondary} />
           <Text style={styles.miniText}>Paylaş</Text>
+        </Pressable>
+        <Pressable style={styles.miniBtn} onPress={onShowQr}>
+          <Ionicons name="qr-code-outline" size={14} color={colors.secondary} />
+          <Text style={styles.miniText}>QR</Text>
         </Pressable>
       </View>
     </View>
@@ -63,6 +68,8 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: 3,
     flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: 8
   },
   miniBtn: {

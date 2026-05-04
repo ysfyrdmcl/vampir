@@ -24,12 +24,29 @@ let lastMayorVoteStartRoundLogged: number | null = null;
 let lastVoteTieRoundLogged: number | null = null;
 let lastExecutionRoundLogged: number | null = null;
 let lastEliminationKeyLogged: string | null = null;
+let pendingReadyResync = false;
 
 function ensureConnected() {
   const socket = getSocket();
   if (!socket.connected) {
     socket.connect();
   }
+}
+
+function resyncRoomAfterReconnect(): void {
+  const state = useGameStore.getState();
+  if (state.testMode || !state.deviceId || !state.roomCode || !state.playerSessionToken) return;
+  const me = state.roomState?.players.find((player) => player.playerId === state.playerId);
+  pendingReadyResync = Boolean(state.roomState?.status === "Lobby" && me?.isReady);
+  getSocket().emit(SOCKET_EVENTS.ROOM_JOIN, {
+    identity: identityPayload(),
+    roomCode: state.roomCode,
+    nickname: state.nickname || me?.nickname || "Oyuncu"
+  });
+  logGameEvent("emit.room_rejoin_silent", {
+    roomCode: state.roomCode,
+    restoreReady: pendingReadyResync
+  });
 }
 
 export function initSocketRuntime(): void {
@@ -42,6 +59,7 @@ export function initSocketRuntime(): void {
   socket.on("connect", () => {
     store.getState().setConnectionStatus("connected");
     store.getState().setErrorCode(null);
+    resyncRoomAfterReconnect();
     logGameEvent("socket.connected", { socketId: socket.id });
   });
 
@@ -78,6 +96,10 @@ export function initSocketRuntime(): void {
       roomCode: payload.roomCode,
       playerId: payload.playerId
     });
+    if (pendingReadyResync) {
+      pendingReadyResync = false;
+      emitReadyToggle(true);
+    }
   });
 
   socket.on(SOCKET_EVENTS.ROOM_STATE, (payload) => {
