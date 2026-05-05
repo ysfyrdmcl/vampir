@@ -1,4 +1,13 @@
+import Constants from "expo-constants";
 import { NativeModules } from "react-native";
+
+function hostFromUrl(value: string | null | undefined): string | null {
+  const matchedHost = value?.match(/(?:exp|http|https|ws|wss):\/\/([^/:]+)/i)?.[1];
+  if (!matchedHost || matchedHost === "localhost" || matchedHost === "127.0.0.1") {
+    return null;
+  }
+  return matchedHost;
+}
 
 function resolveSocketUrl(): string {
   const explicitUrl = process.env.EXPO_PUBLIC_SOCKET_URL?.trim();
@@ -6,13 +15,16 @@ function resolveSocketUrl(): string {
     return explicitUrl;
   }
 
+  const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  const expoHost = hostFromUrl(hostUri ? `exp://${hostUri}` : null);
+  if (expoHost) {
+    return `http://${expoHost}:3000`;
+  }
+
   const scriptURL: string | undefined = NativeModules?.SourceCode?.scriptURL;
-  if (scriptURL) {
-    // Expo dev runtime often provides exp://<host>:<port>/... instead of http://...
-    const matchedHost = scriptURL.match(/(?:exp|http|https|ws|wss):\/\/([^/:]+)/i)?.[1];
-    if (matchedHost && matchedHost !== "localhost" && matchedHost !== "127.0.0.1") {
-      return `http://${matchedHost}:3000`;
-    }
+  const scriptHost = hostFromUrl(scriptURL);
+  if (scriptHost) {
+    return `http://${scriptHost}:3000`;
   }
 
   return "http://127.0.0.1:3000";

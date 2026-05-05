@@ -101,13 +101,15 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
           style={[styles.text, effectiveMode === "compact" ? styles.textCompact : null, isRoleFooter ? styles.textRoleFooter : null]}
           numberOfLines={isRoleFooter ? 2 : undefined}
         >
-          {seconds === 0
-            ? "Karar kilitlendi."
-            : tone === "red"
-              ? "Karar anı. Son saniyeler."
-              : tone === "orange"
-                ? "Süre azalıyor, hızlı karar ver."
-                : "Süre dolmadan seçimini tamamla."}
+          {isRoleFooter
+            ? "Oyun başlıyor..."
+            : seconds === 0
+              ? "Karar kilitlendi."
+              : tone === "red"
+                ? "Karar anı. Son saniyeler."
+                : tone === "orange"
+                  ? "Süre azalıyor, hızlı karar ver."
+                  : "Süre dolmadan seçimini tamamla."}
         </Text>
       </View>
     </View>
@@ -121,11 +123,11 @@ const styles = StyleSheet.create({
   },
   wrapRoleFooter: {
     width: "100%",
-    maxWidth: 380,
+    maxWidth: 340,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 10,
     paddingHorizontal: 4
   },
   wrapCompact: {
@@ -152,9 +154,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8
   },
   ringRoleFooter: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 3,
     flexShrink: 0
   },
@@ -169,8 +171,8 @@ const styles = StyleSheet.create({
     lineHeight: 27
   },
   valueRoleFooter: {
-    fontSize: 28,
-    lineHeight: 30
+    fontSize: 22,
+    lineHeight: 23
   },
   compactCopy: {
     flex: 1,
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
   },
   compactCopyRoleFooter: {
     minWidth: 0,
-    gap: 8
+    gap: 5
   },
   unit: {
     color: colors.textMuted,
@@ -191,8 +193,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6
   },
   unitRoleFooter: {
-    fontSize: 9,
-    letterSpacing: 0.8
+    fontSize: 7,
+    letterSpacing: 0.5
   },
   barTrack: {
     width: 196,
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
   barTrackRoleFooter: {
     width: "100%",
     maxWidth: "100%",
-    height: 5
+    height: 4
   },
   barFill: {
     height: "100%"
@@ -222,8 +224,8 @@ const styles = StyleSheet.create({
     fontSize: 12
   },
   textRoleFooter: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 11,
+    lineHeight: 15,
     textAlign: "center",
     color: colors.textMuted
   }

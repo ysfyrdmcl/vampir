@@ -10,7 +10,6 @@ import { RoleRevealCard } from "../components/RoleRevealCard";
 import { ScreenShell } from "../components/ScreenShell";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
-import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 
@@ -29,10 +28,10 @@ export function RoleRevealScreen(_: Props) {
       : null;
 
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const layout = getResponsiveMetrics(width, height);
-  const footerPadBottom = Math.max(insets.bottom, spacing.md) + spacing.sm;
-  const cardZoneHeight = scaledSize(460, layout.controlScale, 360, 500);
+  const { height } = useWindowDimensions();
+  const compact = height < 720;
+  const footerPadBottom = Math.max(insets.bottom, spacing.sm);
+  const maxCardHeight = Math.max(compact ? 430 : 560, height - (compact ? 270 : 286));
 
   const headerEntry = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -49,6 +48,9 @@ export function RoleRevealScreen(_: Props) {
     ]
   };
 
+  const titleSize = compact ? 28 : 32;
+  const titleLineHeight = compact ? 33 : 38;
+
   return (
     <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="">
       <View style={styles.root}>
@@ -60,34 +62,52 @@ export function RoleRevealScreen(_: Props) {
           bounces={false}
         >
           <View style={styles.column}>
-            <Animated.View style={headerEntryStyle}>
+            <Animated.View style={[styles.header, headerEntryStyle]}>
+              <View style={styles.headerOrnament}>
+                <View style={styles.headerLine} />
+                <Ionicons name="diamond-outline" size={11} color={colors.secondary} />
+                <View style={styles.headerLine} />
+              </View>
+              <Text style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]}>
+                Rolün
+              </Text>
               <View style={styles.privacyPill}>
-                <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
+                <Ionicons name="lock-closed-outline" size={12} color={colors.secondary} />
                 <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
               </View>
-            </Animated.View>
-            <Animated.View style={headerEntryStyle}>
-              <Text style={styles.title}>Rolün</Text>
               <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
             </Animated.View>
 
-            {/* Oval radial ambient behind card — not a flat rectangle */}
-            <View style={[styles.cardZone, { height: cardZoneHeight }]} pointerEvents="none">
+            <View style={styles.cardStage}>
               <LinearGradient
-                colors={["rgba(233,195,73,0.0)", "rgba(233,195,73,0.07)", "rgba(233,195,73,0.0)"]}
+                pointerEvents="none"
+                colors={[
+                  "rgba(233,195,73,0.0)",
+                  "rgba(233,195,73,0.08)",
+                  "rgba(181,38,25,0.04)",
+                  "rgba(0,0,0,0.0)"
+                ]}
+                locations={[0, 0.4, 0.7, 1]}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
-                style={styles.vignetteGold}
+                style={styles.cardVignette}
+              />
+              <RoleRevealCard
+                role={role}
+                loverPartnerName={loverPartnerName}
+                maxColumnWidth={CARD_COLUMN_MAX}
+                maxCardHeight={maxCardHeight}
               />
             </View>
-
-            <RoleRevealCard role={role} loverPartnerName={loverPartnerName} maxColumnWidth={CARD_COLUMN_MAX} />
           </View>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: footerPadBottom }]}>
           <View style={styles.footerDivider} />
-          <PhaseCountdown phaseEndsAt={gameState?.phaseEndsAt ?? null} presentation="roleRevealFooter" />
+          <PhaseCountdown
+            phaseEndsAt={gameState?.phaseEndsAt ?? null}
+            presentation="roleRevealFooter"
+          />
         </View>
       </View>
     </ScreenShell>
@@ -108,85 +128,106 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md
+    paddingTop: 0,
+    paddingBottom: spacing.xs
   },
   column: {
     width: "100%",
     maxWidth: CARD_COLUMN_MAX,
     alignSelf: "center",
+    alignItems: "center"
+  },
+  header: {
+    width: "100%",
     alignItems: "center",
-    gap: spacing.sm
+    paddingHorizontal: spacing.sm,
+    paddingTop: 0,
+    paddingBottom: 2,
+    gap: 3
   },
-  cardZone: {
-    position: "absolute",
-    left: -20,
-    right: -20,
-    top: 60,
-    height: 460,
-    zIndex: 0,
-    borderRadius: 999,
-    overflow: "hidden"
+  headerOrnament: {
+    width: 104,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginBottom: 0
   },
-  vignetteGold: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    opacity: 0.55
-  },
-  footer: {
-    width: "100%",
-    maxWidth: CARD_COLUMN_MAX,
-    alignSelf: "center",
-    paddingTop: spacing.md,
-    paddingHorizontal: 2
-  },
-  footerDivider: {
+  headerLine: {
+    flex: 1,
     height: 1,
-    width: "100%",
-    marginBottom: spacing.md,
-    backgroundColor: "rgba(233,195,73,0.14)",
-    shadowColor: colors.secondary,
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 }
+    backgroundColor: "rgba(233,195,73,0.24)"
+  },
+  title: {
+    color: colors.text,
+    fontFamily: typography.serif,
+    textAlign: "center",
+    letterSpacing: 0.2,
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6
   },
   privacyPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 5,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
+    borderColor: "rgba(233,195,73,0.3)",
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: "rgba(20,18,14,0.74)"
+    paddingVertical: 4,
+    backgroundColor: "rgba(9,9,10,0.78)",
+    alignSelf: "center",
+    marginTop: 0
   },
   privacyText: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 11,
+    fontSize: 9.5,
     letterSpacing: 1.1,
     textTransform: "uppercase"
   },
-  title: {
-    marginTop: spacing.xs,
-    color: colors.text,
-    fontFamily: typography.serif,
-    fontSize: 34,
-    lineHeight: 40,
-    textAlign: "center",
-    letterSpacing: 0.5
-  },
   subtitle: {
-    color: colors.textMuted,
-    fontFamily: typography.sansMedium,
-    fontSize: 13,
-    lineHeight: 18,
+    color: "rgba(229,226,225,0.66)",
+    fontFamily: typography.serifRegular,
+    fontSize: 12.5,
+    lineHeight: 17,
     textAlign: "center",
-    marginBottom: spacing.sm,
+    marginTop: 1,
     paddingHorizontal: spacing.sm
+  },
+  cardStage: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    paddingTop: 0,
+    paddingBottom: 0
+  },
+  cardVignette: {
+    position: "absolute",
+    left: -28,
+    right: -28,
+    top: -8,
+    bottom: -16,
+    borderRadius: 999,
+    opacity: 0.85
+  },
+  footer: {
+    width: "100%",
+    maxWidth: 360,
+    alignSelf: "center",
+    paddingTop: 4,
+    paddingHorizontal: 4
+  },
+  footerDivider: {
+    height: 1,
+    width: "100%",
+    marginBottom: 7,
+    backgroundColor: "rgba(233,195,73,0.16)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 }
   }
 });
