@@ -1,7 +1,9 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseCountdown } from "../components/PhaseCountdown";
 import { RoleRevealCard } from "../components/RoleRevealCard";
@@ -28,6 +30,21 @@ export function RoleRevealScreen(_: Props) {
   const insets = useSafeAreaInsets();
   const footerPadBottom = Math.max(insets.bottom, spacing.md) + spacing.sm;
 
+  const headerEntry = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    headerEntry.setValue(0);
+    Animated.timing(headerEntry, { toValue: 1, duration: 420, useNativeDriver: true }).start();
+  }, [headerEntry]);
+
+  const headerEntryStyle = {
+    opacity: headerEntry,
+    transform: [
+      {
+        translateY: headerEntry.interpolate({ inputRange: [0, 1], outputRange: [10, 0] })
+      }
+    ]
+  };
+
   return (
     <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="">
       <View style={styles.root}>
@@ -39,12 +56,32 @@ export function RoleRevealScreen(_: Props) {
           bounces={false}
         >
           <View style={styles.column}>
-            <View style={styles.privacyPill}>
-              <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
-              <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
+            <Animated.View style={headerEntryStyle}>
+              <View style={styles.privacyPill}>
+                <Ionicons name="lock-closed-outline" size={14} color={colors.secondary} />
+                <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
+              </View>
+            </Animated.View>
+            <Animated.View style={headerEntryStyle}>
+              <Text style={styles.title}>Rolün</Text>
+              <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
+            </Animated.View>
+
+            <View style={styles.cardZone} pointerEvents="none">
+              <LinearGradient
+                colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.0)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.vignetteSoft}
+              />
+              <LinearGradient
+                colors={["rgba(233,195,73,0.0)", "rgba(233,195,73,0.16)", "rgba(233,195,73,0.0)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.vignetteGold}
+              />
             </View>
-            <Text style={styles.title}>Rolün</Text>
-            <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
+
             <RoleRevealCard role={role} loverPartnerName={loverPartnerName} maxColumnWidth={CARD_COLUMN_MAX} />
           </View>
         </ScrollView>
@@ -82,6 +119,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm
   },
+  cardZone: {
+    position: "absolute",
+    left: -40,
+    right: -40,
+    top: 86,
+    height: 470,
+    zIndex: 0
+  },
+  vignetteSoft: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.55
+  },
+  vignetteGold: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.9
+  },
   footer: {
     width: "100%",
     maxWidth: CARD_COLUMN_MAX,
@@ -93,7 +154,11 @@ const styles = StyleSheet.create({
     height: 1,
     width: "100%",
     marginBottom: spacing.md,
-    backgroundColor: "rgba(233,195,73,0.14)"
+    backgroundColor: "rgba(233,195,73,0.14)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 }
   },
   privacyPill: {
     flexDirection: "row",

@@ -29,7 +29,7 @@ import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 
-const LOBBY_STICKY_ACTION_RESERVE = 172;
+const LOBBY_STICKY_ACTION_RESERVE = 228;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lobby">;
 
@@ -228,6 +228,14 @@ export function LobbyScreen({ navigation }: Props) {
           ? null
           : "Tüm oyuncular onay vermeli";
   const canStartRoom = !startDisabledReason;
+  const pendingReadyCount = Math.max(0, connectedPlayers.length - readyCount);
+  const stickyStatusTitle = isHost ? "Host Kontrolü" : meReady ? "Onayın Alındı" : "Onay Bekleniyor";
+  const stickyStatusMeta = `${readyCount}/${lobbyStatusTarget} hazır · ${pendingReadyCount} bekliyor`;
+  const stickyHelperText = isHost
+    ? startDisabledReason ?? "Oda hazır. Oyunu başlatınca rol dağıtımına geçilir."
+    : meReady
+      ? "Host oyunu başlatınca masaya geçilir."
+      : `Başlamak için en az ${minPlayers} oyuncu ve herkesin onayı gerekir.`;
 
   return (
     <ScreenShell scene="lobby" headerTitle="LOBİ">
@@ -522,20 +530,38 @@ export function LobbyScreen({ navigation }: Props) {
           }
         ]}
       >
-        <Text style={styles.stickyReadySummary}>
-          {readyCount} kişi hazır · {Math.max(0, connectedPlayers.length - readyCount)} kişi bekleniyor
-        </Text>
+        <View style={styles.stickyStatusRow}>
+          <View style={[styles.stickyStatusIcon, isHost ? styles.stickyStatusIconHost : null]}>
+            <Ionicons
+              name={isHost ? "shield-checkmark-outline" : meReady ? "checkmark-circle-outline" : "time-outline"}
+              size={18}
+              color={isHost || meReady ? colors.secondary : colors.textMuted}
+            />
+          </View>
+          <View style={styles.stickyStatusCopy}>
+            <Text style={styles.stickyStatusTitle}>{stickyStatusTitle}</Text>
+            <Text style={styles.stickyStatusMeta}>{stickyStatusMeta}</Text>
+          </View>
+          <View style={[styles.stickyRoleChip, isHost ? styles.stickyRoleChipHost : null]}>
+            <Text style={[styles.stickyRoleChipText, isHost ? styles.stickyRoleChipTextHost : null]}>
+              {isHost ? "HOST" : meReady ? "HAZIR" : "OYUNCU"}
+            </Text>
+          </View>
+        </View>
         {isHost ? (
           <View style={styles.stickyCol}>
             {!meReady ? (
               <Pressable style={styles.stickyHostReadyPill} onPress={toggleReady}>
                 <Ionicons name="checkmark-circle-outline" size={16} color={colors.secondary} />
-                <Text style={styles.stickyHostReadyText} numberOfLines={2}>
-                  Onay Ver — oyunu başlatmak için sen de hazır olmalısın
+                <Text style={styles.stickyHostReadyText} numberOfLines={1}>
+                  Önce kendi onayını ver
                 </Text>
               </Pressable>
             ) : (
-              <Text style={styles.stickyHostReadyDone}>Hazırsın</Text>
+              <View style={styles.stickyHostReadyDone}>
+                <Ionicons name="checkmark-done-outline" size={15} color={colors.success} />
+                <Text style={styles.stickyHostReadyDoneText}>Host hazır</Text>
+              </View>
             )}
             <PrimaryButton
               label="Oyunu Başlat"
@@ -545,35 +571,36 @@ export function LobbyScreen({ navigation }: Props) {
               variant="blood"
               compact
             />
-            {startDisabledReason ? (
-              <View style={styles.stickyStartReason}>
-                <Ionicons name="alert-circle-outline" size={14} color={colors.secondary} />
-                <Text style={styles.stickyStartReasonText} numberOfLines={3}>
-                  {startDisabledReason}
-                </Text>
-              </View>
-            ) : null}
+            <View style={[styles.stickyHelperBox, canStartRoom ? styles.stickyHelperBoxReady : null]}>
+              <Ionicons
+                name={canStartRoom ? "sparkles-outline" : "alert-circle-outline"}
+                size={14}
+                color={canStartRoom ? colors.success : colors.secondary}
+              />
+              <Text style={[styles.stickyHelperText, canStartRoom ? styles.stickyHelperTextReady : null]} numberOfLines={2}>
+                {stickyHelperText}
+              </Text>
+            </View>
           </View>
         ) : (
           <View style={styles.stickyCol}>
-            <Pressable
-              style={[styles.stickyGuestToggle, meReady ? styles.stickyGuestToggleOn : null]}
+            <PrimaryButton
+              label={meReady ? "Onayı Geri Al" : "Onay Ver"}
+              iconName={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
               onPress={toggleReady}
-            >
+              variant={meReady ? "outline" : "gold"}
+              compact
+            />
+            <View style={[styles.stickyHelperBox, meReady ? styles.stickyHelperBoxReady : null]}>
               <Ionicons
-                name={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
-                size={18}
-                color={meReady ? colors.parchmentText : colors.secondary}
+                name={meReady ? "checkmark-done-outline" : "information-circle-outline"}
+                size={14}
+                color={meReady ? colors.success : colors.secondary}
               />
-              <Text style={[styles.stickyGuestToggleText, meReady ? styles.stickyGuestToggleTextOn : null]}>
-                {meReady ? "Onayı Geri Al" : "Onay Ver"}
+              <Text style={[styles.stickyHelperText, meReady ? styles.stickyHelperTextReady : null]} numberOfLines={2}>
+                {stickyHelperText}
               </Text>
-            </Pressable>
-            {meReady ? (
-              <Text style={styles.stickyGuestDone}>Hazırsın — host oyunu başlatınca masaya geçilir.</Text>
-            ) : (
-              <Text style={styles.stickyGuestHint}>Başlamak için en az {minPlayers} oyuncu ve herkesin onayı gerekir.</Text>
-            )}
+            </View>
           </View>
         )}
       </View>
@@ -673,23 +700,81 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderTopWidth: 1,
-    borderTopColor: "rgba(233,195,73,0.26)",
-    backgroundColor: "rgba(10,10,12,0.97)",
-    paddingTop: 10,
-    paddingHorizontal: 2,
-    gap: 8,
+    borderTopColor: "rgba(233,195,73,0.3)",
+    backgroundColor: "rgba(10,10,12,0.98)",
+    paddingTop: 12,
+    paddingHorizontal: 10,
+    gap: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.46,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
     elevation: 18
   },
-  stickyReadySummary: {
-    textAlign: "center",
-    color: colors.textMuted,
+  stickyStatusRow: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.2)",
+    borderRadius: 14,
+    backgroundColor: "rgba(22,21,22,0.9)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  stickyStatusIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.24)",
+    backgroundColor: "rgba(12,12,14,0.72)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  stickyStatusIconHost: {
+    borderColor: "rgba(233,195,73,0.36)",
+    backgroundColor: "rgba(44,35,14,0.48)"
+  },
+  stickyStatusCopy: {
+    flex: 1,
+    gap: 2
+  },
+  stickyStatusTitle: {
+    color: colors.text,
+    fontFamily: typography.sansBold,
+    fontSize: 13,
+    letterSpacing: 0.3
+  },
+  stickyStatusMeta: {
+    color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 12,
-    lineHeight: 16
+    fontSize: 11,
+    lineHeight: 14
+  },
+  stickyRoleChip: {
+    minHeight: 25,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.24)",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(12,12,14,0.62)"
+  },
+  stickyRoleChipHost: {
+    borderColor: "rgba(233,195,73,0.38)",
+    backgroundColor: "rgba(233,195,73,0.12)"
+  },
+  stickyRoleChipText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 0.8
+  },
+  stickyRoleChipTextHost: {
+    color: colors.secondary
   },
   stickyCol: {
     gap: 8
@@ -700,78 +785,60 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.35)",
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "rgba(24,23,20,0.75)"
+    minHeight: 38,
+    backgroundColor: "rgba(33,29,16,0.54)"
   },
   stickyHostReadyText: {
     flex: 1,
     color: colors.secondary,
-    fontFamily: typography.sansMedium,
+    fontFamily: typography.sansBold,
     fontSize: 12,
     lineHeight: 16
   },
   stickyHostReadyDone: {
+    minHeight: 34,
+    borderWidth: 1,
+    borderColor: "rgba(39,190,104,0.28)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(11,33,21,0.58)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7
+  },
+  stickyHostReadyDoneText: {
     color: colors.success,
     fontFamily: typography.sansBold,
     fontSize: 12,
-    letterSpacing: 0.4
+    letterSpacing: 0.35
   },
-  stickyStartReason: {
+  stickyHelperBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 6,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.22)",
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
     backgroundColor: "rgba(33,29,16,0.45)"
   },
-  stickyStartReasonText: {
+  stickyHelperBoxReady: {
+    borderColor: "rgba(39,190,104,0.24)",
+    backgroundColor: "rgba(11,33,21,0.46)"
+  },
+  stickyHelperText: {
     flex: 1,
     color: colors.secondary,
     fontFamily: typography.sansMedium,
     fontSize: 11,
     lineHeight: 15
   },
-  stickyGuestToggle: {
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.32)",
-    borderRadius: 12,
-    backgroundColor: "rgba(18,18,20,0.92)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 12
-  },
-  stickyGuestToggleOn: {
-    borderColor: colors.secondary,
-    backgroundColor: "rgba(213,169,50,0.92)"
-  },
-  stickyGuestToggleText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 13
-  },
-  stickyGuestToggleTextOn: {
-    color: colors.parchmentText
-  },
-  stickyGuestDone: {
-    textAlign: "center",
+  stickyHelperTextReady: {
     color: colors.success,
-    fontFamily: typography.sansBold,
-    fontSize: 12
-  },
-  stickyGuestHint: {
-    textAlign: "center",
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 11,
-    lineHeight: 15
+    fontFamily: typography.sansBold
   },
   lobbyHeader: {
     borderWidth: 1,

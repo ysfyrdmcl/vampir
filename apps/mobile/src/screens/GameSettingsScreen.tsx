@@ -32,6 +32,7 @@ export function GameSettingsScreen({ navigation }: Props) {
             label={isPaused ? "Oyunu Devam Ettir" : "Oyunu Durdur"}
             iconName={isPaused ? "play-outline" : "pause-outline"}
             variant={isPaused ? "gold" : "charcoal"}
+            compact
             onPress={() => {
               if (isPaused) {
                 emitGameResume();
@@ -39,6 +40,7 @@ export function GameSettingsScreen({ navigation }: Props) {
               }
               setPauseConfirmOpen(true);
             }}
+            style={styles.pauseButton}
           />
         ) : null}
         <PrimaryButton
@@ -98,6 +100,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: typography.sansMedium,
     marginBottom: spacing.sm
+  },
+  pauseButton: {
+    alignSelf: "center",
+    minWidth: 188,
+    maxWidth: 236,
+    width: "64%"
   },
   leaveButton: {
     alignSelf: "center",
