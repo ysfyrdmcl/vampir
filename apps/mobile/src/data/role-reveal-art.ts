@@ -3,7 +3,7 @@ export const ROLE_REVEAL_FRAME = require("../assets/role-reveal/card-frame.png")
 export const ROLE_REVEAL_MIST = require("../assets/role-reveal/mist-overlay.png") as ImageSourcePropType;
 
 export const ROLE_REVEAL_ART: Record<string, ImageSourcePropType> = {
-  Villager: require("../assets/role-reveal/villager-card-v2.png"),
+  Villager: require("../assets/roles/villager.png"),
   Vampire: require("../assets/roles/vampire.png"),
   Detective: require("../assets/roles/detective.png"),
   Doctor: require("../assets/roles/doctor.png"),
