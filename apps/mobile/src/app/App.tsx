@@ -11,6 +11,7 @@ import {
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
+import { Text, TextInput, type TextInputProps, type TextProps } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BootSplash } from "../components/BootSplash";
 import { logGameEvent } from "../logging/game-logger";
@@ -20,6 +21,15 @@ import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { createDeviceId } from "../utils/device-id";
 import { RootNavigator } from "./navigation/RootNavigator";
 import { navigationRef } from "./navigation/navigation-ref";
+
+function configureStableTextScale() {
+  const textConfig = Text as typeof Text & { defaultProps?: TextProps };
+  const inputConfig = TextInput as typeof TextInput & { defaultProps?: TextInputProps };
+  textConfig.defaultProps = { ...textConfig.defaultProps, allowFontScaling: false };
+  inputConfig.defaultProps = { ...inputConfig.defaultProps, allowFontScaling: false };
+}
+
+configureStableTextScale();
 
 export default function App() {
   const roomState = useGameStore((s) => s.roomState);

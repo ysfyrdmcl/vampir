@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../app/navigation/routes";
@@ -10,6 +10,7 @@ import { RoleRevealCard } from "../components/RoleRevealCard";
 import { ScreenShell } from "../components/ScreenShell";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
+import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 
@@ -28,7 +29,10 @@ export function RoleRevealScreen(_: Props) {
       : null;
 
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const layout = getResponsiveMetrics(width, height);
   const footerPadBottom = Math.max(insets.bottom, spacing.md) + spacing.sm;
+  const cardZoneHeight = scaledSize(460, layout.controlScale, 360, 500);
 
   const headerEntry = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -68,7 +72,7 @@ export function RoleRevealScreen(_: Props) {
             </Animated.View>
 
             {/* Oval radial ambient behind card — not a flat rectangle */}
-            <View style={styles.cardZone} pointerEvents="none">
+            <View style={[styles.cardZone, { height: cardZoneHeight }]} pointerEvents="none">
               <LinearGradient
                 colors={["rgba(233,195,73,0.0)", "rgba(233,195,73,0.07)", "rgba(233,195,73,0.0)"]}
                 start={{ x: 0.5, y: 0 }}
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
     left: -20,
     right: -20,
     top: 60,
-    height: 500,
+    height: 460,
     zIndex: 0,
     borderRadius: 999,
     overflow: "hidden"

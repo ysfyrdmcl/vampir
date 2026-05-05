@@ -18,6 +18,7 @@ import { GameToast } from "../components/GameToast";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
+import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorAllowedForRoute, toFriendlyToastText } from "../ui/error-text";
@@ -71,7 +72,7 @@ export function ScreenShell({
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const label = headerTitle ?? phaseLabelFromState(phase);
   const meAlive = roomState?.players.find((player) => player.playerId === mePlayerId)?.isAlive ?? true;
   const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === mePlayerId);
@@ -169,9 +170,13 @@ export function ScreenShell({
   const navActive = bottomNavActiveIndex ?? navFromScene;
   const shouldShowTopBar = showTopBar && scene !== "home";
   const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
-  const horizontalPadding = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
-  const contentMaxWidth = width >= 768 ? 680 : undefined;
-  const topBarHeight = 64 + insets.top;
+  const layout = useMemo(() => getResponsiveMetrics(width, height), [height, width]);
+  const horizontalPadding = layout.pagePadding + Math.max(insets.left, insets.right);
+  const contentMaxWidth = layout.contentMaxWidth;
+  const topBarHeight = layout.topBarBaseHeight + insets.top;
+  const bottomNavHeight = layout.bottomNavBaseHeight + insets.bottom;
+  const navIconSize = scaledSize(24, layout.controlScale, 21, 25);
+  const navSettingsIconSize = scaledSize(22, layout.controlScale, 20, 24);
   const navigateIfReady = (route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
     if (!navigationRef.isReady()) return;
     navigationRef.navigate(route);
@@ -250,7 +255,7 @@ export function ScreenShell({
         ) : null}
         <GameToast />
         {isPaused && showPauseOverlay ? (
-          <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? 74 + insets.bottom : 0 }]}>
+          <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? bottomNavHeight : 0 }]}>
             <View style={styles.pausePanel}>
               <Ionicons name="pause-circle-outline" size={42} color={colors.secondary} />
               <Text style={styles.pauseTitle}>Oyun Duraklatıldı</Text>
@@ -260,18 +265,18 @@ export function ScreenShell({
         ) : null}
 
         {shouldShowBottomNav ? (
-          <View style={[styles.bottomNav, { height: 74 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[styles.bottomNav, { height: bottomNavHeight, paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={[styles.bottomNavInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
               <Pressable style={[styles.navItem, navActive === 0 ? styles.navItemActive : null]} onPress={goStatus}>
                 <View style={[styles.navIconWrap, navActive === 0 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="eye-outline" size={24} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="eye-outline" size={navIconSize} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
                   {statusAttention ? <View style={styles.navDotDanger} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
               </Pressable>
               <Pressable style={[styles.navItem, navActive === 1 ? styles.navItemActive : null]} onPress={() => navigateIfReady("GameLog")}>
                 <View style={[styles.navIconWrap, navActive === 1 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="book-outline" size={24} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="book-outline" size={navIconSize} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
                   {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
@@ -281,7 +286,7 @@ export function ScreenShell({
                 navigateIfReady("GameSettings");
               }}>
                 <View style={[styles.navIconWrap, navActive === 2 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="settings-outline" size={22} color={navActive === 2 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="settings-outline" size={navSettingsIconSize} color={navActive === 2 ? colors.secondary : "#6e6d72"} />
                 </View>
                 <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
               </Pressable>
