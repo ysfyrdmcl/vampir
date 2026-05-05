@@ -29,7 +29,7 @@ import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 
-const LOBBY_STICKY_ACTION_RESERVE = 228;
+const LOBBY_STICKY_ACTION_RESERVE = 160;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lobby">;
 
@@ -238,7 +238,7 @@ export function LobbyScreen({ navigation }: Props) {
       : `Başlamak için en az ${minPlayers} oyuncu ve herkesin onayı gerekir.`;
 
   return (
-    <ScreenShell scene="lobby" headerTitle="LOBİ">
+    <ScreenShell scene="lobby" headerTitle="LOBİ" showTopBar={false}>
       <View style={styles.lobbyRoot}>
       <ScrollView
         style={styles.scroll}
@@ -552,17 +552,12 @@ export function LobbyScreen({ navigation }: Props) {
           <View style={styles.stickyCol}>
             {!meReady ? (
               <Pressable style={styles.stickyHostReadyPill} onPress={toggleReady}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={colors.secondary} />
+                <Ionicons name="checkmark-circle-outline" size={14} color={colors.secondary} />
                 <Text style={styles.stickyHostReadyText} numberOfLines={1}>
                   Önce kendi onayını ver
                 </Text>
               </Pressable>
-            ) : (
-              <View style={styles.stickyHostReadyDone}>
-                <Ionicons name="checkmark-done-outline" size={15} color={colors.success} />
-                <Text style={styles.stickyHostReadyDoneText}>Host hazır</Text>
-              </View>
-            )}
+            ) : null}
             <PrimaryButton
               label="Oyunu Başlat"
               iconName="checkmark-circle-outline"
@@ -571,13 +566,13 @@ export function LobbyScreen({ navigation }: Props) {
               variant="blood"
               compact
             />
-            <View style={[styles.stickyHelperBox, canStartRoom ? styles.stickyHelperBoxReady : null]}>
+            <View style={styles.stickyHelperLine}>
               <Ionicons
                 name={canStartRoom ? "sparkles-outline" : "alert-circle-outline"}
-                size={14}
+                size={13}
                 color={canStartRoom ? colors.success : colors.secondary}
               />
-              <Text style={[styles.stickyHelperText, canStartRoom ? styles.stickyHelperTextReady : null]} numberOfLines={2}>
+              <Text style={[styles.stickyHelperText, canStartRoom ? styles.stickyHelperTextReady : null]} numberOfLines={1}>
                 {stickyHelperText}
               </Text>
             </View>
@@ -591,13 +586,13 @@ export function LobbyScreen({ navigation }: Props) {
               variant={meReady ? "outline" : "gold"}
               compact
             />
-            <View style={[styles.stickyHelperBox, meReady ? styles.stickyHelperBoxReady : null]}>
+            <View style={styles.stickyHelperLine}>
               <Ionicons
                 name={meReady ? "checkmark-done-outline" : "information-circle-outline"}
-                size={14}
+                size={13}
                 color={meReady ? colors.success : colors.secondary}
               />
-              <Text style={[styles.stickyHelperText, meReady ? styles.stickyHelperTextReady : null]} numberOfLines={2}>
+              <Text style={[styles.stickyHelperText, meReady ? styles.stickyHelperTextReady : null]} numberOfLines={1}>
                 {stickyHelperText}
               </Text>
             </View>
@@ -702,9 +697,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(233,195,73,0.3)",
     backgroundColor: "rgba(10,10,12,0.98)",
-    paddingTop: 12,
+    paddingTop: 8,
     paddingHorizontal: 10,
-    gap: 10,
+    gap: 7,
     shadowColor: "#000",
     shadowOpacity: 0.46,
     shadowRadius: 18,
@@ -712,21 +707,21 @@ const styles = StyleSheet.create({
     elevation: 18
   },
   stickyStatusRow: {
-    minHeight: 46,
+    minHeight: 38,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.2)",
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: "rgba(22,21,22,0.9)",
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
     flexDirection: "row",
     alignItems: "center",
     gap: 10
   },
   stickyStatusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.24)",
     backgroundColor: "rgba(12,12,14,0.72)",
@@ -777,64 +772,39 @@ const styles = StyleSheet.create({
     color: colors.secondary
   },
   stickyCol: {
-    gap: 8
+    gap: 6
   },
   stickyHostReadyPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 7,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.35)",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    minHeight: 38,
+    borderColor: "rgba(233,195,73,0.32)",
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    minHeight: 30,
     backgroundColor: "rgba(33,29,16,0.54)"
   },
   stickyHostReadyText: {
     flex: 1,
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 12,
-    lineHeight: 16
+    fontSize: 11,
+    lineHeight: 14
   },
-  stickyHostReadyDone: {
-    minHeight: 34,
-    borderWidth: 1,
-    borderColor: "rgba(39,190,104,0.28)",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    backgroundColor: "rgba(11,33,21,0.58)",
+  stickyHelperLine: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7
-  },
-  stickyHostReadyDoneText: {
-    color: colors.success,
-    fontFamily: typography.sansBold,
-    fontSize: 12,
-    letterSpacing: 0.35
-  },
-  stickyHelperBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.22)",
-    borderRadius: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 8,
-    backgroundColor: "rgba(33,29,16,0.45)"
-  },
-  stickyHelperBoxReady: {
-    borderColor: "rgba(39,190,104,0.24)",
-    backgroundColor: "rgba(11,33,21,0.46)"
+    gap: 5,
+    paddingHorizontal: 4,
+    paddingBottom: 2
   },
   stickyHelperText: {
     flex: 1,
     color: colors.secondary,
     fontFamily: typography.sansMedium,
     fontSize: 11,
-    lineHeight: 15
+    lineHeight: 14
   },
   stickyHelperTextReady: {
     color: colors.success,

@@ -67,17 +67,12 @@ export function RoleRevealScreen(_: Props) {
               <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
             </Animated.View>
 
+            {/* Oval radial ambient behind card — not a flat rectangle */}
             <View style={styles.cardZone} pointerEvents="none">
               <LinearGradient
-                colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.0)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.vignetteSoft}
-              />
-              <LinearGradient
-                colors={["rgba(233,195,73,0.0)", "rgba(233,195,73,0.16)", "rgba(233,195,73,0.0)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                colors={["rgba(233,195,73,0.0)", "rgba(233,195,73,0.07)", "rgba(233,195,73,0.0)"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
                 style={styles.vignetteGold}
               />
             </View>
@@ -121,19 +116,13 @@ const styles = StyleSheet.create({
   },
   cardZone: {
     position: "absolute",
-    left: -40,
-    right: -40,
-    top: 86,
-    height: 470,
-    zIndex: 0
-  },
-  vignetteSoft: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    opacity: 0.55
+    left: -20,
+    right: -20,
+    top: 60,
+    height: 500,
+    zIndex: 0,
+    borderRadius: 999,
+    overflow: "hidden"
   },
   vignetteGold: {
     position: "absolute",
@@ -141,7 +130,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    opacity: 0.9
+    opacity: 0.55
   },
   footer: {
     width: "100%",
