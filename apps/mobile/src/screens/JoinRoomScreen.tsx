@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -73,16 +74,30 @@ export function JoinRoomScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="join" headerTitle="ODAYA KATIL">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>Karanlık meclise davet edildin.</Text>
+        <View style={styles.introCard}>
+          <View style={styles.introIcon}>
+            <Ionicons name="people-outline" size={26} color={colors.secondary} />
+          </View>
+          <Text style={styles.kicker}>DAVET ODASI</Text>
+          <Text style={styles.title}>Karanlık meclise davet edildin.</Text>
+          <Text style={styles.introText}>Oda kodunu gir, lakabını doğrula ve aynı masadaki oyuna katıl.</Text>
+          <View style={styles.introChips}>
+            <Pressable style={styles.introChip} onPress={pasteRoomCode}>
+              <Ionicons name="clipboard-outline" size={13} color={colors.secondary} />
+              <Text style={styles.introChipText}>Yapıştır</Text>
+            </Pressable>
+            {lastRoomCode ? (
+              <Pressable style={styles.introChip} onPress={() => normalizeRoomCode(lastRoomCode)}>
+                <Ionicons name="time-outline" size={13} color={colors.secondary} />
+                <Text style={styles.introChipText}>Son oda: {lastRoomCode}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
 
         <View style={styles.card}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>ODA KODU</Text>
-            <View style={styles.headerActions}>
-              <Pressable style={styles.headerActionButtonStrong} onPress={pasteRoomCode}>
-                <Text style={styles.headerActionStrongText}>Yapıştır</Text>
-              </Pressable>
-            </View>
           </View>
           <View style={styles.codeEntry}>
             <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
@@ -105,18 +120,11 @@ export function JoinRoomScreen({ navigation }: Props) {
               caretHidden
             />
           </View>
-          <View style={styles.quickActions}>
-            {lastRoomCode ? (
-              <Pressable style={styles.quickChip} onPress={() => normalizeRoomCode(lastRoomCode)}>
-                <Text style={styles.quickChipText}>Son oda: {lastRoomCode}</Text>
-              </Pressable>
-            ) : null}
-          </View>
 
           <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
           <TextInput
             style={styles.nameInput}
-            placeholder="Lakapını yaz"
+            placeholder="Lakabını yaz"
             placeholderTextColor="rgba(55,47,35,0.58)"
             value={nickname}
             onChangeText={setNickname}
@@ -151,11 +159,71 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
-  subtitle: {
+  introCard: {
+    borderRadius: uiStandard.screen.cardRadius,
+    borderWidth: 1,
+    borderColor: uiStandard.surfaces.hero.borderColor,
+    backgroundColor: uiStandard.surfaces.hero.backgroundColor,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+    gap: 9,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 9 }
+  },
+  introIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    backgroundColor: "rgba(38,28,18,0.62)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  kicker: {
+    color: colors.primaryBright,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.8
+  },
+  title: {
+    color: colors.text,
+    fontFamily: typography.serif,
+    fontSize: 28,
+    textAlign: "center"
+  },
+  introText: {
     color: colors.textMuted,
-    textAlign: "center",
-    fontFamily: typography.serifRegular,
-    fontSize: uiStandard.text.heroSubtitleSize
+    fontFamily: typography.sansMedium,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center"
+  },
+  introChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 2
+  },
+  introChip: {
+    minHeight: 30,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    backgroundColor: "rgba(24,22,18,0.58)",
+    paddingHorizontal: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  introChipText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
   },
   card: {
     borderWidth: 1,
@@ -175,26 +243,8 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: 10
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7
-  },
-  headerActionButtonStrong: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.34)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(36,31,20,0.68)"
-  },
-  headerActionStrongText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 11
   },
   codeEntry: {
     position: "relative"
@@ -230,24 +280,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     opacity: 0,
     color: "transparent"
-  },
-  quickActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  quickChip: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.28)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: "rgba(12,12,14,0.72)"
-  },
-  quickChipText: {
-    color: colors.secondary,
-    fontFamily: typography.sansMedium,
-    fontSize: 12
   },
   playerLabel: {
     marginTop: 2

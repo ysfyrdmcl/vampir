@@ -29,7 +29,7 @@ import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 
-const LOBBY_STICKY_ACTION_RESERVE = 160;
+const LOBBY_STICKY_ACTION_RESERVE = 148;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Lobby">;
 
@@ -530,34 +530,44 @@ export function LobbyScreen({ navigation }: Props) {
           }
         ]}
       >
-        <View style={styles.stickyStatusRow}>
-          <View style={[styles.stickyStatusIcon, isHost ? styles.stickyStatusIconHost : null]}>
-            <Ionicons
-              name={isHost ? "shield-checkmark-outline" : meReady ? "checkmark-circle-outline" : "time-outline"}
-              size={18}
-              color={isHost || meReady ? colors.secondary : colors.textMuted}
-            />
+        <View style={styles.stickyMainRow}>
+          <View style={styles.stickyStatusRow}>
+            <View style={[styles.stickyStatusIcon, isHost ? styles.stickyStatusIconHost : null]}>
+              <Ionicons
+                name={isHost ? "shield-checkmark-outline" : meReady ? "checkmark-circle-outline" : "time-outline"}
+                size={18}
+                color={isHost || meReady ? colors.secondary : colors.textMuted}
+              />
+            </View>
+            <View style={styles.stickyStatusCopy}>
+              <Text style={styles.stickyStatusTitle} numberOfLines={1}>{stickyStatusTitle}</Text>
+              <Text style={styles.stickyStatusMeta} numberOfLines={1}>{stickyStatusMeta}</Text>
+            </View>
           </View>
-          <View style={styles.stickyStatusCopy}>
-            <Text style={styles.stickyStatusTitle}>{stickyStatusTitle}</Text>
-            <Text style={styles.stickyStatusMeta}>{stickyStatusMeta}</Text>
-          </View>
-          <View style={[styles.stickyRoleChip, isHost ? styles.stickyRoleChipHost : null]}>
-            <Text style={[styles.stickyRoleChipText, isHost ? styles.stickyRoleChipTextHost : null]}>
-              {isHost ? "HOST" : meReady ? "HAZIR" : "OYUNCU"}
-            </Text>
+          <View style={styles.stickyActionSlot}>
+            {isHost ? (
+              <Pressable
+                style={[styles.stickyHostReadyPill, meReady ? styles.stickyHostReadyPillActive : null]}
+                onPress={toggleReady}
+              >
+                <Ionicons name="checkmark-circle-outline" size={14} color={colors.secondary} />
+                <Text style={styles.stickyHostReadyText} numberOfLines={1}>
+                  {meReady ? "Onay Verildi" : "Onay Ver"}
+                </Text>
+              </Pressable>
+            ) : (
+              <PrimaryButton
+                label={meReady ? "Geri Al" : "Onay Ver"}
+                iconName={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
+                onPress={toggleReady}
+                variant={meReady ? "outline" : "gold"}
+                compact
+              />
+            )}
           </View>
         </View>
         {isHost ? (
           <View style={styles.stickyCol}>
-            {!meReady ? (
-              <Pressable style={styles.stickyHostReadyPill} onPress={toggleReady}>
-                <Ionicons name="checkmark-circle-outline" size={14} color={colors.secondary} />
-                <Text style={styles.stickyHostReadyText} numberOfLines={1}>
-                  Önce kendi onayını ver
-                </Text>
-              </Pressable>
-            ) : null}
             <PrimaryButton
               label="Oyunu Başlat"
               iconName="checkmark-circle-outline"
@@ -579,13 +589,6 @@ export function LobbyScreen({ navigation }: Props) {
           </View>
         ) : (
           <View style={styles.stickyCol}>
-            <PrimaryButton
-              label={meReady ? "Onayı Geri Al" : "Onay Ver"}
-              iconName={meReady ? "close-circle-outline" : "checkmark-circle-outline"}
-              onPress={toggleReady}
-              variant={meReady ? "outline" : "gold"}
-              compact
-            />
             <View style={styles.stickyHelperLine}>
               <Ionicons
                 name={meReady ? "checkmark-done-outline" : "information-circle-outline"}
@@ -697,26 +700,34 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(233,195,73,0.3)",
     backgroundColor: "rgba(10,10,12,0.98)",
-    paddingTop: 8,
+    paddingTop: 9,
     paddingHorizontal: 10,
-    gap: 7,
+    gap: 8,
     shadowColor: "#000",
     shadowOpacity: 0.46,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: -8 },
     elevation: 18
   },
+  stickyMainRow: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8
+  },
   stickyStatusRow: {
-    minHeight: 38,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.2)",
     borderRadius: 12,
     backgroundColor: "rgba(22,21,22,0.9)",
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 6,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10
+    gap: 8
   },
   stickyStatusIcon: {
     width: 28,
@@ -734,6 +745,7 @@ const styles = StyleSheet.create({
   },
   stickyStatusCopy: {
     flex: 1,
+    minWidth: 0,
     gap: 2
   },
   stickyStatusTitle: {
@@ -771,26 +783,35 @@ const styles = StyleSheet.create({
   stickyRoleChipTextHost: {
     color: colors.secondary
   },
+  stickyActionSlot: {
+    flex: 1,
+    minWidth: 0
+  },
   stickyCol: {
     gap: 6
   },
   stickyHostReadyPill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 7,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.32)",
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 9,
-    minHeight: 30,
+    minHeight: 44,
     backgroundColor: "rgba(33,29,16,0.54)"
   },
+  stickyHostReadyPillActive: {
+    borderColor: "rgba(39,190,104,0.38)",
+    backgroundColor: "rgba(18,48,31,0.52)"
+  },
   stickyHostReadyText: {
-    flex: 1,
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 11,
-    lineHeight: 14
+    fontSize: 12,
+    lineHeight: 15
   },
   stickyHelperLine: {
     flexDirection: "row",

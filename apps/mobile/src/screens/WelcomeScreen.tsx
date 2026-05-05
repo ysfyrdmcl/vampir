@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
@@ -20,6 +21,7 @@ import {
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Welcome">;
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 export function WelcomeScreen({ navigation }: Props) {
   const connectionStatus = useGameStore((s) => s.connectionStatus);
@@ -43,15 +45,44 @@ export function WelcomeScreen({ navigation }: Props) {
       onPress: () => navigation.navigate("RoleGuide", { source: "menu" })
     }
   ];
+  const tableStats: { label: string; value: string; icon: IconName }[] = [
+    { label: "Oyuncu", value: "4+", icon: "people-outline" },
+    { label: "Kurulum", value: "Oda", icon: "keypad-outline" },
+    { label: "Akış", value: "Canlı", icon: "pulse-outline" }
+  ];
+
   return (
     <ScreenShell scene="home" headerTitle="ANA MENÜ">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
+          <View style={styles.heroTopline}>
+            <View style={styles.heroPill}>
+              <Ionicons name="moon-outline" size={14} color={colors.secondary} />
+              <Text style={styles.heroPillText}>GECE MECLİSİ</Text>
+            </View>
+            <View style={styles.heroPillMuted}>
+              <Ionicons name="wifi-outline" size={14} color={colors.textDim} />
+              <Text style={styles.heroPillMutedText}>{connectionText}</Text>
+            </View>
+          </View>
           <HeroBrandArea title="Vampir Köylü" subtitle="Aynı masada oynanan sosyal çıkarım oyunu" />
+          <View style={styles.heroStats}>
+            {tableStats.map((item) => (
+              <View key={item.label} style={styles.statTile}>
+                <Ionicons name={item.icon} size={17} color={colors.secondary} />
+                <Text style={styles.statValue}>{item.value}</Text>
+                <Text style={styles.statLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
           {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         </View>
 
         <View style={styles.menuCard}>
+          <View style={styles.menuHeader}>
+            <Text style={styles.menuKicker}>MASA HAZIRLIĞI</Text>
+            <Text style={styles.menuTitle}>Oyunu kur ya da davet koduyla masaya otur.</Text>
+          </View>
           <View style={styles.actions}>
             <PrimaryButton label="Oda Kur" iconName="git-network-outline" onPress={() => navigation.navigate("CreateRoom")} />
             <PrimaryButton label="Odaya Katıl" iconName="people-outline" onPress={() => navigation.navigate("JoinRoom")} variant="charcoal" />
@@ -95,12 +126,79 @@ const styles = StyleSheet.create({
     borderColor: uiStandard.surfaces.hero.borderColor,
     backgroundColor: uiStandard.surfaces.hero.backgroundColor,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 }
+  },
+  heroTopline: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  heroPill: {
+    minHeight: 30,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.24)",
+    backgroundColor: "rgba(40,28,18,0.44)",
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  heroPillText: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.2
+  },
+  heroPillMuted: {
+    minHeight: 30,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.16)",
+    backgroundColor: "rgba(12,12,14,0.38)",
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 1
+  },
+  heroPillMutedText: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 10
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: 8
+  },
+  statTile: {
+    flex: 1,
+    minHeight: 70,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.18)",
+    backgroundColor: "rgba(10,10,12,0.42)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 6
+  },
+  statValue: {
+    color: colors.text,
+    fontFamily: typography.serif,
+    fontSize: 20
+  },
+  statLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 10,
+    textAlign: "center"
   },
   statusPill: {
     flexDirection: "row",
@@ -141,11 +239,26 @@ const styles = StyleSheet.create({
     backgroundColor: uiStandard.surfaces.panel.backgroundColor,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    gap: 14,
+    gap: spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.24,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 }
+  },
+  menuHeader: {
+    gap: 4
+  },
+  menuKicker: {
+    color: colors.primaryBright,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.6
+  },
+  menuTitle: {
+    color: colors.text,
+    fontFamily: typography.serifSemi,
+    fontSize: 20,
+    lineHeight: 25
   },
   actions: {
     gap: 12

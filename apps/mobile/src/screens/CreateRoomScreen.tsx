@@ -53,12 +53,30 @@ export function CreateRoomScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="create" headerTitle="ODA KUR">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>Karanlık meclisi başlat.</Text>
+        <View style={styles.introCard}>
+          <View style={styles.introIcon}>
+            <Ionicons name="git-network-outline" size={26} color={colors.secondary} />
+          </View>
+          <Text style={styles.kicker}>HOST ODASI</Text>
+          <Text style={styles.title}>Karanlık meclisi sen başlat.</Text>
+          <Text style={styles.introText}>Oyuncu adını seç, oda kodunu oluştur ve masadaki herkesi aynı lobiye al.</Text>
+          <View style={styles.introChips}>
+            <View style={styles.introChip}>
+              <Ionicons name="people-outline" size={13} color={colors.secondary} />
+              <Text style={styles.introChipText}>4+ oyuncu</Text>
+            </View>
+            <View style={styles.introChip}>
+              <Ionicons name="shield-outline" size={13} color={colors.secondary} />
+              <Text style={styles.introChipText}>Host kontrolü</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.formCard}>
           <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
           <TextInput
             style={[styles.input, isInputFocused ? styles.inputFocused : null]}
-            placeholder="Lakapını yaz"
+            placeholder="Lakabını yaz"
             placeholderTextColor="rgba(55,47,35,0.58)"
             value={nickname}
             onChangeText={setNickname}
@@ -66,10 +84,6 @@ export function CreateRoomScreen({ navigation }: Props) {
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
           />
-        </View>
-        <View style={styles.infoChip}>
-          <Ionicons name="people-outline" size={14} color={colors.secondary} />
-          <Text style={styles.hint}>Minimum 4 oyuncu gerekir.</Text>
         </View>
 
         {roomCode ? (
@@ -105,11 +119,71 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
-  subtitle: {
+  introCard: {
+    borderRadius: uiStandard.screen.cardRadius,
+    borderWidth: 1,
+    borderColor: uiStandard.surfaces.hero.borderColor,
+    backgroundColor: uiStandard.surfaces.hero.backgroundColor,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+    gap: 9,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 9 }
+  },
+  introIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    backgroundColor: "rgba(38,28,18,0.62)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  kicker: {
+    color: colors.primaryBright,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    letterSpacing: 1.8
+  },
+  title: {
+    color: colors.text,
+    fontFamily: typography.serif,
+    fontSize: 28,
+    textAlign: "center"
+  },
+  introText: {
     color: colors.textMuted,
-    textAlign: "center",
-    fontFamily: typography.serifRegular,
-    fontSize: uiStandard.text.heroSubtitleSize
+    fontFamily: typography.sansMedium,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center"
+  },
+  introChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 2
+  },
+  introChip: {
+    minHeight: 30,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    backgroundColor: "rgba(24,22,18,0.58)",
+    paddingHorizontal: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  introChipText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12
   },
   formCard: {
     backgroundColor: uiStandard.surfaces.parchment.backgroundColor,
@@ -144,23 +218,6 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: "rgba(127,90,9,0.82)",
     backgroundColor: "rgba(255,251,240,0.78)"
-  },
-  infoChip: {
-    alignSelf: "center",
-    minHeight: 30,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.22)",
-    backgroundColor: "rgba(24,22,18,0.58)",
-    paddingHorizontal: 11,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6
-  },
-  hint: {
-    color: colors.textMuted,
-    fontFamily: typography.sansMedium,
-    fontSize: 12
   },
   codeCard: {
     marginTop: 2,
