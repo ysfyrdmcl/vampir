@@ -7,8 +7,7 @@ export type RootStackParamList = {
   GameLog: undefined;
   GameSettings: undefined;
   CreateRoom: undefined;
-  JoinRoom: { scannedCode?: string } | undefined;
-  QrScanner: undefined;
+  JoinRoom: undefined;
   Lobby: undefined;
   RoleReveal: undefined;
   Night: undefined;

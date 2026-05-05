@@ -7,11 +7,9 @@ import { typography } from "../theme/typography";
 interface RoomCodeCardProps {
   roomCode: string;
   onCopy: () => void;
-  onShare: () => void;
-  onShowQr: () => void;
 }
 
-export function RoomCodeCard({ roomCode, onCopy, onShare, onShowQr }: RoomCodeCardProps) {
+export function RoomCodeCard({ roomCode, onCopy }: RoomCodeCardProps) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>ODA KODU</Text>
@@ -21,14 +19,6 @@ export function RoomCodeCard({ roomCode, onCopy, onShare, onShowQr }: RoomCodeCa
         <Pressable style={styles.miniBtn} onPress={onCopy}>
           <Ionicons name="copy-outline" size={14} color={colors.secondary} />
           <Text style={styles.miniText}>Kopyala</Text>
-        </Pressable>
-        <Pressable style={styles.miniBtn} onPress={onShare}>
-          <Ionicons name="share-social-outline" size={14} color={colors.secondary} />
-          <Text style={styles.miniText}>Paylaş</Text>
-        </Pressable>
-        <Pressable style={styles.miniBtn} onPress={onShowQr}>
-          <Ionicons name="qr-code-outline" size={14} color={colors.secondary} />
-          <Text style={styles.miniText}>QR</Text>
         </Pressable>
       </View>
     </View>

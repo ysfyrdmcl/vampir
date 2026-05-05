@@ -1,5 +1,4 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -17,7 +16,7 @@ import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JoinRoom">;
 
-export function JoinRoomScreen({ navigation, route }: Props) {
+export function JoinRoomScreen({ navigation }: Props) {
   const codeInputRef = useRef<TextInput>(null);
   const [roomCode, setRoomCode] = useState("");
   const [nickname, setNickname] = useState("");
@@ -41,12 +40,6 @@ export function JoinRoomScreen({ navigation, route }: Props) {
       if (storedNickname) setNickname(storedNickname);
     });
   }, []);
-
-  useEffect(() => {
-    if (!route.params?.scannedCode) return;
-    normalizeRoomCode(route.params.scannedCode);
-    navigation.setParams({ scannedCode: undefined });
-  }, [navigation, route.params?.scannedCode]);
 
   const normalizeRoomCode = (value: string) => {
     setRoomCode(value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase());
@@ -86,10 +79,6 @@ export function JoinRoomScreen({ navigation, route }: Props) {
           <View style={styles.labelRow}>
             <Text style={styles.label}>ODA KODU</Text>
             <View style={styles.headerActions}>
-              <Pressable style={styles.headerActionButton} onPress={() => navigation.navigate("QrScanner")}>
-                <Ionicons name="qr-code-outline" size={13} color={colors.textDim} />
-                <Text style={styles.headerActionMutedText}>QR Tara</Text>
-              </Pressable>
               <Pressable style={styles.headerActionButtonStrong} onPress={pasteRoomCode}>
                 <Text style={styles.headerActionStrongText}>Yapıştır</Text>
               </Pressable>
@@ -193,22 +182,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 7
-  },
-  headerActionButton: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.2)",
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    backgroundColor: "rgba(12,12,14,0.42)",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4
-  },
-  headerActionMutedText: {
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 11
   },
   headerActionButtonStrong: {
     borderWidth: 1,
