@@ -8,8 +8,6 @@ import { NightScreen } from "../../screens/NightScreen";
 import { RoleRevealScreen } from "../../screens/RoleRevealScreen";
 import { VoteScreen } from "../../screens/VoteScreen";
 import { WelcomeScreen } from "../../screens/WelcomeScreen";
-import { SimulationLabScreen } from "../../screens/SimulationLabScreen";
-import { TestModeSetupScreen } from "../../screens/TestModeSetupScreen";
 import { GameLogScreen } from "../../screens/GameLogScreen";
 import { GameSettingsScreen } from "../../screens/GameSettingsScreen";
 import { RoleGuideScreen } from "../../screens/RoleGuideScreen";
@@ -48,8 +46,6 @@ export function RootNavigator() {
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="RoleGuide" component={RoleGuideScreen} />
         <Stack.Screen name="RoleCard" component={RoleCardScreen} />
-        <Stack.Screen name="SimulationLab" component={SimulationLabScreen} />
-        <Stack.Screen name="TestModeSetup" component={TestModeSetupScreen} />
         <Stack.Screen name="GameLog" component={GameLogScreen} />
         <Stack.Screen name="GameSettings" component={GameSettingsScreen} />
         <Stack.Screen name="CreateRoom" component={CreateRoomScreen} />

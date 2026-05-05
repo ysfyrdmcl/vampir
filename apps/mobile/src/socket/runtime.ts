@@ -16,7 +16,6 @@ import { useGameStore } from "../store/game-store";
 import { clearRoomSession, saveLastRoomCode, saveSessionToken } from "../storage/session-storage";
 import { socketErrorAllowedForRoute } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
-import { testSimulator } from "../sim/test-simulator";
 import { logGameEvent, logPersonalEvent } from "../logging/game-logger";
 import { useLogFeedStore } from "../logging/log-feed-store";
 
@@ -66,7 +65,7 @@ function ensureConnected() {
 
 function resyncRoomAfterReconnect(): void {
   const state = useGameStore.getState();
-  if (state.testMode || !state.deviceId || !state.roomCode || !state.playerSessionToken) return;
+  if (!state.deviceId || !state.roomCode || !state.playerSessionToken) return;
   const me = state.roomState?.players.find((player) => player.playerId === state.playerId);
   pendingReadyResync = Boolean(state.roomState?.status === "Lobby" && me?.isReady);
   markJoinEmitIntent("resync");
@@ -448,11 +447,6 @@ export function initSocketRuntime(): void {
 
 export function connectSocket(): void {
   const store = useGameStore.getState();
-  if (store.testMode) {
-    store.setConnectionStatus("connected");
-    logGameEvent("test.connection.virtual_connected");
-    return;
-  }
   store.setConnectionStatus("connecting");
   ensureConnected();
 }
@@ -516,7 +510,7 @@ let lastEmittedRoomConfigKey: string | null = null;
 
 function computeRoomConfigEmitKey(): string | null {
   const s = useGameStore.getState();
-  if (!s.roomCode || s.testMode) return null;
+  if (!s.roomCode) return null;
   const phaseDurations = buildPhaseDurationsPayload();
   const config = buildGameConfigPayload();
   return JSON.stringify({
@@ -529,9 +523,6 @@ function computeRoomConfigEmitKey(): string | null {
 }
 
 export function emitCreateRoom(nickname: string): void {
-  if (useGameStore.getState().testMode) {
-    return;
-  }
   ensureConnected();
   useGameStore.getState().setNickname(nickname);
   const phaseDurations = buildPhaseDurationsPayload();
@@ -553,9 +544,6 @@ export function emitCreateRoom(nickname: string): void {
 }
 
 export function emitJoinRoom(roomCode: string, nickname: string, intent: JoinEmitIntent = "manual"): void {
-  if (useGameStore.getState().testMode) {
-    return;
-  }
   ensureConnected();
   useGameStore.getState().setNickname(nickname);
   markJoinEmitIntent(intent);
@@ -571,12 +559,6 @@ export function emitLeaveRoom(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
   resetSocketErrorDedup();
-  if (state.testMode) {
-    testSimulator.leave();
-    state.resetRoom();
-    logGameEvent("emit.room_leave.test_mode");
-    return;
-  }
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_LEAVE, {
     identity: identityPayload(),
@@ -590,11 +572,6 @@ export function emitLeaveRoom(): void {
 export function emitResetRoomToLobby(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  if (state.testMode) {
-    testSimulator.resetToLobbyAfterGameOver();
-    logGameEvent("emit.room_reset_to_lobby.test_mode");
-    return;
-  }
   if (state.roomState?.status !== "GameOver") {
     logGameEvent("emit.room_reset_to_lobby.skipped", {
       roomCode: state.roomCode,
@@ -622,11 +599,6 @@ export function emitStartRoom(): void {
     return;
   }
   useLogFeedStore.getState().clear();
-  if (state.testMode) {
-    testSimulator.startGame();
-    logGameEvent("emit.room_start.test_mode");
-    return;
-  }
   ensureConnected();
   const phaseDurations = buildPhaseDurationsPayload();
   const config = buildGameConfigPayload();
@@ -648,7 +620,7 @@ export function emitStartRoom(): void {
 
 export function emitRoomConfigUpdate(): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   if (roomConfigEmitTimer) {
     clearTimeout(roomConfigEmitTimer);
@@ -656,7 +628,7 @@ export function emitRoomConfigUpdate(): void {
   roomConfigEmitTimer = setTimeout(() => {
     roomConfigEmitTimer = null;
     const s = useGameStore.getState();
-    if (!s.roomCode || s.testMode) return;
+    if (!s.roomCode) return;
     const phaseDurations = buildPhaseDurationsPayload();
     const config = buildGameConfigPayload();
     const dedupeKey = computeRoomConfigEmitKey();
@@ -684,11 +656,6 @@ export function emitRoomConfigUpdate(): void {
 export function emitGamePause(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  if (state.testMode) {
-    testSimulator.pauseGame();
-    logGameEvent("emit.game_pause.test_mode");
-    return;
-  }
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.GAME_PAUSE, {
     identity: identityPayload(),
@@ -700,11 +667,6 @@ export function emitGamePause(): void {
 export function emitGameResume(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  if (state.testMode) {
-    testSimulator.resumeGame();
-    logGameEvent("emit.game_resume.test_mode");
-    return;
-  }
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.GAME_RESUME, {
     identity: identityPayload(),
@@ -715,7 +677,7 @@ export function emitGameResume(): void {
 
 export function emitReadyToggle(isReady: boolean): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_READY_TOGGLE, {
     identity: identityPayload(),
@@ -729,11 +691,6 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
   const state = useGameStore.getState();
   if (!state.roomCode || !state.gameState) return;
   if (state.gameState.isPaused) return;
-  if (state.testMode) {
-    testSimulator.submitAction(actionType, targetPlayerId);
-    logGameEvent("emit.game_action.test_mode", { actionType, targetPlayerId });
-    return;
-  }
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.GAME_ACTION_SUBMIT, {
     identity: identityPayload(),
@@ -783,7 +740,7 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
 
 export function emitAddBot(intelligence: BotIntelligence, count = 1): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_ADD, {
     identity: identityPayload(),
@@ -796,7 +753,7 @@ export function emitAddBot(intelligence: BotIntelligence, count = 1): void {
 
 export function emitRemoveBot(botPlayerId: string): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_REMOVE, {
     identity: identityPayload(),
@@ -808,7 +765,7 @@ export function emitRemoveBot(botPlayerId: string): void {
 
 export function emitSetBotIntelligence(botPlayerId: string, intelligence: BotIntelligence): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, {
     identity: identityPayload(),
@@ -821,7 +778,7 @@ export function emitSetBotIntelligence(botPlayerId: string, intelligence: BotInt
 
 export function emitFillBotsToMinimum(intelligence: BotIntelligence): void {
   const state = useGameStore.getState();
-  if (!state.roomCode || state.testMode) return;
+  if (!state.roomCode) return;
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_FILL_MINIMUM, {
     identity: identityPayload(),
@@ -829,20 +786,4 @@ export function emitFillBotsToMinimum(intelligence: BotIntelligence): void {
     intelligence
   });
   logGameEvent("emit.room_bot_fill_minimum", { roomCode: state.roomCode, intelligence });
-}
-
-export function startTestSimulation(nickname: string, totalPlayers: 4 | 6 | 8 | 10 = 4, preferredRole: "random" | "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard" = "random"): void {
-  const safeNickname = nickname.trim();
-  useGameStore.getState().setNickname(safeNickname || "Sen");
-  testSimulator.startLobby(totalPlayers, preferredRole);
-  logGameEvent("test.simulation.start_lobby", { nickname: safeNickname || "Sen", totalPlayers, preferredRole });
-}
-
-export function startBatchSimulation(totalPlayers: 4 | 6 | 8 | 10, gameCount: number) {
-  const summary = testSimulator.runBatchSimulation({
-    totalPlayers,
-    gameCount
-  });
-  logGameEvent("test.simulation.batch.finished", summary as unknown as Record<string, unknown>);
-  return summary;
 }

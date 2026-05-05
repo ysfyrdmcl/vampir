@@ -1,5 +1,5 @@
 /** Welcome ayrı; CreateRoom yerel nickname + oturum; diğerleri yalnızca bağlantı/oturum. */
-const OTHER_OUTER_MENU_ROUTES = new Set(["SimulationLab", "TestModeSetup", "QrScanner", "RoleGuide", "RoleCard"]);
+const OTHER_OUTER_MENU_ROUTES = new Set(["QrScanner", "RoleGuide", "RoleCard"]);
 
 const GAMEPLAY_STACK_ROUTES = new Set(["RoleReveal", "Night", "Vote", "GameLog", "GameSettings"]);
 

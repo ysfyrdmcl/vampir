@@ -145,7 +145,6 @@ export function NightScreen(_: Props) {
   const setSelectedTargetPlayerId = useGameStore((s) => s.setSelectedTargetPlayerId);
   const privateResultText = useGameStore((s) => s.privateResultText);
   const privateResultKind = useGameStore((s) => s.privateResultKind);
-  const testMode = useGameStore((s) => s.testMode);
   const vampireVotePreview = useGameStore((s) => s.vampireVotePreview);
   const lastDayVoteSummary = useGameStore((s) => s.lastDayVoteSummary);
   const detectiveInspectedPlayerIds = useGameStore((s) => s.detectiveInspectedPlayerIds);
@@ -330,7 +329,7 @@ export function NightScreen(_: Props) {
           </View>
         ) : null}
 
-        {privateResultText && privateResultKind && (privateResultKind !== "info" || testMode) ? (
+        {privateResultText && privateResultKind && privateResultKind !== "info" ? (
           <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
         ) : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}

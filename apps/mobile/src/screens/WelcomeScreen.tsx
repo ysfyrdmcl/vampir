@@ -43,21 +43,6 @@ export function WelcomeScreen({ navigation }: Props) {
       onPress: () => navigation.navigate("RoleGuide", { source: "menu" })
     }
   ];
-  const developerUtilityItems = [
-    {
-      key: "test-mode",
-      label: "Test",
-      icon: "flask-outline" as const,
-      onPress: () => navigation.navigate("TestModeSetup")
-    },
-    {
-      key: "sim-lab",
-      label: "Simülasyon",
-      icon: "analytics-outline" as const,
-      onPress: () => navigation.navigate("SimulationLab")
-    }
-  ];
-
   return (
     <ScreenShell scene="home" headerTitle="ANA MENÜ">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -80,17 +65,6 @@ export function WelcomeScreen({ navigation }: Props) {
                   <Text style={styles.utilityLabel}>{item.label}</Text>
                 </Pressable>
               ))}
-            </View>
-            <View style={styles.developerTools}>
-              <Text style={styles.developerLabel}>GELİŞTİRİCİ ARAÇLARI</Text>
-              <View style={styles.developerRail}>
-                {developerUtilityItems.map((item) => (
-                  <Pressable key={item.key} style={styles.developerButton} onPress={item.onPress}>
-                    <Ionicons name={item.icon} size={15} color={colors.textDim} />
-                    <Text style={styles.developerButtonText}>{item.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
             </View>
             <View style={styles.metaRow}>
               <View style={styles.statusPill}>
@@ -204,37 +178,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 11,
     textAlign: "center"
-  },
-  developerTools: {
-    gap: 7
-  },
-  developerLabel: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    letterSpacing: 1.2
-  },
-  developerRail: {
-    flexDirection: "row",
-    gap: 8
-  },
-  developerButton: {
-    flex: 1,
-    minHeight: 36,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.14)",
-    backgroundColor: "rgba(10,10,12,0.36)",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 5,
-    paddingHorizontal: 10
-  },
-  developerButtonText: {
-    color: colors.textDim,
-    fontFamily: typography.sansMedium,
-    fontSize: 10
   },
   metaRow: {
     borderTopWidth: 1,

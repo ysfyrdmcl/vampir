@@ -44,7 +44,6 @@ export interface PhaseDurationSettings {
 }
 
 interface GameStoreState {
-  testMode: boolean;
   connectionStatus: ConnectionStatus;
   errorCode: string | null;
   deviceId: string | null;
@@ -83,7 +82,6 @@ interface GameStoreState {
   clearBotSpeechHistory: () => void;
   markBotSpeechInboxRead: () => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
-  setTestMode: (value: boolean) => void;
   setErrorCode: (code: string | null) => void;
   setDeviceId: (deviceId: string) => void;
   setSession: (values: { playerSessionToken: string; playerId: string; roomCode: string }) => void;
@@ -108,7 +106,6 @@ interface GameStoreState {
 
 export const useGameStore = create<GameStoreState>((set) => ({
   connectionStatus: "idle",
-  testMode: false,
   errorCode: null,
   deviceId: null,
   playerSessionToken: null,
@@ -200,7 +197,6 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
   clearBotSpeech: () => set({ activeBotSpeech: null, botSpeechQueue: [] }),
   clearBotSpeechHistory: () => set({ botSpeechHistory: [], botSpeechUnreadCount: 0 }),
-  setTestMode: (value) => set({ testMode: value }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
   setErrorCode: (code) => set({ errorCode: code }),
   setDeviceId: (deviceId) => set({ deviceId }),
