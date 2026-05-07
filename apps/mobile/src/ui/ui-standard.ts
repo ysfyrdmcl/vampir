@@ -58,6 +58,13 @@ export const uiStandard = {
     shadowRadius: 14,
     shadowOffsetY: 7
   },
+  actionDock: {
+    minHeight: 64,
+    bottomGap: spacing.sm,
+    scrollGap: spacing.lg,
+    paddingX: 10,
+    paddingY: 8
+  },
   fx: {
     glowSoft: 0.18,
     glowMedium: 0.32,

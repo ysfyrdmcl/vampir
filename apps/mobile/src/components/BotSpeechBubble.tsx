@@ -144,6 +144,8 @@ export function BotSpeechBubble({ event, onPress, animatedStyle }: BotSpeechBubb
 
 const styles = StyleSheet.create({
   card: {
+    width: "100%",
+    maxWidth: "100%",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
@@ -158,6 +160,7 @@ const styles = StyleSheet.create({
     marginBottom: 6
   },
   messageLine: {
+    flexShrink: 1,
     color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 15,

@@ -111,7 +111,9 @@ function TargetCard({ item, onSelect }: TargetCardProps) {
         <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
           <Text style={styles.avatarText}>{item.initials}</Text>
         </View>
-        <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]}>{item.label}</Text>
+        <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]} numberOfLines={1} ellipsizeMode="tail">
+          {item.label}
+        </Text>
         {item.badgeText ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{item.badgeText}</Text>
@@ -123,7 +125,9 @@ function TargetCard({ item, onSelect }: TargetCardProps) {
           ) : (
             <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
           )}
-          <Text style={styles.selectText}>{item.isSelectable ? (item.isSelected ? "Hedef seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}</Text>
+          <Text style={styles.selectText} numberOfLines={1} ellipsizeMode="tail">
+            {item.isSelectable ? (item.isSelected ? "Seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}
+          </Text>
         </View>
       </Animated.View>
     </Pressable>
@@ -132,7 +136,7 @@ function TargetCard({ item, onSelect }: TargetCardProps) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 10
+    gap: 8
   },
   lockedBand: {
     borderWidth: 1,
@@ -156,22 +160,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 10
+    rowGap: 7
   },
   cardWrap: {
-    width: "48.4%"
+    width: "49%"
   },
   card: {
     width: "100%",
-    minHeight: 148,
-    borderRadius: 14,
+    minHeight: 104,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.24)",
     backgroundColor: colors.surfaceGlass,
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    gap: 7
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 5
   },
   cardSelectable: {
     borderColor: "rgba(233,195,73,0.34)",
@@ -189,13 +193,13 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryBright,
     shadowColor: colors.primary,
     shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 5 }
+    shadowRadius: 11,
+    shadowOffset: { width: 0, height: 4 }
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.42)",
     backgroundColor: "rgba(8,8,10,0.9)",
@@ -211,39 +215,47 @@ const styles = StyleSheet.create({
   avatarText: {
     color: colors.text,
     fontFamily: typography.serifSemi,
-    fontSize: 21
+    fontSize: 16
   },
   name: {
     color: "#dec1bd",
     fontFamily: typography.serifSemi,
-    fontSize: 34 / 1.75,
-    textAlign: "center"
+    fontSize: 15,
+    lineHeight: 18,
+    textAlign: "center",
+    maxWidth: "100%"
   },
   nameSelected: {
     color: colors.parchmentText
   },
   badge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.38)",
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
     backgroundColor: "rgba(48,43,22,0.64)"
   },
   badgeText: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 10
+    fontSize: 8
   },
   selectRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4
+    gap: 3,
+    maxWidth: "100%"
   },
   selectText: {
+    flexShrink: 1,
     color: colors.textDim,
     fontFamily: typography.sansMedium,
-    fontSize: 11
+    fontSize: 10,
+    lineHeight: 13
   },
   graveyard: {
     borderWidth: 1,

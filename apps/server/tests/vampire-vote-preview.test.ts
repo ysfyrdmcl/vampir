@@ -56,9 +56,15 @@ function baseGame(overrides: Partial<GameState> = {}): GameState {
       vampireVote: 20,
       detectiveInspect: 20,
       doctorProtect: 20,
+      nightResolve: 8,
       dayStart: 8,
+      mayorElection: 30,
+      guardProtect: 30,
       dayDiscussion: 60,
-      dayVote: 30
+      dayVote: 30,
+      executionResolve: 8,
+      hunterLastBreath: 10,
+      winCheck: 1
     },
     ...overrides
   };

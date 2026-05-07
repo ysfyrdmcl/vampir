@@ -136,10 +136,29 @@ export function LobbyScreen({ navigation }: Props) {
   const roleDistributionValid = startRoleDeck.length === Math.max(connectedPlayers.length, minPlayers);
   const activeRoleDeck = buildRoleDeck(setupPlayerCount, rolePreset);
   const activeRoleSet = new Set(activeRoleDeck);
+  const hasVampire = activeRoleSet.has("Vampire");
   const hasDoctor = activeRoleSet.has("Doctor");
   const hasDetective = activeRoleSet.has("Detective");
+  const hasHunter = activeRoleSet.has("Hunter");
+  const hasGuard = activeRoleSet.has("Guard");
   const hasMayorMechanic = rolePreset === "socialChaos" && setupPlayerCount >= ROLE_DEFINITIONS.Mayor.minPlayers;
   const hasLoversMechanic = rolePreset === "socialChaos" && setupPlayerCount >= ROLE_DEFINITIONS.Lover.minPlayers;
+  const durationRows = [
+    { key: "roleReveal", label: "Rol Açılımı", value: phaseDurations.roleReveal },
+    { key: "nightStart", label: "Gece Başlangıcı", value: phaseDurations.nightStart },
+    hasVampire ? { key: "vampireVote", label: "Vampir", value: phaseDurations.vampireVote } : null,
+    hasDetective ? { key: "detectiveInspect", label: "Dedektif", value: phaseDurations.detectiveInspect } : null,
+    hasDoctor ? { key: "doctorProtect", label: "Doktor", value: phaseDurations.doctorProtect } : null,
+    { key: "nightResolve", label: "Gece Sonucu", value: phaseDurations.nightResolve },
+    { key: "dayStart", label: "Gün Başlangıcı", value: phaseDurations.dayStart },
+    hasMayorMechanic && roomRules.mayorEnabled ? { key: "mayorElection", label: "Başkan Seçimi", value: phaseDurations.mayorElection } : null,
+    hasGuard ? { key: "guardProtect", label: "Gardiyan", value: phaseDurations.guardProtect } : null,
+    { key: "dayDiscussion", label: "Tartışma", value: phaseDurations.dayDiscussion },
+    { key: "dayVote", label: "Oylama", value: phaseDurations.dayVote },
+    { key: "executionResolve", label: "İnfaz Sonucu", value: phaseDurations.executionResolve },
+    hasHunter ? { key: "hunterLastBreath", label: "Avcı", value: phaseDurations.hunterLastBreath } : null,
+    { key: "winCheck", label: "Kazanma Kontrolü", value: phaseDurations.winCheck }
+  ].filter((item): item is { key: Exclude<keyof typeof phaseDurations, "useSystemDefaults">; label: string; value: number } => Boolean(item));
   const allConnectedReady = connectedPlayers.length >= minPlayers && connectedPlayers.every((p) => p.isReady);
   const playersNeeded = Math.max(minPlayers - connectedPlayers.length, 0);
   const lobbyStatusTarget = Math.max(connectedPlayers.length, minPlayers);
@@ -176,8 +195,15 @@ export function LobbyScreen({ navigation }: Props) {
   const updateDuration = (key: keyof typeof phaseDurations, delta: number) => {
     if (key === "useSystemDefaults") return;
     const current = phaseDurations[key] as number;
-    const next = Math.max(3, Math.min(180, current + delta));
+    const next = Math.max(0, Math.min(180, current + delta));
     setPhaseDurations({ [key]: next });
+    emitRoomConfigUpdate();
+    showToast("Ayarlar güncellendi", "gold", 1500);
+  };
+  const toggleEndlessDuration = (key: keyof typeof phaseDurations) => {
+    if (key === "useSystemDefaults") return;
+    const current = phaseDurations[key] as number;
+    setPhaseDurations({ [key]: current === 0 ? 30 : 0 });
     emitRoomConfigUpdate();
     showToast("Ayarlar güncellendi", "gold", 1500);
   };
@@ -408,20 +434,16 @@ export function LobbyScreen({ navigation }: Props) {
               </View>
               {!phaseDurations.useSystemDefaults ? (
                 <View style={styles.timingList}>
-                  {[
-                    { key: "dayDiscussion", label: "Tartışma", value: phaseDurations.dayDiscussion },
-                    { key: "dayVote", label: "Oylama", value: phaseDurations.dayVote },
-                    { key: "vampireVote", label: "Vampir", value: phaseDurations.vampireVote },
-                    hasDetective ? { key: "detectiveInspect", label: "Dedektif", value: phaseDurations.detectiveInspect } : null,
-                    hasDoctor ? { key: "doctorProtect", label: "Doktor", value: phaseDurations.doctorProtect } : null
-                  ].filter((item): item is { key: keyof typeof phaseDurations; label: string; value: number } => Boolean(item)).map((item) => (
+                  {durationRows.map((item) => (
                     <View key={item.key} style={styles.timingRow}>
                       <Text style={styles.timingLabel}>{item.label}</Text>
                       <View style={styles.timingAdjust}>
                         <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, -5)}>
                           <Text style={styles.adjustText}>-</Text>
                         </Pressable>
-                        <Text style={styles.timingValue}>{item.value}s</Text>
+                        <Pressable style={[styles.endlessBtn, item.value === 0 ? styles.endlessBtnActive : null]} onPress={() => toggleEndlessDuration(item.key as keyof typeof phaseDurations)}>
+                          <Text style={[styles.endlessText, item.value === 0 ? styles.endlessTextActive : null]}>{item.value === 0 ? "Süresiz" : `${item.value}s`}</Text>
+                        </Pressable>
                         <Pressable style={styles.adjustBtn} onPress={() => updateDuration(item.key as keyof typeof phaseDurations, 5)}>
                           <Text style={styles.adjustText}>+</Text>
                         </Pressable>
@@ -1168,11 +1190,29 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansBold,
     fontSize: 18
   },
-  timingValue: {
-    width: 56,
+  endlessBtn: {
+    minWidth: 68,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    backgroundColor: "rgba(12,12,14,0.48)"
+  },
+  endlessBtnActive: {
+    borderColor: "rgba(233,195,73,0.48)",
+    backgroundColor: "rgba(44,35,14,0.58)"
+  },
+  endlessText: {
     textAlign: "center",
     color: colors.secondary,
-    fontFamily: typography.sansBold
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  endlessTextActive: {
+    color: colors.text
   },
   infoText: {
     flex: 1,

@@ -62,6 +62,11 @@ const GAMEPLAY_ROUTE_ALLOWED_CODES = new Set([
 
 const OUTER_AUX_SOCKET_CODES = new Set([...CONNECTION_CODES, "SESSION_TOKEN_MISMATCH"]);
 
+const GAME_SETTINGS_CODES = new Set([
+  ...GAMEPLAY_ROUTE_ALLOWED_CODES,
+  "PHASE_ACTIONS_PENDING"
+]);
+
 /**
  * Whether a socket error may be written to `errorCode` for this navigation route.
  * Suppressed errors are logged on the socket layer and not stored (avoids stale lobby errors on Welcome).
@@ -83,7 +88,12 @@ export function socketErrorAllowedForRoute(code: string, routeName: string | und
 
   if (routeName === "GameOver") {
     if (code === "PLAYERS_NOT_READY" || code === "GAME_ALREADY_STARTED") return false;
+    if (code === "PHASE_ACTIONS_PENDING") return false;
     return GAMEPLAY_ROUTE_ALLOWED_CODES.has(code);
+  }
+
+  if (routeName === "GameSettings") {
+    return GAME_SETTINGS_CODES.has(code);
   }
 
   if (GAMEPLAY_STACK_ROUTES.has(routeName)) {
@@ -156,7 +166,8 @@ export function toFriendlyErrorText(code: string | null): string | null {
     NO_LYNCH_DISABLED: "Çekimser oy bu odada kapalı.",
     SELF_PROTECT_BLOCKED: "Bu tur kendini koruyamazsın.",
     CONSECUTIVE_PROTECT_BLOCKED: "Üst üste aynı oyuncuyu koruyamazsın.",
-    DETECTIVE_REPEAT_BLOCKED: "Aynı oyuncuyu tekrar araştıramazsın."
+    DETECTIVE_REPEAT_BLOCKED: "Aynı oyuncuyu tekrar araştıramazsın.",
+    PHASE_ACTIONS_PENDING: "Bu faz geçmeden önce ilgili oyuncuların görevini tamamlaması gerekiyor."
   };
 
   return table[code] ?? `Bir hata oluştu: ${code}`;
@@ -192,7 +203,8 @@ export function toFriendlyToastText(code: string | null): string | null {
     NO_LYNCH_DISABLED: "Çekimser kapalı",
     SELF_PROTECT_BLOCKED: "Kendini koruma kapalı",
     CONSECUTIVE_PROTECT_BLOCKED: "Üst üste aynı koruma yok",
-    DETECTIVE_REPEAT_BLOCKED: "Tekrar araştırma yok"
+    DETECTIVE_REPEAT_BLOCKED: "Tekrar araştırma yok",
+    PHASE_ACTIONS_PENDING: "Önce faz görevi tamamlanmalı"
   };
 
   return table[code] ?? "Bir hata oluştu";

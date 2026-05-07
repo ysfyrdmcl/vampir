@@ -1,8 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PhaseBanner } from "../components/PhaseBanner";
@@ -13,10 +11,12 @@ import { TargetSelectionList, type TargetSelectionItem } from "../components/Tar
 import { emitGameAction } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
+import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
+import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Vote">;
 
@@ -30,7 +30,7 @@ function initialsFromName(name: string): string {
 }
 
 export function VoteScreen(_: Props) {
-  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const playerId = useGameStore((s) => s.playerId);
@@ -52,6 +52,16 @@ export function VoteScreen(_: Props) {
     selectedTargetPlayerId === "__NO_LYNCH__"
       ? "Kimseyi Gönderme"
       : players.find((player) => player.playerId === selectedTargetPlayerId)?.nickname ?? null;
+  const voteInfoText = !meAlive
+    ? "Elendin; oylamayı izliyorsun."
+    : selectedName
+      ? `${selectedName} seçildi.`
+      : "Bir hedef seç ve alttan onayla.";
+  const voteInfoDetail = !meAlive
+    ? "Oy kullanamazsın, sonucu izleyebilirsin."
+    : isMayorElection
+      ? "Başkan tercihini süre bitmeden kilitle."
+      : "Oyunu süre bitmeden kilitle.";
   const tiedTopCandidates = gameState?.lastDayVoteSummary?.tiedTopCandidates ?? [];
   const hasTieRevote = !isMayorElection && gameState?.tieCountInRound ? tiedTopCandidates.length > 1 : false;
   const tieCandidateSet = useMemo(() => new Set(tiedTopCandidates), [tiedTopCandidates]);
@@ -96,8 +106,12 @@ export function VoteScreen(_: Props) {
     : !selectedTargetPlayerId
       ? "Bir hedef seç"
       : !selectedVoteTarget?.isSelectable
-        ? "Bu hedef seçilemez"
-        : null;
+      ? "Bu hedef seçilemez"
+      : null;
+  const layout = getResponsiveMetrics(width, height);
+  const actionDockBottom = uiStandard.actionDock.bottomGap;
+  const actionScrollPadding = uiStandard.actionDock.minHeight + actionDockBottom + uiStandard.actionDock.scrollGap;
+  const actionButtonWidth = scaledSize(150, layout.controlScale, 132, 150);
 
   const submitVote = () => {
     if (!meAlive) return;
@@ -108,13 +122,19 @@ export function VoteScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="vote" bottomNavActiveIndex={0} headerTitle="GÜNDÜZ FAZI">
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScreenShell scene="vote" bottomNavActiveIndex={0} headerTitle="GÜNDÜZ FAZI" contentDensity="game">
+      <View style={styles.screenRoot}>
         <PhaseBanner
           title={isMayorElection ? "Baskan Secimi" : "Oylama"}
           description={isMayorElection ? "Koy baskanini sec. Baskanin oyu gunduz 2 sayilir." : "Kimi koyden gondermek istiyorsun?"}
           notice={gameState?.tieCountInRound ? "Koy ikiye bolundu. Son karar icin tekrar oy veriliyor." : undefined}
           phaseEndsAt={gameState?.phaseEndsAt ?? null}
+          infoLabel={isMayorElection ? "Sıradaki karar" : "Oylama kararı"}
+          infoText={voteInfoText}
+          infoDetail={voteInfoDetail}
+          infoIcon={meAlive ? "people-outline" : "skull-outline"}
+          infoActive={meAlive}
+          compact
         />
         {hasTieRevote ? (
           <View style={styles.tieCard}>
@@ -132,36 +152,24 @@ export function VoteScreen(_: Props) {
             Gardiyan Koruması: {players.find((p) => p.playerId === guardProtectedPlayerId)?.nickname ?? guardProtectedPlayerId} bugün oylanamaz.
           </Text>
         ) : null}
-        <View style={styles.voteMissionCard}>
-          <View style={styles.voteMissionIcon}>
-            <Ionicons name={meAlive ? "people-outline" : "skull-outline"} size={18} color={colors.secondary} />
-          </View>
-          <View style={styles.voteMissionCopy}>
-            <Text style={styles.selectedLabel}>{isMayorElection ? "Sıradaki karar" : "Oylama kararı"}</Text>
-            <Text style={styles.selectedValue}>
-              {!meAlive ? "Elendin; oylamayı izliyorsun." : selectedName ? `${selectedName} seçildi.` : "Bir hedef seç ve alttan onayla."}
-            </Text>
-          </View>
-        </View>
-        <TargetSelectionList
-          items={targetItems}
-          onSelect={setSelectedTargetPlayerId}
-          disabledSummary="Elendin; oy kullanamazsın, sonuç akışını izleyebilirsin."
-        />
+        <ScrollView
+          style={styles.targetScroll}
+          contentContainerStyle={[styles.targetContent, { paddingBottom: actionScrollPadding }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <TargetSelectionList
+            items={targetItems}
+            onSelect={setSelectedTargetPlayerId}
+            disabledSummary={null}
+          />
 
-        <Text style={styles.help}>
-          {!meAlive
-            ? "Elendin. Bu oylamaya katılamazsın, sonucu izleyebilirsin."
-            : isMayorElection
-              ? "Süre bitmeden başkan tercihini değiştirebilirsin."
-              : "Süre bitmeden önce seçimini değiştirebilirsin."}
-        </Text>
-        {privateResultText && privateResultKind === "lover" ? (
-          <PrivateInfoCard kind="lover" body={privateResultText} />
-        ) : null}
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-      </ScrollView>
-      <View style={[styles.stickyAction, { bottom: 84 + insets.bottom }]}>
+          {privateResultText && privateResultKind === "lover" ? (
+            <PrivateInfoCard kind="lover" body={privateResultText} />
+          ) : null}
+          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+        </ScrollView>
+      </View>
+      <View style={[styles.stickyAction, { bottom: actionDockBottom }]}>
         <View style={styles.actionSummary}>
           <Text style={styles.actionSummaryLabel}>Hedef</Text>
           <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedName ?? "Seçilmedi"}</Text>
@@ -173,7 +181,7 @@ export function VoteScreen(_: Props) {
           onPress={() => setConfirmOpen(true)}
           disabled={Boolean(voteDisabledReason)}
           compact
-          style={styles.actionButton}
+          style={[styles.actionButton, { width: actionButtonWidth }]}
         />
       </View>
       <ConfirmActionSheet
@@ -194,20 +202,23 @@ export function VoteScreen(_: Props) {
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  screenRoot: {
+    flex: 1,
+    gap: 7
+  },
+  targetScroll: {
     flex: 1
   },
-  content: {
-    paddingBottom: 132,
-    gap: 14
+  targetContent: {
+    gap: 8
   },
   stickyAction: {
     position: "absolute",
     left: spacing.safe,
     right: spacing.safe,
-    minHeight: 64,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    minHeight: uiStandard.actionDock.minHeight,
+    paddingHorizontal: uiStandard.actionDock.paddingX,
+    paddingVertical: uiStandard.actionDock.paddingY,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.24)",
     borderRadius: 16,
@@ -244,7 +255,7 @@ const styles = StyleSheet.create({
     fontSize: 11
   },
   actionButton: {
-    width: 150
+    flexShrink: 0
   },
   mayorInfo: {
     color: colors.secondary,
@@ -277,48 +288,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: typography.sansMedium,
     fontSize: 13
-  },
-  voteMissionCard: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
-    borderRadius: 14,
-    backgroundColor: "rgba(36,31,20,0.72)",
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10
-  },
-  voteMissionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.36)",
-    backgroundColor: "rgba(50,40,17,0.42)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  voteMissionCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2
-  },
-  selectedLabel: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 11,
-    letterSpacing: 1.1
-  },
-  selectedValue: {
-    color: colors.secondary,
-    fontFamily: typography.serifSemi,
-    fontSize: 20
-  },
-  help: {
-    color: colors.textDim,
-    textAlign: "center",
-    fontFamily: typography.serifRegular,
-    fontSize: 17
   },
   error: {
     color: colors.danger,

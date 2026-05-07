@@ -1,14 +1,20 @@
 import { z } from "zod";
 
 const phaseDurationsSchema = z.object({
-  roleReveal: z.number().int().min(3).max(180),
-  nightStart: z.number().int().min(3).max(180),
-  vampireVote: z.number().int().min(3).max(180),
-  detectiveInspect: z.number().int().min(3).max(180),
-  doctorProtect: z.number().int().min(3).max(180),
-  dayStart: z.number().int().min(3).max(180),
-  dayDiscussion: z.number().int().min(3).max(180),
-  dayVote: z.number().int().min(3).max(180)
+  roleReveal: z.number().int().min(0).max(180),
+  nightStart: z.number().int().min(0).max(180),
+  vampireVote: z.number().int().min(0).max(180),
+  detectiveInspect: z.number().int().min(0).max(180),
+  doctorProtect: z.number().int().min(0).max(180),
+  nightResolve: z.number().int().min(0).max(180),
+  dayStart: z.number().int().min(0).max(180),
+  mayorElection: z.number().int().min(0).max(180),
+  guardProtect: z.number().int().min(0).max(180),
+  dayDiscussion: z.number().int().min(0).max(180),
+  dayVote: z.number().int().min(0).max(180),
+  executionResolve: z.number().int().min(0).max(180),
+  hunterLastBreath: z.number().int().min(0).max(180),
+  winCheck: z.number().int().min(0).max(180)
 });
 const ruleSettingsSchema = z.object({
   firstNightNoKill: z.boolean().optional(),
@@ -102,6 +108,7 @@ export const gamePauseSchema = z.object({
 });
 
 export const gameResumeSchema = gamePauseSchema;
+export const gamePhaseAdvanceSchema = gamePauseSchema;
 
 export const actionSubmitSchema = z.object({
   identity: identitySchema,

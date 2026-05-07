@@ -3,15 +3,17 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
+import { useGameStore } from "../store/game-store";
 
 interface PhaseCountdownProps {
   phaseEndsAt: number | null;
   mode?: "dramatic" | "compact";
   /** Rol açılımı alt bandı: kart genişliğiyle hizalı, metin ortada. */
-  presentation?: "default" | "roleRevealFooter";
+  presentation?: "default" | "roleRevealFooter" | "phaseSummary";
 }
 
 export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
+  const isPaused = useGameStore((s) => Boolean(s.gameState?.isPaused));
   const [now, setNow] = useState(Date.now());
   const [maxSeconds, setMaxSeconds] = useState<number | null>(null);
   const pulse = useState(new Animated.Value(0))[0];
@@ -55,11 +57,8 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
     return () => loop.stop();
   }, [pulse, seconds]);
 
-  if (seconds === null) {
-    return null;
-  }
-
-  const tone = seconds >= 45 ? "green" : seconds >= 20 ? "yellow" : seconds > 10 ? "orange" : "red";
+  const isEndless = seconds === null;
+  const tone = isEndless || seconds >= 45 ? "green" : seconds >= 20 ? "yellow" : seconds > 10 ? "orange" : "red";
   const accent =
     tone === "green"
       ? "#21c06d"
@@ -74,42 +73,76 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
   });
 
   const isRoleFooter = presentation === "roleRevealFooter";
-  const effectiveMode = isRoleFooter ? "compact" : mode;
+  const isPhaseSummary = presentation === "phaseSummary";
+  const effectiveMode = isRoleFooter || isPhaseSummary ? "compact" : mode;
+  const countdownText = isRoleFooter
+    ? "Oyun başlıyor..."
+    : isPaused
+      ? "Duraklatıldı"
+      : isEndless
+        ? "Manuel geçiş"
+        : seconds === 0
+          ? "Kilitlendi"
+          : isPhaseSummary
+            ? tone === "red"
+              ? "Son saniyeler"
+              : tone === "orange"
+                ? "Süre azalıyor"
+                : "Süre aktif"
+            : tone === "red"
+              ? "Karar anı. Son saniyeler."
+              : tone === "orange"
+                ? "Süre azalıyor, hızlı karar ver."
+                : "Süre dolmadan seçimini tamamla.";
 
   return (
-    <View style={[styles.wrap, effectiveMode === "compact" ? styles.wrapCompact : null, isRoleFooter ? styles.wrapRoleFooter : null]}>
+    <View
+      style={[
+        styles.wrap,
+        effectiveMode === "compact" ? styles.wrapCompact : null,
+        isRoleFooter ? styles.wrapRoleFooter : null,
+        isPhaseSummary ? styles.wrapPhaseSummary : null
+      ]}
+    >
       <Animated.View
         style={[
           styles.ring,
           effectiveMode === "compact" ? styles.ringCompact : null,
           isRoleFooter ? styles.ringRoleFooter : null,
+          isPhaseSummary ? styles.ringPhaseSummary : null,
           { borderColor: accent, shadowColor: accent, shadowOpacity: warningGlow }
         ]}
       >
-        <Text style={[styles.value, effectiveMode === "compact" ? styles.valueCompact : null, isRoleFooter ? styles.valueRoleFooter : null]}>
-          {seconds}
+        <Text
+          style={[
+            styles.value,
+            effectiveMode === "compact" ? styles.valueCompact : null,
+            isRoleFooter ? styles.valueRoleFooter : null,
+            isPhaseSummary ? styles.valuePhaseSummary : null
+          ]}
+        >
+          {isEndless ? "∞" : seconds}
         </Text>
-        <Text style={[styles.unit, effectiveMode === "compact" ? styles.unitCompact : null, isRoleFooter ? styles.unitRoleFooter : null]}>
-          {seconds === 0 ? "KİLİTLİ" : "SANİYE"}
+        <Text
+          style={[
+            styles.unit,
+            effectiveMode === "compact" ? styles.unitCompact : null,
+            isRoleFooter ? styles.unitRoleFooter : null,
+            isPhaseSummary ? styles.unitPhaseSummary : null
+          ]}
+        >
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SANİYE"}
         </Text>
       </Animated.View>
-      <View style={[effectiveMode === "compact" ? styles.compactCopy : null, isRoleFooter ? styles.compactCopyRoleFooter : null]}>
-        <View style={[styles.barTrack, effectiveMode === "compact" ? styles.barTrackCompact : null, isRoleFooter ? styles.barTrackRoleFooter : null]}>
+      <View style={[effectiveMode === "compact" ? styles.compactCopy : null, isRoleFooter ? styles.compactCopyRoleFooter : null, isPhaseSummary ? styles.compactCopyPhaseSummary : null]}>
+        <View style={[styles.barTrack, effectiveMode === "compact" ? styles.barTrackCompact : null, isRoleFooter ? styles.barTrackRoleFooter : null, isPhaseSummary ? styles.barTrackPhaseSummary : null]}>
           <View style={[styles.barFill, { width: `${Math.round(percentage * 100)}%`, backgroundColor: accent }]} />
         </View>
         <Text
-          style={[styles.text, effectiveMode === "compact" ? styles.textCompact : null, isRoleFooter ? styles.textRoleFooter : null]}
+          style={[styles.text, effectiveMode === "compact" ? styles.textCompact : null, isRoleFooter ? styles.textRoleFooter : null, isPhaseSummary ? styles.textPhaseSummary : null]}
           numberOfLines={isRoleFooter ? 2 : undefined}
         >
-          {isRoleFooter
-            ? "Oyun başlıyor..."
-            : seconds === 0
-              ? "Karar kilitlendi."
-              : tone === "red"
-                ? "Karar anı. Son saniyeler."
-                : tone === "orange"
-                  ? "Süre azalıyor, hızlı karar ver."
-                  : "Süre dolmadan seçimini tamamla."}
+          {countdownText}
         </Text>
       </View>
     </View>
@@ -135,6 +168,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10
   },
+  wrapPhaseSummary: {
+    flexShrink: 0,
+    gap: 7
+  },
   ring: {
     width: 120,
     height: 120,
@@ -153,6 +190,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     shadowRadius: 8
   },
+  ringPhaseSummary: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    shadowRadius: 6
+  },
   ringRoleFooter: {
     width: 54,
     height: 54,
@@ -170,6 +214,10 @@ const styles = StyleSheet.create({
     fontSize: 25,
     lineHeight: 27
   },
+  valuePhaseSummary: {
+    fontSize: 18,
+    lineHeight: 19
+  },
   valueRoleFooter: {
     fontSize: 22,
     lineHeight: 23
@@ -182,6 +230,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 5
   },
+  compactCopyPhaseSummary: {
+    width: 82,
+    flex: 0,
+    gap: 4
+  },
   unit: {
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
@@ -191,6 +244,10 @@ const styles = StyleSheet.create({
   unitCompact: {
     fontSize: 8,
     letterSpacing: 0.6
+  },
+  unitPhaseSummary: {
+    fontSize: 6,
+    letterSpacing: 0.4
   },
   unitRoleFooter: {
     fontSize: 7,
@@ -212,6 +269,9 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     height: 4
   },
+  barTrackPhaseSummary: {
+    height: 4
+  },
   barFill: {
     height: "100%"
   },
@@ -222,6 +282,10 @@ const styles = StyleSheet.create({
   },
   textCompact: {
     fontSize: 12
+  },
+  textPhaseSummary: {
+    fontSize: 10,
+    lineHeight: 13
   },
   textRoleFooter: {
     fontSize: 11,

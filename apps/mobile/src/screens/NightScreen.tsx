@@ -2,8 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
 import { useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseBanner } from "../components/PhaseBanner";
 import { PrivateInfoCard } from "../components/PrivateInfoCard";
@@ -13,11 +12,12 @@ import { TargetSelectionList, type TargetSelectionItem } from "../components/Tar
 import { emitGameAction } from "../socket/runtime";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
+import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
-import { toRoleLabel } from "../utils/role-label";
+import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Night">;
 
@@ -135,7 +135,7 @@ function initialsFromName(name: string): string {
 }
 
 export function NightScreen(_: Props) {
-  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const submittedActionKeyRef = useRef<string | null>(null);
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
@@ -146,8 +146,8 @@ export function NightScreen(_: Props) {
   const privateResultText = useGameStore((s) => s.privateResultText);
   const privateResultKind = useGameStore((s) => s.privateResultKind);
   const vampireVotePreview = useGameStore((s) => s.vampireVotePreview);
-  const lastDayVoteSummary = useGameStore((s) => s.lastDayVoteSummary);
   const detectiveInspectedPlayerIds = useGameStore((s) => s.detectiveInspectedPlayerIds);
+  const knownVampirePlayerIds = useGameStore((s) => s.knownVampirePlayerIds);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Night"));
 
@@ -169,9 +169,15 @@ export function NightScreen(_: Props) {
   const meAlive = mePlayer?.isAlive ?? true;
   const canAct = !!actionConfig && role === actionConfig.role && (meAlive || actionConfig.actionType === "hunter-shot");
   const currentActionSummary = actionSummaryText(phase ?? "NightStart", canAct, meAlive);
+  const actionDetailText = canAct
+    ? "Hedefini seçip alttan kilitle."
+    : meAlive
+      ? "Hedef kartları yalnızca bilgi için gösteriliyor."
+      : "Oyunu izleyebilirsin.";
   const playerNameById = new Map(players.map((p) => [p.playerId, p.nickname] as const));
   const selectedTargetName = selectedTargetPlayerId ? playerNameById.get(selectedTargetPlayerId) ?? "hedef" : null;
   const inspectedSet = new Set(detectiveInspectedPlayerIds);
+  const vampireSet = new Set(knownVampirePlayerIds);
   const targetItems: TargetSelectionItem[] = players.map((player) => {
     const alreadyInspectedByDetective =
       actionConfig?.actionType === "detective-inspect" &&
@@ -183,7 +189,7 @@ export function NightScreen(_: Props) {
       player.isAlive &&
       !alreadyInspectedByDetective &&
       (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId) &&
-      !(actionConfig.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire");
+      !(actionConfig.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId));
     const disabledReason = !player.isAlive
       ? "Elendi"
       : !canAct
@@ -192,7 +198,7 @@ export function NightScreen(_: Props) {
           ? "Daha önce sorgulandı"
           : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
             ? "Kendini secemezsin"
-            : actionConfig?.actionType === "vampire-target" && role === "Vampire" && player.role === "Vampire"
+            : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
               ? "Vampir baska vampiri hedefleyemez"
               : null;
     return {
@@ -204,7 +210,7 @@ export function NightScreen(_: Props) {
       isSelected: selectedTargetPlayerId === player.playerId,
       statusText: player.isAlive ? "Hayatta" : "Elendi",
       disabledReason,
-      badgeText: player.playerId === playerId ? "SEN" : null
+      badgeText: player.playerId === playerId ? "SEN" : role === "Vampire" && vampireSet.has(player.playerId) ? "VAMPİR" : null
     };
   });
   const selectedActionTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
@@ -213,8 +219,12 @@ export function NightScreen(_: Props) {
     : !selectedTargetPlayerId
       ? "Bir hedef seç"
       : !selectedActionTarget?.isSelectable
-        ? "Bu hedef seçilemez"
-        : null;
+      ? "Bu hedef seçilemez"
+      : null;
+  const layout = getResponsiveMetrics(width, height);
+  const actionDockBottom = uiStandard.actionDock.bottomGap;
+  const actionScrollPadding = uiStandard.actionDock.minHeight + actionDockBottom + uiStandard.actionDock.scrollGap;
+  const actionButtonWidth = scaledSize(146, layout.controlScale, 130, 146);
 
   const submitAction = () => {
     if (!actionConfig || !selectedTargetPlayerId || !actionKey || alreadySubmittedThisPhase) {
@@ -240,102 +250,54 @@ export function NightScreen(_: Props) {
       scene={sceneForPhase(phase, role, tieCount)}
       bottomNavActiveIndex={0}
       headerTitle={phase.startsWith("Day") || phase === "HunterLastBreath" || phase === "GuardProtect" ? "GÜNDÜZ FAZI" : "GECE FAZI"}
+      contentDensity="game"
     >
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.screenRoot}>
         <PhaseBanner
           title={phaseTitle(phase)}
           description={phaseDescription(phase, tieCount)}
           phaseEndsAt={gameState?.phaseEndsAt ?? null}
+          infoLabel={currentActionSummary.label}
+          infoText={currentActionSummary.value}
+          infoDetail={actionDetailText}
+          infoIcon={currentActionSummary.icon}
+          infoActive={canAct}
+          compact
         />
-        <View style={styles.missionCard}>
-          <View style={styles.missionIcon}>
-            <Ionicons name={currentActionSummary.icon} size={18} color={colors.secondary} />
-          </View>
-          <View style={styles.missionCopy}>
-            <Text style={styles.missionLabel}>{currentActionSummary.label}</Text>
-            <Text style={styles.missionValue}>{currentActionSummary.value}</Text>
-          </View>
-          {canAct ? <Text style={styles.missionBadge}>AKTİF</Text> : null}
-        </View>
-        <TargetSelectionList
-          items={targetItems}
-          onSelect={setSelectedTargetPlayerId}
-          disabledSummary={meAlive ? "Bu fazda aksiyon hakkın yok; hedef kartları sadece bilgi için gösteriliyor." : "Elendin; hedef seçemezsin."}
-        />
+        <ScrollView
+          style={styles.targetScroll}
+          contentContainerStyle={[styles.targetContent, { paddingBottom: canAct ? actionScrollPadding : spacing.lg }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <TargetSelectionList
+            items={targetItems}
+            onSelect={setSelectedTargetPlayerId}
+            disabledSummary={null}
+          />
 
-        {canAct ? null : (
-          <View style={styles.waitingBox}>
-            <Ionicons name={meAlive ? "eye-off-outline" : "skull-outline"} size={20} color={colors.textMuted} />
-            <Text style={styles.waitingText}>
-              {meAlive ? "Sıra sende değil. Faz devam ediyor, bekle." : "Elendin. Artık aksiyon kullanamazsın, oyunu izleyebilirsin."}
-            </Text>
-          </View>
-        )}
+          {role === "Doctor" && phase === "DoctorProtect" ? (
+            <Text style={styles.tip}>Kural: Kendini art arda iki gece koruyamazsın.</Text>
+          ) : null}
 
-        {role === "Doctor" && phase === "DoctorProtect" ? (
-          <Text style={styles.tip}>Kural: Kendini art arda iki gece koruyamazsın.</Text>
-        ) : null}
-
-        {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Vampir Oyları</Text>
-            {vampireVotePreview.votes.length === 0 ? <Text style={styles.resultText}>Henüz vampir kaydı yok.</Text> : null}
-            {vampireVotePreview.votes.map((row) => (
-              <Text key={row.voterPlayerId} style={styles.resultText}>
-                {row.voterName}
-                {row.isBot ? " (bot)" : ""} → {row.targetName ?? "Henüz seçmedi"}
-              </Text>
-            ))}
-            {vampireVotePreview.targetCounts.length ? (
-              <View style={styles.vampireTallyRow}>
-                {vampireVotePreview.targetCounts.map((t) => (
-                  <Text key={t.targetPlayerId} style={styles.vampireTallyChip}>
-                    {t.targetName} · {t.count} oy
-                  </Text>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        {(phase === "ExecutionResolve" || phase === "WinCheck") && lastDayVoteSummary?.entries?.length ? (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Oylama Dökümü</Text>
-            {lastDayVoteSummary.entries
-              .slice()
-              .sort((a: { votes: number }, b: { votes: number }) => b.votes - a.votes)
-              .map((entry: { playerId: string; votes: number }) => (
-                <Text key={entry.playerId} style={styles.resultText}>
-                  {(entry.playerId === "__NO_LYNCH__" ? "Kimseyi Gönderme" : playerNameById.get(entry.playerId) ?? entry.playerId)}: {entry.votes} oy
+          {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
+            <View style={styles.resultCard}>
+              <Text style={styles.resultTitle}>Vampir Oyları</Text>
+              {vampireVotePreview.votes.map((row) => (
+                <Text key={row.voterPlayerId} style={styles.resultText}>
+                  {row.voterName}{row.isBot ? " (bot)" : ""} → {row.targetName ?? "Henüz seçmedi"}
                 </Text>
               ))}
-            {lastDayVoteSummary.noLynchWon ? <Text style={styles.resultText}>Sonuç: Kimse elenmedi.</Text> : null}
-          </View>
-        ) : null}
+            </View>
+          ) : null}
 
-        {(phase === "DayStart" || phase === "ExecutionResolve" || phase === "WinCheck") && gameState?.lastEliminationSummary ? (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>{gameState.lastEliminationSummary.source === "Night" ? "Gece Sonucu" : "Gündüz Sonucu"}</Text>
-            <Text style={styles.resultText}>
-              {(playerNameById.get(gameState.lastEliminationSummary.playerId) ?? gameState.lastEliminationSummary.playerId)} elendi.
-            </Text>
-            {roomState?.rules?.revealEliminatedRole ? (
-              <Text style={styles.resultText}>
-                Rol: {gameState.lastEliminationSummary.revealedRole ? toRoleLabel(gameState.lastEliminationSummary.revealedRole) : "Bilinmiyor"}
-              </Text>
-            ) : (
-              <Text style={styles.resultText}>Rol gizli kaldı.</Text>
-            )}
-          </View>
-        ) : null}
-
-        {privateResultText && privateResultKind && privateResultKind !== "info" ? (
-          <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
-        ) : null}
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-      </ScrollView>
+          {privateResultText && privateResultKind && privateResultKind !== "info" ? (
+            <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
+          ) : null}
+          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+        </ScrollView>
+      </View>
       {canAct ? (
-        <View style={[styles.stickyAction, { bottom: 84 + insets.bottom }]}>
+        <View style={[styles.stickyAction, { bottom: actionDockBottom }]}>
           <View style={styles.actionSummary}>
             <Text style={styles.actionSummaryLabel}>Hedef</Text>
             <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedTargetName ?? "Seçilmedi"}</Text>
@@ -348,7 +310,7 @@ export function NightScreen(_: Props) {
             onPress={submitAction}
             disabled={Boolean(actionDisabledReason)}
             compact
-            style={styles.actionButton}
+            style={[styles.actionButton, { width: actionButtonWidth }]}
           />
         </View>
       ) : null}
@@ -362,20 +324,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
-  scroll: {
+  screenRoot: {
+    flex: 1,
+    gap: 7
+  },
+  targetScroll: {
     flex: 1
   },
-  content: {
-    paddingBottom: 132,
-    gap: 14
+  targetContent: {
+    gap: 8
   },
   stickyAction: {
     position: "absolute",
     left: spacing.safe,
     right: spacing.safe,
-    minHeight: 64,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    minHeight: uiStandard.actionDock.minHeight,
+    paddingHorizontal: uiStandard.actionDock.paddingX,
+    paddingVertical: uiStandard.actionDock.paddingY,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.24)",
     borderRadius: 16,
@@ -412,54 +377,7 @@ const styles = StyleSheet.create({
     fontSize: 11
   },
   actionButton: {
-    width: 146
-  },
-  missionCard: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.25)",
-    borderRadius: 14,
-    padding: 12,
-    backgroundColor: "rgba(24,23,20,0.84)",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10
-  },
-  missionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.36)",
-    backgroundColor: "rgba(50,40,17,0.42)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  missionCopy: {
-    flex: 1,
-    gap: 2
-  },
-  missionLabel: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: "uppercase"
-  },
-  missionValue: {
-    color: colors.text,
-    fontFamily: typography.sansMedium,
-    fontSize: 14,
-    lineHeight: 19
-  },
-  missionBadge: {
-    color: colors.backgroundDeep,
-    backgroundColor: colors.secondary,
-    overflow: "hidden",
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    fontFamily: typography.sansBold,
-    fontSize: 10
+    flexShrink: 0
   },
   hero: {
     borderWidth: 1,
@@ -547,23 +465,6 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     marginTop: 2
-  },
-  waitingBox: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.28)",
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: "rgba(18,19,21,0.85)",
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center"
-  },
-  waitingText: {
-    flex: 1,
-    color: colors.textMuted,
-    fontFamily: typography.sansMedium,
-    fontSize: 15,
-    lineHeight: 22
   },
   tip: {
     color: colors.secondary,

@@ -60,9 +60,15 @@ function makeRoom(opts: {
         vampireVote: 1,
         detectiveInspect: 1,
         doctorProtect: 1,
+        nightResolve: 1,
         dayStart: 1,
+        mayorElection: 1,
+        guardProtect: 1,
         dayDiscussion: 1,
-        dayVote: 1
+        dayVote: 1,
+        executionResolve: 1,
+        hunterLastBreath: 1,
+        winCheck: 1
       }
     },
     createdAt: Date.now(),
@@ -88,6 +94,64 @@ describe("phase skip when role absent or dead", () => {
     const { phaseChanged } = engine.tick(room);
     expect(phaseChanged).toBe(true);
     expect(room.game.phase).toBe("NightResolve");
+  });
+
+  it("does not auto-advance endless phases", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager")
+      ],
+      phase: "DayDiscussion",
+      rolePreset: "beginner"
+    });
+    room.game.phaseEndsAt = null;
+    room.game.phaseDurations.dayDiscussion = 0;
+    const { phaseChanged } = engine.tick(room);
+    expect(phaseChanged).toBe(false);
+    expect(room.game.phase).toBe("DayDiscussion");
+  });
+
+  it("manual advance uses the same phase flow for endless phases", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager")
+      ],
+      phase: "DayDiscussion",
+      rolePreset: "beginner"
+    });
+    room.game.phaseEndsAt = null;
+    room.game.phaseDurations.dayDiscussion = 0;
+    const { phaseChanged } = engine.advancePhase(room);
+    expect(phaseChanged).toBe(true);
+    expect(room.game.phase).toBe("DayVote");
+  });
+
+  it("manual advance rejects VampireVote before living vampires choose", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager")
+      ],
+      phase: "VampireVote",
+      rolePreset: "beginner"
+    });
+    expect(() => engine.assertManualAdvanceAllowed(room)).toThrow("PHASE_ACTIONS_PENDING");
+    engine.submitAction(room, "v1", {
+      roomCode: room.roomCode,
+      actionType: "vampire-target",
+      targetPlayerId: "a",
+      phase: "VampireVote",
+      round: 1
+    });
+    expect(() => engine.assertManualAdvanceAllowed(room)).not.toThrow();
   });
 
   it("VampireVote -> DoctorProtect when Doctor alive but Detective absent", () => {

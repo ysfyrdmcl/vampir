@@ -428,9 +428,15 @@ export class RoomManager {
       vampireVote: phaseDurations?.vampireVote ?? env.VAMPIRE_ACTION_SECONDS,
       detectiveInspect: phaseDurations?.detectiveInspect ?? env.DETECTIVE_ACTION_SECONDS,
       doctorProtect: phaseDurations?.doctorProtect ?? env.DOCTOR_ACTION_SECONDS,
+      nightResolve: phaseDurations?.nightResolve ?? env.RESULT_SCREEN_SECONDS,
       dayStart: phaseDurations?.dayStart ?? env.RESULT_SCREEN_SECONDS,
+      mayorElection: phaseDurations?.mayorElection ?? env.DAY_VOTE_SECONDS,
+      guardProtect: phaseDurations?.guardProtect ?? env.DAY_VOTE_SECONDS,
       dayDiscussion: phaseDurations?.dayDiscussion ?? env.DAY_DISCUSSION_SECONDS,
-      dayVote: phaseDurations?.dayVote ?? env.DAY_VOTE_SECONDS
+      dayVote: phaseDurations?.dayVote ?? env.DAY_VOTE_SECONDS,
+      executionResolve: phaseDurations?.executionResolve ?? env.RESULT_SCREEN_SECONDS,
+      hunterLastBreath: phaseDurations?.hunterLastBreath ?? env.RESULT_SCREEN_SECONDS,
+      winCheck: phaseDurations?.winCheck ?? 1
     };
   }
 

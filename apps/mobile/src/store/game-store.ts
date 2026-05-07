@@ -2,6 +2,7 @@ import type {
   BotIntelligence,
   BotSpeechEvent,
   DayVoteSummary,
+  GameResultEvent,
   GameMode,
   GamePhase,
   GameStateSnapshotPublic,
@@ -39,8 +40,14 @@ export interface PhaseDurationSettings {
   detectiveInspect: number;
   doctorProtect: number;
   dayStart: number;
+  nightResolve: number;
+  mayorElection: number;
+  guardProtect: number;
   dayDiscussion: number;
   dayVote: number;
+  executionResolve: number;
+  hunterLastBreath: number;
+  winCheck: number;
 }
 
 interface GameStoreState {
@@ -60,12 +67,15 @@ interface GameStoreState {
   vampireVotePreview: VampireVotePreview | null;
   lastDayVoteSummary: DayVoteSummary | null;
   gameWinner: "Vampires" | "Villagers" | null;
+  activeResultEvent: GameResultEvent | null;
+  resultEventQueue: GameResultEvent[];
   phaseDurations: PhaseDurationSettings;
   gameMode: GameMode;
   rolePreset: RolePresetId;
   roomRules: RuleSettings;
   /** Dedektif: bu oyunda sorgulanmış hedefler (sunucu `game:private-role` ile senkron). */
   detectiveInspectedPlayerIds: string[];
+  knownVampirePlayerIds: string[];
   selectedTargetPlayerId: string | null;
   botIntelligence: BotIntelligence;
   /** Tek aktif popup + bekleyen söylentiler (BOT-F; server üretir). */
@@ -91,11 +101,14 @@ interface GameStoreState {
   setGameState: (gameState: GameStateSnapshotPublic) => void;
   setPrivateRole: (role: Role | null) => void;
   setDetectiveInspectedPlayerIds: (ids: string[]) => void;
+  setKnownVampirePlayerIds: (ids: string[]) => void;
   setLoverPartnerPlayerId: (playerId: string | null) => void;
   setPrivateResultText: (value: string | null, kind?: PrivateResultKind | null) => void;
   setVampireVotePreview: (preview: VampireVotePreview | null) => void;
   setLastDayVoteSummary: (summary: DayVoteSummary | null) => void;
   setGameWinner: (winner: "Vampires" | "Villagers" | null) => void;
+  pushResultEvent: (event: GameResultEvent) => void;
+  dismissActiveResultEvent: () => void;
   setSelectedTargetPlayerId: (playerId: string | null) => void;
   setPhaseDurations: (updater: Partial<PhaseDurationSettings>) => void;
   setGameMode: (mode: GameMode) => void;
@@ -121,6 +134,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
   vampireVotePreview: null,
   lastDayVoteSummary: null,
   gameWinner: null,
+  activeResultEvent: null,
+  resultEventQueue: [],
   phaseDurations: {
     useSystemDefaults: true,
     roleReveal: 8,
@@ -128,9 +143,15 @@ export const useGameStore = create<GameStoreState>((set) => ({
     vampireVote: 20,
     detectiveInspect: 20,
     doctorProtect: 20,
+    nightResolve: 8,
     dayStart: 8,
+    mayorElection: 30,
+    guardProtect: 30,
     dayDiscussion: 60,
-    dayVote: 30
+    dayVote: 30,
+    executionResolve: 8,
+    hunterLastBreath: 10,
+    winCheck: 1
   },
   gameMode: "Classic",
   rolePreset: "beginner",
@@ -145,6 +166,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     loversEnabled: false
   },
   detectiveInspectedPlayerIds: [],
+  knownVampirePlayerIds: [],
   selectedTargetPlayerId: null,
   botIntelligence: "balanced",
   activeBotSpeech: null,
@@ -226,6 +248,9 @@ export const useGameStore = create<GameStoreState>((set) => ({
         gameMode: roomState.gameMode ?? state.gameMode,
         rolePreset: roomState.rolePreset ?? state.rolePreset,
         roomRules: roomState.rules ?? state.roomRules,
+        phaseDurations: roomState.phaseDurations
+          ? { ...state.phaseDurations, ...roomState.phaseDurations }
+          : state.phaseDurations,
         ...(clearSpeechHistory
           ? { botSpeechHistory: [] as BotSpeechEvent[], botSpeechUnreadCount: 0 }
           : {}),
@@ -236,8 +261,11 @@ export const useGameStore = create<GameStoreState>((set) => ({
               privateResultText: null,
               privateResultKind: null,
               gameWinner: null,
+              activeResultEvent: null,
+              resultEventQueue: [],
               vampireVotePreview: null,
               detectiveInspectedPlayerIds: [],
+              knownVampirePlayerIds: [],
               selectedTargetPlayerId: null,
               errorCode: null
             }
@@ -261,6 +289,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
   setPrivateRole: (role) => set({ privateRole: role }),
   setDetectiveInspectedPlayerIds: (detectiveInspectedPlayerIds) => set({ detectiveInspectedPlayerIds }),
+  setKnownVampirePlayerIds: (knownVampirePlayerIds) => set({ knownVampirePlayerIds }),
   setLoverPartnerPlayerId: (loverPartnerPlayerId) => set({ loverPartnerPlayerId }),
   setPrivateResultText: (privateResultText, kind) =>
     set({
@@ -270,6 +299,21 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setVampireVotePreview: (vampireVotePreview) => set({ vampireVotePreview }),
   setLastDayVoteSummary: (lastDayVoteSummary) => set({ lastDayVoteSummary }),
   setGameWinner: (gameWinner) => set({ gameWinner }),
+  pushResultEvent: (event) =>
+    set((state) => {
+      if (state.activeResultEvent?.id === event.id || state.resultEventQueue.some((e) => e.id === event.id)) {
+        return {};
+      }
+      if (!state.activeResultEvent) {
+        return { activeResultEvent: event };
+      }
+      return { resultEventQueue: [...state.resultEventQueue, event] };
+    }),
+  dismissActiveResultEvent: () =>
+    set((state) => {
+      const [next, ...rest] = state.resultEventQueue;
+      return { activeResultEvent: next ?? null, resultEventQueue: rest };
+    }),
   setSelectedTargetPlayerId: (selectedTargetPlayerId) => set({ selectedTargetPlayerId }),
   setPhaseDurations: (updater) =>
     set((state) => ({
@@ -301,8 +345,11 @@ export const useGameStore = create<GameStoreState>((set) => ({
       privateResultKind: null,
       vampireVotePreview: null,
       detectiveInspectedPlayerIds: [],
+      knownVampirePlayerIds: [],
       lastDayVoteSummary: null,
       gameWinner: null,
+      activeResultEvent: null,
+      resultEventQueue: [],
       selectedTargetPlayerId: null,
       activeBotSpeech: null,
       botSpeechQueue: [],

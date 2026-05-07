@@ -41,8 +41,10 @@ import {
   roomBotRemoveSchema,
   roomBotSetIntelligenceSchema,
   roomBotFillMinimumSchema,
-  roomResetToLobbySchema
+  roomResetToLobbySchema,
+  gamePhaseAdvanceSchema
 } from "./socket-schema.js";
+import { buildGameResultEvents, captureResultEventBaseline } from "../game/game-result-events.js";
 
 export class SocketRuntime {
   private readonly roomManager = new RoomManager();
@@ -87,6 +89,7 @@ export class SocketRuntime {
     socket.on(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, (payload) => this.safe(socket, () => this.onResetToLobby(payload)));
     socket.on(SOCKET_EVENTS.GAME_PAUSE, (payload) => this.safe(socket, () => this.onPause(socket, payload)));
     socket.on(SOCKET_EVENTS.GAME_RESUME, (payload) => this.safe(socket, () => this.onResume(socket, payload)));
+    socket.on(SOCKET_EVENTS.GAME_PHASE_ADVANCE, (payload) => this.safe(socket, () => this.onPhaseAdvance(socket, payload)));
     socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_BOT_ADD, (payload) => this.safe(socket, () => this.onBotAdd(payload)));
     socket.on(SOCKET_EVENTS.ROOM_BOT_REMOVE, (payload) => this.safe(socket, () => this.onBotRemove(payload)));
@@ -130,39 +133,10 @@ export class SocketRuntime {
   private tickRoom(roomCode: string): void {
     const room = this.roomManager.getRoom(roomCode);
     if (!room || room.status !== "InGame") return;
+    const before = captureResultEventBaseline(room);
     const tick = this.gameEngine.tick(room);
-    if (tick.phaseChanged) {
-      for (const pr of tick.privateResults) {
-        if (!("detectiveResult" in pr) || !pr.detectiveTargetPlayerId) continue;
-        const detective = room.players.find((p) => p.playerId === pr.playerId);
-        if (!detective?.isBot) continue;
-        this.botMemoryStore.applyDetectivePrivateResult(
-          room.roomCode,
-          pr.playerId,
-          pr.detectiveTargetPlayerId,
-          pr.detectiveResult
-        );
-      }
-      this.botMemoryStore.onPhaseAdvanced(room);
-      this.botActionEngine.onPhaseAdvanced(room);
-      this.botSpeechEngine.onPhaseAdvanced(room);
-    }
     if (!tick.phaseChanged) return;
-    for (const privateResult of tick.privateResults) {
-      const player = room.players.find((p) => p.playerId === privateResult.playerId);
-      if (player?.socketId) {
-        this.io.to(player.socketId).emit(SOCKET_EVENTS.GAME_PRIVATE_RESULT, privateResult);
-      }
-    }
-    this.broadcastGamePhase(room);
-    this.broadcastRoomState(room);
-    if (room.game.phase === "GameOver") {
-      this.log.info({ roomCode: room.roomCode, winner: room.game.winner, round: room.game.round }, "game over");
-      this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_OVER, {
-        winner: room.game.winner,
-        round: room.game.round
-      });
-    }
+    this.afterPhaseAdvanced(room, tick.privateResults, before);
   }
 
   private onCreate(socket: Socket, raw: unknown): void {
@@ -214,6 +188,9 @@ export class SocketRuntime {
       };
       if (player.role === "Detective") {
         rolePayload.detectiveInspectedPlayerIds = room.game.detectiveInspectedTargets[player.playerId] ?? [];
+      }
+      if (player.role === "Vampire") {
+        rolePayload.vampirePlayerIds = room.players.filter((p) => p.role === "Vampire").map((p) => p.playerId);
       }
       socket.emit(SOCKET_EVENTS.GAME_PRIVATE_ROLE, rolePayload);
     }
@@ -373,6 +350,21 @@ export class SocketRuntime {
     this.botActionEngine.onGameResumed(room);
   }
 
+  private onPhaseAdvance(_socket: Socket, raw: unknown): void {
+    const payload = gamePhaseAdvanceSchema.parse(raw);
+    const room = this.roomManager.requireRoom(payload.roomCode);
+    this.roomManager.assertHost(room, payload.identity.deviceId);
+    if (room.status !== "InGame" || room.game.phase === "GameOver") {
+      throw new Error("INVALID_PHASE");
+    }
+    this.gameEngine.assertManualAdvanceAllowed(room);
+    const before = captureResultEventBaseline(room);
+    const advanced = this.gameEngine.advancePhase(room);
+    if (!advanced.phaseChanged) return;
+    this.log.info({ roomCode: room.roomCode, phase: room.game.phase, round: room.game.round }, "phase advanced manually");
+    this.afterPhaseAdvanced(room, advanced.privateResults, before);
+  }
+
   private onBotAdd(raw: unknown): void {
     const payload = roomBotAddSchema.parse(raw);
     const { room } = this.roomManager.addBot(
@@ -432,7 +424,8 @@ export class SocketRuntime {
       maxPlayers: env.ROOM_MAX_PLAYERS,
       gameMode: room.game.gameMode,
       rolePreset: room.game.rolePreset,
-      rules: room.game.rules
+      rules: room.game.rules,
+      phaseDurations: room.game.phaseDurations
     };
   }
 
@@ -444,6 +437,45 @@ export class SocketRuntime {
     this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_PHASE, this.gameEngine.getPublicSnapshot(room));
     if (room.status === "InGame" && room.game.phase === "VampireVote") {
       this.emitVampireVotePreviewToVampires(room);
+    }
+  }
+
+  private afterPhaseAdvanced(
+    room: RoomState,
+    privateResults: RoomState["game"]["privateResults"],
+    before: ReturnType<typeof captureResultEventBaseline>
+  ): void {
+    for (const pr of privateResults) {
+      if (!("detectiveResult" in pr) || !pr.detectiveTargetPlayerId) continue;
+      const detective = room.players.find((p) => p.playerId === pr.playerId);
+      if (!detective?.isBot) continue;
+      this.botMemoryStore.applyDetectivePrivateResult(
+        room.roomCode,
+        pr.playerId,
+        pr.detectiveTargetPlayerId,
+        pr.detectiveResult
+      );
+    }
+    this.botMemoryStore.onPhaseAdvanced(room);
+    this.botActionEngine.onPhaseAdvanced(room);
+    this.botSpeechEngine.onPhaseAdvanced(room);
+    for (const privateResult of privateResults) {
+      const player = room.players.find((p) => p.playerId === privateResult.playerId);
+      if (player?.socketId) {
+        this.io.to(player.socketId).emit(SOCKET_EVENTS.GAME_PRIVATE_RESULT, privateResult);
+      }
+    }
+    this.broadcastGamePhase(room);
+    this.broadcastRoomState(room);
+    for (const event of buildGameResultEvents(before, room)) {
+      this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_RESULT, event);
+    }
+    if (room.game.phase === "GameOver") {
+      this.log.info({ roomCode: room.roomCode, winner: room.game.winner, round: room.game.round }, "game over");
+      this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_OVER, {
+        winner: room.game.winner,
+        round: room.game.round
+      });
     }
   }
 

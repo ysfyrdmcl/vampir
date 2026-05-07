@@ -60,9 +60,15 @@ function makeRoom(opts: {
         vampireVote: 1,
         detectiveInspect: 1,
         doctorProtect: 1,
+        nightResolve: 1,
         dayStart: 1,
+        mayorElection: 1,
+        guardProtect: 1,
         dayDiscussion: 1,
-        dayVote: 1
+        dayVote: 1,
+        executionResolve: 1,
+        hunterLastBreath: 1,
+        winCheck: 1
       }
     },
     createdAt: Date.now(),

@@ -7,6 +7,7 @@ import {
   type BotIntelligence,
   type BotSpeechEvent,
   type GamePrivateResultPayload,
+  type GameResultEvent,
   type RolePresetId,
   type RuleSettings
 } from "@vampir-koylu/shared";
@@ -28,6 +29,7 @@ let lastMayorVoteStartRoundLogged: number | null = null;
 let lastVoteTieRoundLogged: number | null = null;
 let lastExecutionRoundLogged: number | null = null;
 let lastEliminationKeyLogged: string | null = null;
+let lastVampireVotePreviewLogKey: string | null = null;
 let pendingReadyResync = false;
 /** After a real disconnect, reconnect should re-emit join; first cold `connect` must not duplicate bootstrap join. */
 let joinAfterNextSocketConnect = false;
@@ -193,10 +195,12 @@ export function initSocketRuntime(): void {
       lastVoteTieRoundLogged = null;
       lastExecutionRoundLogged = null;
       lastEliminationKeyLogged = null;
+      lastVampireVotePreviewLogKey = null;
       store.getState().clearBotSpeechHistory();
     }
     const prevPhaseForLog = lastPhase;
     store.getState().clearBotSpeech();
+    store.getState().setErrorCode(null);
     store.getState().setGameState(payload);
     store.getState().setSelectedTargetPlayerId(null);
     if (payload.phase !== "VampireVote") {
@@ -276,7 +280,7 @@ export function initSocketRuntime(): void {
         round: payload.round
       });
     }
-    if (prevPhaseForLog === "MayorElection" && payload.phase === "DayDiscussion" && payload.mayorPlayerId) {
+    if (prevPhaseForLog === "MayorElection" && (payload.phase === "GuardProtect" || payload.phase === "DayDiscussion") && payload.mayorPlayerId) {
       logGameEvent("role.mayor.selected", {
         round: payload.round,
         mayorPlayerId: payload.mayorPlayerId
@@ -310,12 +314,23 @@ export function initSocketRuntime(): void {
     });
   });
 
+  socket.on(SOCKET_EVENTS.GAME_RESULT, (payload: GameResultEvent) => {
+    store.getState().pushResultEvent(payload);
+    logGameEvent("game.result", {
+      id: payload.id,
+      kind: payload.kind,
+      phase: payload.phase,
+      round: payload.round
+    });
+  });
+
   socket.on(
     SOCKET_EVENTS.GAME_PRIVATE_ROLE,
     (payload: {
       role?: "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard";
       loverPartnerPlayerId?: string;
       detectiveInspectedPlayerIds?: string[];
+      vampirePlayerIds?: string[];
     }) => {
     if (payload.role) {
       store.getState().setPrivateRole(payload.role);
@@ -323,6 +338,9 @@ export function initSocketRuntime(): void {
     }
     if (payload.detectiveInspectedPlayerIds) {
       store.getState().setDetectiveInspectedPlayerIds(payload.detectiveInspectedPlayerIds);
+    }
+    if (payload.vampirePlayerIds) {
+      store.getState().setKnownVampirePlayerIds(payload.vampirePlayerIds);
     }
     if (payload.loverPartnerPlayerId) {
       store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId);
@@ -342,15 +360,26 @@ export function initSocketRuntime(): void {
     if (payload.vampireVotePreview) {
       store.getState().setVampireVotePreview(payload.vampireVotePreview);
       const v = payload.vampireVotePreview;
-      logPersonalEvent("game.private_result.vampire_preview", {
+      const previewLogKey = JSON.stringify({
         round: v.round,
-        voters: v.votes.length,
-        pending: v.pendingVoterPlayerIds.length
+        votes: v.votes.map((vote) => [vote.voterPlayerId, vote.targetPlayerId ?? null]),
+        pending: v.pendingVoterPlayerIds
       });
-      logPersonalEvent("personal.vampire.vote_preview", {
-        round: v.round,
-        tallyTargets: v.targetCounts.length
-      });
+      if (previewLogKey !== lastVampireVotePreviewLogKey) {
+        lastVampireVotePreviewLogKey = previewLogKey;
+        const pendingNames = v.votes
+          .filter((vote) => !vote.targetPlayerId)
+          .map((vote) => vote.voterName);
+        const voteLines = v.votes.map((vote) => `${vote.voterName}${vote.isBot ? " (bot)" : ""} → ${vote.targetName ?? "bekliyor"}`);
+        const leadingText = v.targetCounts.length
+          ? v.targetCounts.map((target) => `${target.targetName}: ${target.count}`).join(", ")
+          : "henüz hedef yok";
+        const text = `Vampir oyları: ${voteLines.join("; ")}. Önde: ${leadingText}.${pendingNames.length ? ` Bekleyen: ${pendingNames.join(", ")}.` : ""}`;
+        logPersonalEvent("personal.vampire.vote_preview", {
+          round: v.round,
+          text
+        });
+      }
     }
     if (payload.detectiveResult) {
       const roomState = store.getState().roomState;
@@ -370,26 +399,22 @@ export function initSocketRuntime(): void {
           ? `${targetName}: Vampir`
           : `${targetName}: Vampir değil`;
       store.getState().setPrivateResultText(text, "detective");
-      logPersonalEvent("game.private_result.detective", {
-        detectiveResult: payload.detectiveResult,
-        detectiveTargetPlayerId: payload.detectiveTargetPlayerId ?? null,
-        text
-      });
       logPersonalEvent("personal.detective.inspect_result", {
         detectiveResult: payload.detectiveResult,
         detectiveTargetPlayerId: payload.detectiveTargetPlayerId ?? null,
+        targetName,
         text
       });
       return;
     }
     if (payload.accepted) {
       showToast("Aksiyon gönderildi", "gold", 1400);
-      logPersonalEvent("game.private_result.accepted");
     }
   });
 
   socket.on(SOCKET_EVENTS.GAME_OVER, (payload: { winner: "Vampires" | "Villagers" }) => {
     store.getState().setGameWinner(payload.winner);
+    store.getState().setErrorCode(null);
     store.getState().clearBotSpeech();
     logGameEvent("game.over", { winner: payload.winner });
   });
@@ -473,9 +498,15 @@ function buildPhaseDurationsPayload() {
     vampireVote: settings.vampireVote,
     detectiveInspect: settings.detectiveInspect,
     doctorProtect: settings.doctorProtect,
+    nightResolve: settings.nightResolve,
     dayStart: settings.dayStart,
+    mayorElection: settings.mayorElection,
+    guardProtect: settings.guardProtect,
     dayDiscussion: settings.dayDiscussion,
-    dayVote: settings.dayVote
+    dayVote: settings.dayVote,
+    executionResolve: settings.executionResolve,
+    hunterLastBreath: settings.hunterLastBreath,
+    winCheck: settings.winCheck
   };
 }
 
@@ -675,6 +706,21 @@ export function emitGameResume(): void {
   logGameEvent("emit.game_resume", { roomCode: state.roomCode });
 }
 
+export function emitGamePhaseAdvance(): void {
+  const state = useGameStore.getState();
+  if (!state.roomCode) return;
+  ensureConnected();
+  getSocket().emit(SOCKET_EVENTS.GAME_PHASE_ADVANCE, {
+    identity: identityPayload(),
+    roomCode: state.roomCode
+  });
+  logGameEvent("emit.game_phase_advance", {
+    roomCode: state.roomCode,
+    phase: state.gameState?.phase ?? null,
+    round: state.gameState?.round ?? null
+  });
+}
+
 export function emitReadyToggle(isReady: boolean): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
@@ -706,33 +752,37 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
     phase: state.gameState.phase,
     round: state.gameState.round
   });
-  logPersonalEvent("emit.game_action.personal", {
-    actionType,
-    targetPlayerId: targetPlayerId ?? null,
-    phase: state.gameState.phase,
-    round: state.gameState.round
-  });
+  const targetName =
+    targetPlayerId === "__NO_LYNCH__"
+      ? "Kimseyi gönderme"
+      : targetPlayerId
+        ? state.roomState?.players.find((player) => player.playerId === targetPlayerId)?.nickname ?? targetPlayerId
+        : null;
   if (actionType === "doctor-protect") {
     logPersonalEvent("personal.doctor.protect_selected", {
       targetPlayerId: targetPlayerId ?? null,
+      targetName,
       round: state.gameState.round
     });
   }
   if (actionType === "vampire-target") {
     logPersonalEvent("personal.vampire.target_selected", {
       targetPlayerId: targetPlayerId ?? null,
+      targetName,
       round: state.gameState.round
     });
   }
   if (actionType === "hunter-shot") {
     logPersonalEvent("personal.hunter.shot_selected", {
       targetPlayerId: targetPlayerId ?? null,
+      targetName,
       round: state.gameState.round
     });
   }
   if (actionType === "guard-protect") {
     logPersonalEvent("personal.guard.protect_selected", {
       targetPlayerId: targetPlayerId ?? null,
+      targetName,
       round: state.gameState.round
     });
   }

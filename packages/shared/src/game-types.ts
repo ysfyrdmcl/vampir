@@ -30,9 +30,15 @@ export interface PhaseDurationSettings {
   vampireVote: number;
   detectiveInspect: number;
   doctorProtect: number;
+  nightResolve: number;
   dayStart: number;
+  mayorElection: number;
+  guardProtect: number;
   dayDiscussion: number;
   dayVote: number;
+  executionResolve: number;
+  hunterLastBreath: number;
+  winCheck: number;
 }
 
 export interface RuleSettings {
@@ -96,6 +102,7 @@ export interface RoomStateSnapshot {
   gameMode?: GameMode;
   rolePreset?: RolePresetId;
   rules?: RuleSettings;
+  phaseDurations?: PhaseDurationSettings;
 }
 
 export interface GameStateSnapshotPublic {
@@ -116,6 +123,7 @@ export interface GameStatePrivateDelta {
   detectiveResult?: "Vampire" | "NotVampire";
   /** Dedektifin bu oyunda daha önce sorguladığı oyuncu kimlikleri (yeniden sorgu yok). */
   detectiveInspectedPlayerIds?: string[];
+  vampirePlayerIds?: string[];
   isActionAllowed?: boolean;
   reason?: string;
 }
@@ -158,6 +166,27 @@ export interface EliminationSummary {
   source: "Night" | "Day";
   playerId: string;
   revealedRole?: Role | null;
+}
+
+export type GameResultKind =
+  | "night"
+  | "day"
+  | "mayor"
+  | "guard"
+  | "tie"
+  | "hunter"
+  | "gameOver";
+
+export interface GameResultEvent {
+  id: string;
+  kind: GameResultKind;
+  title: string;
+  message: string;
+  phase: GamePhase;
+  round: number;
+  playerIds?: string[];
+  role?: Role | null;
+  winner?: "Vampires" | "Villagers";
 }
 
 export interface GamePrivateResultPayload {

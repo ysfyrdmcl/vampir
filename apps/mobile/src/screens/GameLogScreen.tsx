@@ -31,6 +31,7 @@ import { toRoleLabel } from "../utils/role-label";
 
 type Props = NativeStackScreenProps<RootStackParamList, "GameLog">;
 type Tab = "general" | "personal";
+type PersonalView = "logs" | "notebook";
 type GeneralFilter = "all" | "night" | "vote" | "result";
 type TimelineGroup = { key: string; title: string; meta: string; entries: LogFeedEntry[] };
 
@@ -49,6 +50,7 @@ export function GameLogScreen(_: Props) {
     [roomPlayers]
   );
   const [tab, setTab] = useState<Tab>("general");
+  const [personalView, setPersonalView] = useState<PersonalView>("logs");
   const [generalFilter, setGeneralFilter] = useState<GeneralFilter>("all");
   const [playerNotes, setPlayerNotes] = useState<PlayerNotesById>({});
   const [expandedNotePlayerId, setExpandedNotePlayerId] = useState<string | null>(null);
@@ -63,6 +65,17 @@ export function GameLogScreen(_: Props) {
   const personalSummary = useMemo(() => buildPersonalSummary(entries), [entries]);
   const timelineGroups = useMemo(() => buildTimelineGroups(filtered.slice().reverse()), [filtered]);
   const gameAnalysis = useMemo(() => buildGameAnalysis(entries, winner, roomPlayers), [entries, winner, roomPlayers]);
+  const notePlayers = useMemo(
+    () => roomPlayers.filter((player) => player.playerId !== playerId),
+    [playerId, roomPlayers]
+  );
+  const hasAnyPlayerNote = useMemo(
+    () => notePlayers.some((player) => {
+      const note = getPlayerNote(playerNotes, player.playerId);
+      return note.tag !== "none" || note.note.trim().length > 0;
+    }),
+    [notePlayers, playerNotes]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -157,11 +170,29 @@ export function GameLogScreen(_: Props) {
             ))}
           </ScrollView>
         ) : (
-          <View style={styles.personalSummaryRow}>
-            <Text style={styles.personalSummaryText}>Rolün: {role ? toRoleLabel(role) : "Henüz atanmadı"}</Text>
-            <Text style={styles.personalSummaryMeta}>
-              {personalSummary.actionCount} aksiyon · {personalSummary.privateIntelCount} kişisel kayıt
-            </Text>
+          <View style={styles.personalHeader}>
+            <View style={styles.personalSummaryRow}>
+              <Text style={styles.personalSummaryText}>Rolün: {role ? toRoleLabel(role) : "Henüz atanmadı"}</Text>
+              <Text style={styles.personalSummaryMeta}>
+                {personalSummary.actionCount} aksiyon · {personalSummary.privateIntelCount} kişisel kayıt
+              </Text>
+            </View>
+            <View style={styles.personalModeRow}>
+              <Pressable
+                style={[styles.personalMode, personalView === "logs" ? styles.personalModeActive : null]}
+                onPress={() => setPersonalView("logs")}
+              >
+                <Ionicons name="reader-outline" size={14} color={personalView === "logs" ? colors.parchmentText : colors.textMuted} />
+                <Text style={[styles.personalModeText, personalView === "logs" ? styles.personalModeTextActive : null]}>Loglar</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.personalMode, personalView === "notebook" ? styles.personalModeActive : null]}
+                onPress={() => setPersonalView("notebook")}
+              >
+                <Ionicons name="create-outline" size={14} color={personalView === "notebook" ? colors.parchmentText : colors.textMuted} />
+                <Text style={[styles.personalModeText, personalView === "notebook" ? styles.personalModeTextActive : null]}>Not Defteri</Text>
+              </Pressable>
+            </View>
           </View>
         )}
         {tab === "general" && gameAnalysis ? (
@@ -177,16 +208,61 @@ export function GameLogScreen(_: Props) {
             ))}
           </View>
         ) : null}
-        {tab === "personal" ? (
+        {tab === "personal" && personalView === "logs" ? (
+          <View style={styles.personalLogPanel}>
+            <View style={styles.panelHeader}>
+              <View>
+                <Text style={styles.panelTitle}>Kişisel Loglar</Text>
+                <Text style={styles.panelSubtitle}>Sunucudan gelen özel olay geçmişi.</Text>
+              </View>
+              <Text style={styles.panelCount}>{filtered.length} kayıt</Text>
+            </View>
+            {filtered.length === 0 ? <Text style={styles.empty}>Henüz kişisel log yok.</Text> : null}
+            {timelineGroups.map((group) => (
+              <View key={group.key} style={styles.timelineGroup}>
+                <View style={styles.timelineHeader}>
+                  <View style={styles.timelineDot} />
+                  <View style={styles.timelineHeaderCopy}>
+                    <Text style={styles.timelineTitle}>{group.title}</Text>
+                    <Text style={styles.timelineMeta}>{group.meta}</Text>
+                  </View>
+                </View>
+                <View style={styles.timelineRail}>
+                  {group.entries.map((entry, idx) => (
+                    <View style={[styles.row, eventToneStyle(entry.event)]} key={`${entry.ts}-${entry.event}-${idx}`}>
+                      <View style={styles.rowTop}>
+                        <View style={styles.eventMeta}>
+                          <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
+                          <Text style={styles.headline}>{eventHeadline(entry.event, entry.payload)}</Text>
+                        </View>
+                        <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event, entry.payload)}</Text>
+                      </View>
+                      <View style={styles.rowTop}>
+                        <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
+                      </View>
+                      <Text style={styles.event}>
+                        {toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {tab === "personal" && personalView === "notebook" ? (
           <View style={styles.notesPanel}>
             <View style={styles.notesHeader}>
               <View>
-                <Text style={styles.notesTitle}>Oyuncu Defteri</Text>
-                <Text style={styles.notesSubtitle}>Hızlı etiketle; not alanı gerektiğinde açılır.</Text>
+                <Text style={styles.notesTitle}>Not Defteri</Text>
+                <Text style={styles.notesSubtitle}>
+                  {hasAnyPlayerNote ? "Oyuncu bazlı yerel notların." : "Henüz not eklenmedi."}
+                </Text>
               </View>
-              <Text style={styles.notesCount}>{Math.max(roomPlayers.length - 1, 0)} kişi</Text>
+              <Text style={styles.notesCount}>{notePlayers.length} kişi</Text>
             </View>
-            {roomPlayers.filter((player) => player.playerId !== playerId).map((player) => {
+            {notePlayers.length === 0 ? <Text style={styles.empty}>Henüz not eklenmedi.</Text> : null}
+            {notePlayers.map((player) => {
               const note = getPlayerNote(playerNotes, player.playerId);
               const isExpanded = expandedNotePlayerId === player.playerId;
               return (
@@ -224,8 +300,8 @@ export function GameLogScreen(_: Props) {
             })}
           </View>
         ) : null}
-        {filtered.length === 0 ? <Text style={styles.empty}>Bu sekmede henüz kayıt yok.</Text> : null}
-        {timelineGroups.map((group) => (
+        {tab === "general" && filtered.length === 0 ? <Text style={styles.empty}>Bu sekmede henüz kayıt yok.</Text> : null}
+        {tab === "general" ? timelineGroups.map((group) => (
           <View key={group.key} style={styles.timelineGroup}>
             <View style={styles.timelineHeader}>
               <View style={styles.timelineDot} />
@@ -254,7 +330,7 @@ export function GameLogScreen(_: Props) {
               ))}
             </View>
           </View>
-        ))}
+        )) : null}
       </ScrollView>
       </View>
     </ScreenShell>
@@ -262,7 +338,6 @@ export function GameLogScreen(_: Props) {
 }
 
 const NOTE_TAGS: Array<{ value: PlayerNoteTag; label: string }> = [
-  { value: "none", label: "Nötr" },
   { value: "trusted", label: "Güvenilir" },
   { value: "suspect", label: "Şüpheli" },
   { value: "enemy", label: "Düşman" }
@@ -353,6 +428,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8
   },
+  personalHeader: {
+    gap: 8
+  },
   personalSummaryText: {
     color: colors.textMuted,
     fontFamily: typography.sansBold,
@@ -363,6 +441,69 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 11,
     letterSpacing: 0.2
+  },
+  personalModeRow: {
+    flexDirection: "row",
+    gap: 8
+  },
+  personalMode: {
+    flex: 1,
+    minHeight: 36,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.22)",
+    borderRadius: 8,
+    backgroundColor: "rgba(12,12,14,0.72)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6
+  },
+  personalModeActive: {
+    backgroundColor: colors.parchment,
+    borderColor: colors.primaryBright
+  },
+  personalModeText: {
+    color: colors.textMuted,
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  personalModeTextActive: {
+    color: colors.parchmentText
+  },
+  personalLogPanel: {
+    borderWidth: 1,
+    borderColor: uiStandard.logTones.private.border,
+    borderRadius: 10,
+    backgroundColor: "rgba(22,16,34,0.58)",
+    padding: 10,
+    gap: 10
+  },
+  panelHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  panelTitle: {
+    color: uiStandard.logTones.private.text,
+    fontFamily: typography.sansBold,
+    fontSize: 13
+  },
+  panelSubtitle: {
+    color: colors.textDim,
+    fontFamily: typography.sansMedium,
+    fontSize: 11,
+    marginTop: 2
+  },
+  panelCount: {
+    color: colors.backgroundDeep,
+    backgroundColor: uiStandard.logTones.private.text,
+    overflow: "hidden",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontFamily: typography.sansBold,
+    fontSize: 10
   },
   entryToast: {
     position: "absolute",
@@ -532,11 +673,10 @@ const styles = StyleSheet.create({
     lineHeight: 20
   },
   notesPanel: {
-    marginTop: 8,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.24)",
+    borderColor: "rgba(233,195,73,0.28)",
     borderRadius: 10,
-    backgroundColor: "rgba(12,12,14,0.82)",
+    backgroundColor: "rgba(33,29,16,0.64)",
     padding: 10,
     gap: 10
   },
@@ -706,7 +846,7 @@ function noteTagLabel(tag: PlayerNoteTag): string {
   if (tag === "trusted") return "Güvenilir";
   if (tag === "suspect") return "Şüpheli";
   if (tag === "enemy") return "Düşman";
-  return "Nötr";
+  return "Etiket yok";
 }
 
 function eventIcon(event: string): keyof typeof Ionicons.glyphMap {

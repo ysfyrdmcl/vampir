@@ -44,7 +44,8 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
   const exitingRef = useRef(false);
 
   const horizontalPad = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
-  const contentMaxWidth = width >= 768 ? 680 : undefined;
+  const availableWidth = Math.max(220, width - horizontalPad * 2);
+  const contentMaxWidth = width >= 768 ? Math.min(680, availableWidth) : availableWidth;
 
   const hasTopBar = layoutTopOffset > 80;
   const collectorTop = hasTopBar ? insets.top + Math.round((64 - COLLECTOR_CHIP_H) / 2) : insets.top + 6;
@@ -188,7 +189,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
                 }
               ]}
             >
-              <View style={[styles.bubbleInner, { maxWidth: contentMaxWidth ?? width - horizontalPad * 2 }]}>
+              <View style={[styles.bubbleInner, { width: availableWidth, maxWidth: contentMaxWidth }]}>
                 <Animated.View
                   style={{
                     opacity,

@@ -32,9 +32,15 @@ function baseRoom(overrides: { players: RoomState["players"]; game?: Partial<Roo
       vampireVote: 30,
       detectiveInspect: 20,
       doctorProtect: 20,
+      nightResolve: 10,
       dayStart: 10,
+      mayorElection: 45,
+      guardProtect: 45,
       dayDiscussion: 120,
-      dayVote: 45
+      dayVote: 45,
+      executionResolve: 10,
+      hunterLastBreath: 10,
+      winCheck: 1
     }
   };
   const gameOverrides = overrides.game ?? {};

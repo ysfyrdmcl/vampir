@@ -42,6 +42,8 @@ export class GameEngine {
     room.game.phaseEndsAt = this.phaseEndsAt(room, "RoleReveal");
 
     const assignments = assignRoles(room.players.map((p) => p.playerId), room.game.rolePreset);
+    // TEMP TEST: force host to Vampire so the mobile vampire teammate UI can be checked quickly.
+    this.forceHostVampireForLocalTest(room, assignments);
     for (const player of room.players) {
       player.role = assignments[player.playerId] ?? "Villager";
       player.isAlive = true;
@@ -53,6 +55,7 @@ export class GameEngine {
 
     this.setupLovers(room);
 
+    const vampirePlayerIds = room.players.filter((p) => p.role === "Vampire").map((p) => p.playerId);
     return room.players.map((p) => {
       const role = p.role ?? "Villager";
       const delta: GameStatePrivateDelta = {
@@ -63,8 +66,20 @@ export class GameEngine {
       if (role === "Detective") {
         delta.detectiveInspectedPlayerIds = [];
       }
+      if (role === "Vampire") {
+        delta.vampirePlayerIds = vampirePlayerIds;
+      }
       return delta;
     });
+  }
+
+  private forceHostVampireForLocalTest(room: RoomState, assignments: Record<string, Role>): void {
+    const hostId = room.hostPlayerId;
+    if (!hostId || assignments[hostId] === "Vampire") return;
+    const currentVampireId = room.players.find((p) => assignments[p.playerId] === "Vampire")?.playerId;
+    if (!currentVampireId) return;
+    assignments[currentVampireId] = assignments[hostId] ?? "Villager";
+    assignments[hostId] = "Vampire";
   }
 
   submitAction(room: RoomState, actorPlayerId: string, submission: ActionSubmission): void {
@@ -88,10 +103,26 @@ export class GameEngine {
     if (!room.game.phaseEndsAt || Date.now() < room.game.phaseEndsAt) {
       return { phaseChanged: false, privateResults: [] };
     }
+    return this.advancePhaseInternal(room);
+  }
 
+  advancePhase(room: RoomState): { phaseChanged: boolean; privateResults: RoomState["game"]["privateResults"] } {
+    if (room.game.phase === "Lobby" || room.game.phase === "GameOver") {
+      return { phaseChanged: false, privateResults: [] };
+    }
+    return this.advancePhaseInternal(room);
+  }
+
+  assertManualAdvanceAllowed(room: RoomState): void {
+    if (!this.areRequiredActionsSubmitted(room)) {
+      throw new Error("PHASE_ACTIONS_PENDING");
+    }
+  }
+
+  private advancePhaseInternal(room: RoomState): { phaseChanged: boolean; privateResults: RoomState["game"]["privateResults"] } {
     const next = this.nextPhase(room);
     room.game.phase = next;
-    room.game.phaseEndsAt = next === "GameOver" ? null : this.phaseEndsAt(room, next);
+    room.game.phaseEndsAt = next === "GameOver" || room.game.isPaused ? null : this.phaseEndsAt(room, next);
     room.lastActivityAt = Date.now();
     const privateResults = [...room.game.privateResults];
     room.game.privateResults = [];
@@ -398,6 +429,75 @@ export class GameEngine {
     }
   }
 
+  private areRequiredActionsSubmitted(room: RoomState): boolean {
+    const actionType = this.requiredActionTypeForPhase(room.game.phase);
+    if (!actionType) return true;
+    const requiredActors = room.players.filter((p) => this.hasRequiredActionInPhase(room, p.playerId));
+    if (!requiredActors.length) return true;
+    return requiredActors.every((p) =>
+      room.game.actions.some(
+        (a) => a.actorPlayerId === p.playerId && a.actionType === actionType && a.round === room.game.round
+      )
+    );
+  }
+
+  private requiredActionTypeForPhase(phase: GamePhase): ActionSubmission["actionType"] | null {
+    if (phase === "VampireVote") return "vampire-target";
+    if (phase === "DetectiveInspect") return "detective-inspect";
+    if (phase === "DoctorProtect") return "doctor-protect";
+    if (phase === "GuardProtect") return "guard-protect";
+    if (phase === "MayorElection") return "mayor-vote";
+    if (phase === "DayVote") return "day-vote";
+    if (phase === "HunterLastBreath") return "hunter-shot";
+    return null;
+  }
+
+  private hasRequiredActionInPhase(room: RoomState, actorPlayerId: string): boolean {
+    const actor = room.players.find((p) => p.playerId === actorPlayerId);
+    if (!actor) return false;
+    const aliveOthers = room.players.filter((p) => p.isAlive && p.playerId !== actorPlayerId);
+    const aliveAll = room.players.filter((p) => p.isAlive);
+    switch (room.game.phase) {
+      case "VampireVote":
+        return actor.isAlive && actor.role === "Vampire" && room.players.some((p) => p.isAlive && p.role !== "Vampire");
+      case "DetectiveInspect": {
+        if (!actor.isAlive || actor.role !== "Detective") return false;
+        const inspected = new Set(room.game.detectiveInspectedTargets[actorPlayerId] ?? []);
+        return aliveAll.some((p) => p.playerId !== actorPlayerId && !inspected.has(p.playerId));
+      }
+      case "DoctorProtect": {
+        if (!actor.isAlive || actor.role !== "Doctor") return false;
+        return aliveAll.some((p) => {
+          if (!room.game.rules.allowDoctorSelfProtect && p.playerId === actorPlayerId) return false;
+          if (
+            !room.game.rules.allowDoctorConsecutiveProtectSameTarget &&
+            actor.lastProtectedRound === room.game.round - 1 &&
+            actor.lastProtectedTargetPlayerId === p.playerId
+          ) {
+            return false;
+          }
+          return true;
+        });
+      }
+      case "GuardProtect":
+        return actor.isAlive && actor.role === "Guard" && !actor.guardUsedInGame && aliveOthers.length > 0;
+      case "MayorElection":
+        return actor.isAlive && aliveOthers.length > 0;
+      case "DayVote": {
+        if (!actor.isAlive) return false;
+        const legalTargets = aliveOthers.filter((p) => p.playerId !== room.game.guardProtectedPlayerId);
+        return legalTargets.length > 0 || room.game.rules.noLynchEnabled;
+      }
+      case "HunterLastBreath":
+        return actor.role === "Hunter" &&
+          room.game.lastEliminationSummary?.source === "Day" &&
+          room.game.lastEliminationSummary.playerId === actorPlayerId &&
+          aliveOthers.length > 0;
+      default:
+        return false;
+    }
+  }
+
   private phaseEndsAt(room: RoomState, phase: GamePhase): number | null {
     const seconds = this.phaseSeconds(room, phase);
     if (seconds <= 0) return null;
@@ -410,13 +510,15 @@ export class GameEngine {
     if (phase === "VampireVote") return room.game.phaseDurations.vampireVote;
     if (phase === "DetectiveInspect") return room.game.phaseDurations.detectiveInspect;
     if (phase === "DoctorProtect") return room.game.phaseDurations.doctorProtect;
+    if (phase === "NightResolve") return room.game.phaseDurations.nightResolve;
     if (phase === "DayStart") return room.game.phaseDurations.dayStart;
-    if (phase === "MayorElection") return room.game.phaseDurations.dayVote;
-    if (phase === "GuardProtect") return room.game.phaseDurations.dayVote;
+    if (phase === "MayorElection") return room.game.phaseDurations.mayorElection;
+    if (phase === "GuardProtect") return room.game.phaseDurations.guardProtect;
     if (phase === "DayDiscussion") return room.game.phaseDurations.dayDiscussion;
     if (phase === "DayVote") return room.game.phaseDurations.dayVote;
-    if (phase === "NightResolve" || phase === "ExecutionResolve" || phase === "HunterLastBreath") return env.RESULT_SCREEN_SECONDS;
-    if (phase === "WinCheck") return 1;
+    if (phase === "ExecutionResolve") return room.game.phaseDurations.executionResolve;
+    if (phase === "HunterLastBreath") return room.game.phaseDurations.hunterLastBreath;
+    if (phase === "WinCheck") return room.game.phaseDurations.winCheck;
     return 0;
   }
 

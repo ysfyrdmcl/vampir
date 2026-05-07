@@ -35,10 +35,7 @@ const GENERAL_EVENTS = new Set<string>([
 const PERSONAL_EVENTS = new Set<string>([
   "game.phase.personal_turn_info",
   "game.role.assigned",
-  "game.private_result.detective",
-  "game.private_result.vampire_preview",
   "game.private_result.lover_link",
-  "game.private_result.accepted",
   "personal.detective.inspect_result",
   "personal.doctor.protect_selected",
   "personal.doctor.protect_result",
@@ -107,21 +104,17 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
     return `${formatPersonalTurnLogLine(p)}.`;
   }
   if (event === "game.role.assigned") return `Rolün atandı: ${toRoleLabel(p.role as string | null | undefined)}.`;
-  if (event === "game.private_result.detective") return `Dedektif sonucu: ${String(p.text ?? "-")}.`;
-  if (event === "game.private_result.vampire_preview") return "Vampir oy önizlemesi güncellendi.";
   if (event === "game.private_result.lover_link") return `Aşık bağı bildirimi: ${String(p.text ?? "-")}.`;
-  if (event === "game.private_result.accepted") return "Aksiyonun kaydedildi.";
   if (event === "personal.detective.inspect_result") return `Sorgu sonucu: ${String(p.text ?? "-")}.`;
-  if (event === "personal.doctor.protect_selected") return `Koruma hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
+  if (event === "personal.doctor.protect_selected") return `Bu gece ${String(p.targetName ?? p.targetPlayerId ?? "hedef")} korunacak.`;
   if (event === "personal.doctor.protect_result") return `Koruma sonucu: ${String(p.text ?? "-")}.`;
-  if (event === "personal.vampire.target_selected") return `Gece hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
+  if (event === "personal.vampire.target_selected") return `Gece hedefin: ${String(p.targetName ?? p.targetPlayerId ?? "hedef")}.`;
   if (event === "personal.vampire.night_result") return `Gece sonucu: ${String(p.text ?? "-")}.`;
   if (event === "personal.vampire.vote_preview") {
-    const tally = typeof p.tallyTargets === "number" ? p.tallyTargets : 0;
-    return `Vampir ekip oyları güncellendi (${String(tally)} hedef özeti).`;
+    return String(p.text ?? "Vampir oy durumu güncellendi.");
   }
-  if (event === "personal.hunter.shot_selected") return `Son nefes hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
-  if (event === "personal.guard.protect_selected") return `Gündüz koruma hedefin seçildi (${String(p.targetPlayerId ?? "-")}).`;
+  if (event === "personal.hunter.shot_selected") return `Son nefes hedefin: ${String(p.targetName ?? p.targetPlayerId ?? "hedef")}.`;
+  if (event === "personal.guard.protect_selected") return `${String(p.targetName ?? p.targetPlayerId ?? "Hedef")} bugün oylamayla elenemez.`;
   if (event === "role.hunter.triggered") return `${rp}Avcı son nefes hakkını kullanacak.`;
   if (event === "role.hunter.shot") return `${rp}Avcı bir hedef seçti (${String(p.targetPlayerId ?? "-")}).`;
   if (event === "role.mayor.selected") return `${rp}Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;

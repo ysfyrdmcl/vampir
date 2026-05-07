@@ -15,6 +15,7 @@ import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
 import { BotSpeechOverlay } from "../components/BotSpeechOverlay";
 import { GameToast } from "../components/GameToast";
+import { ResultPopup } from "../components/ResultPopup";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
@@ -35,6 +36,7 @@ interface ScreenShellProps extends PropsWithChildren {
   showTopBar?: boolean;
   showBottomNav?: boolean;
   showPauseOverlay?: boolean;
+  contentDensity?: "default" | "game";
 }
 
 function phaseLabelFromState(phase: GamePhase | null): string {
@@ -61,7 +63,8 @@ export function ScreenShell({
   headerTitle,
   showTopBar = true,
   showBottomNav = true,
-  showPauseOverlay = true
+  showPauseOverlay = true,
+  contentDensity = "default"
 }: ScreenShellProps) {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
@@ -175,6 +178,7 @@ export function ScreenShell({
   const contentMaxWidth = layout.contentMaxWidth;
   const topBarHeight = layout.topBarBaseHeight + insets.top;
   const bottomNavHeight = layout.bottomNavBaseHeight + insets.bottom;
+  const contentTopPadding = contentDensity === "game" ? spacing.sm : spacing.lg;
   const navIconSize = scaledSize(24, layout.controlScale, 21, 25);
   const navSettingsIconSize = scaledSize(22, layout.controlScale, 20, 24);
   const navigateIfReady = (route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
@@ -222,7 +226,7 @@ export function ScreenShell({
             {
               maxWidth: contentMaxWidth,
               paddingHorizontal: horizontalPadding,
-              paddingTop: spacing.lg + (shouldShowTopBar ? 0 : insets.top),
+              paddingTop: contentTopPadding + (shouldShowTopBar ? 0 : insets.top),
               opacity: contentOpacity,
               transform: [{ translateY: contentY }]
             }
@@ -253,6 +257,7 @@ export function ScreenShell({
             </Text>
           </Animated.View>
         ) : null}
+        <ResultPopup />
         <GameToast />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? bottomNavHeight : 0 }]}>

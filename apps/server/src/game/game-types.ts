@@ -76,9 +76,15 @@ export interface GameState {
     vampireVote: number;
     detectiveInspect: number;
     doctorProtect: number;
+    nightResolve: number;
     dayStart: number;
+    mayorElection: number;
+    guardProtect: number;
     dayDiscussion: number;
     dayVote: number;
+    executionResolve: number;
+    hunterLastBreath: number;
+    winCheck: number;
   };
 }
 
