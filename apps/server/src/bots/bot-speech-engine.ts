@@ -20,6 +20,7 @@ import {
   randomJokeTails,
   randomSofteners,
   renderSpeechTemplate,
+  speechInitialDelayMs,
   type SpeechTemplate,
   speechStaggerDelayMs,
   speechTemplates
@@ -73,6 +74,23 @@ type BuiltSpeech = BotSpeechEvent & {
 };
 
 type IntentWeight = { intent: BotSpeechIntent; weight: number };
+
+type BotSpeechPhaseExclusions = {
+  usedTemplateIds: ReadonlySet<string>;
+  usedFingerprints: ReadonlySet<string>;
+  usedIntentTargetPairs: ReadonlySet<string>;
+};
+
+type BotSpeechPhaseState = {
+  roomCode: string;
+  phaseId: string;
+  usedTemplateIds: Set<string>;
+  usedFingerprints: Set<string>;
+  usedSpeakerPlayerIds: Set<string>;
+  usedIntentTargetPairs: Set<string>;
+  totalScheduled: number;
+  totalEmitted: number;
+};
 
 const PHASE_NAMES: Partial<Record<GamePhase, string>> = {
   DayStart: "gündüz",
@@ -141,6 +159,10 @@ function randomToneForIntent(intent: BotSpeechIntent, personality: BotPersonalit
 function pickRandom<T>(list: readonly T[]): T | null {
   if (!list.length) return null;
   return list[Math.floor(Math.random() * list.length)]!;
+}
+
+function shuffled<T>(list: readonly T[]): T[] {
+  return [...list].sort(() => Math.random() - 0.5);
 }
 
 function weightedPick(items: IntentWeight[]): BotSpeechIntent | null {
@@ -263,12 +285,26 @@ export function selectSpeechTargetForIntent(ctx: BotSpeechContext, intent: BotSp
   return undefined;
 }
 
-function templateMatches(ctx: BotSpeechContext, template: SpeechTemplate, target: PlayerState | undefined): boolean {
+function intentTargetPair(intent: BotSpeechIntent, target: PlayerState | undefined): string {
+  return `${intent}:${target?.playerId ?? ""}`;
+}
+
+function speechFingerprint(message: string): string {
+  return message.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+}
+
+function templateMatches(
+  ctx: BotSpeechContext,
+  template: SpeechTemplate,
+  target: PlayerState | undefined,
+  exclusions?: BotSpeechPhaseExclusions
+): boolean {
   if (template.phases && !template.phases.includes(ctx.phase)) return false;
   if (template.personalities && !template.personalities.includes(ctx.speakerPersonality)) return false;
   if (template.intelligences && !template.intelligences.includes(ctx.speakerIntelligence)) return false;
   if (template.requiresTarget && !target) return false;
   if (ctx.recentSpeechTemplateIds.includes(template.id)) return false;
+  if (exclusions?.usedTemplateIds.has(template.id)) return false;
   if (ctx.lastSpeechIntent === template.intent && ctx.lastSpeechTargetId && target?.playerId === ctx.lastSpeechTargetId) return false;
   if (template.tags?.includes("doctor_safe") && ctx.speakerRole !== "Doctor") return false;
   if (template.tags?.includes("detective_safe") && ctx.speakerRole !== "Detective") return false;
@@ -276,7 +312,7 @@ function templateMatches(ctx: BotSpeechContext, template: SpeechTemplate, target
   return true;
 }
 
-export function composeBotSpeech(ctx: BotSpeechContext): BuiltSpeech | null {
+export function composeBotSpeech(ctx: BotSpeechContext, exclusions?: BotSpeechPhaseExclusions): BuiltSpeech | null {
   if (ctx.daySpeechCount >= MAX_SPEECH_PER_BOT_PER_DAY) return null;
   if (ctx.phaseSpeechCount >= MAX_SPEECH_PER_BOT_PER_PHASE) return null;
 
@@ -286,8 +322,9 @@ export function composeBotSpeech(ctx: BotSpeechContext): BuiltSpeech | null {
 
   for (const intent of intents) {
     const target = selectSpeechTargetForIntent(ctx, intent);
-    const candidates = speechTemplates.filter((template) => template.intent === intent && templateMatches(ctx, template, target));
-    const template = pickRandom(candidates);
+    if (exclusions?.usedIntentTargetPairs.has(intentTargetPair(intent, target))) continue;
+    const candidates = shuffled(speechTemplates.filter((template) => template.intent === intent && templateMatches(ctx, template, target, exclusions)));
+    const template = candidates[0] ?? null;
     if (!template) continue;
 
     const message = renderSpeechTemplate(template, {
@@ -297,8 +334,9 @@ export function composeBotSpeech(ctx: BotSpeechContext): BuiltSpeech | null {
       randomSoftener: pickRandomLine(randomSofteners),
       randomJokeTail: pickRandomLine(randomJokeTails)
     });
-    const fingerprint = `${ctx.phase}:${ctx.round}:${ctx.speaker.playerId}:${template.id}:${target?.playerId ?? ""}`;
+    const fingerprint = speechFingerprint(message);
     if (ctx.recentSpeechFingerprints.includes(fingerprint)) continue;
+    if (exclusions?.usedFingerprints.has(fingerprint)) continue;
 
     return {
       roomCode: ctx.roomCode,
@@ -321,7 +359,8 @@ export function composeBotSpeech(ctx: BotSpeechContext): BuiltSpeech | null {
 
 export class BotSpeechEngine {
   private readonly scheduleGen = new Map<string, number>();
-  private readonly emittedThisPhase = new Map<string, { phase: GamePhase; round: number; count: number }>();
+  private readonly phaseStates = new Map<string, BotSpeechPhaseState>();
+  private readonly timersByRoom = new Map<string, Set<ReturnType<typeof setTimeout>>>();
 
   constructor(
     private readonly deps: {
@@ -347,7 +386,7 @@ export class BotSpeechEngine {
   disposeRoom(roomCode: string): void {
     this.bumpGeneration(roomCode);
     this.scheduleGen.delete(roomCode);
-    this.emittedThisPhase.delete(roomCode);
+    this.phaseStates.delete(roomCode);
   }
 
   onGamePaused(roomCode: string): void {
@@ -356,18 +395,35 @@ export class BotSpeechEngine {
 
   onPhaseAdvanced(room: RoomState): void {
     const gen = this.bumpGeneration(room.roomCode);
-    this.emittedThisPhase.set(room.roomCode, {
-      phase: room.game.phase,
-      round: room.game.round,
-      count: 0
-    });
+    this.phaseStates.set(room.roomCode, this.createPhaseState(room, 0));
     this.scheduleSpeechWave(room, gen);
   }
 
   private bumpGeneration(roomCode: string): number {
+    this.clearTimers(roomCode);
     const n = (this.scheduleGen.get(roomCode) ?? 0) + 1;
     this.scheduleGen.set(roomCode, n);
     return n;
+  }
+
+  private clearTimers(roomCode: string): void {
+    const timers = this.timersByRoom.get(roomCode);
+    if (!timers) return;
+    for (const timer of timers) clearTimeout(timer);
+    this.timersByRoom.delete(roomCode);
+  }
+
+  private createPhaseState(room: RoomState, totalScheduled: number): BotSpeechPhaseState {
+    return {
+      roomCode: room.roomCode,
+      phaseId: `${room.game.phase}:${room.game.round}`,
+      usedTemplateIds: new Set(),
+      usedFingerprints: new Set(),
+      usedSpeakerPlayerIds: new Set(),
+      usedIntentTargetPairs: new Set(),
+      totalScheduled,
+      totalEmitted: 0
+    };
   }
 
   private scheduleSpeechWave(room: RoomState, gen: number): void {
@@ -378,10 +434,17 @@ export class BotSpeechEngine {
     if (!bots.length) return;
 
     const maxTotal = maxTotalBotSpeechPerPhase(bots.length);
-    let cumulative = 0;
+    this.phaseStates.set(room.roomCode, this.createPhaseState(room, maxTotal));
+    let cumulative = speechInitialDelayMs();
     for (let i = 0; i < maxTotal; i++) {
+      const timer = setTimeout(() => {
+        this.timersByRoom.get(room.roomCode)?.delete(timer);
+        this.tryEmitSpeechSlot(room.roomCode, gen);
+      }, cumulative);
+      const timers = this.timersByRoom.get(room.roomCode) ?? new Set<ReturnType<typeof setTimeout>>();
+      timers.add(timer);
+      this.timersByRoom.set(room.roomCode, timers);
       cumulative += speechStaggerDelayMs();
-      setTimeout(() => this.tryEmitSpeechSlot(room.roomCode, gen), cumulative);
     }
   }
 
@@ -391,27 +454,32 @@ export class BotSpeechEngine {
     if (!room || room.status !== "InGame" || room.game.isPaused || room.game.phase === "GameOver") return;
     if (!SPEECH_PHASES.has(room.game.phase)) return;
 
-    let st = this.emittedThisPhase.get(roomCode);
-    if (!st || st.phase !== room.game.phase || st.round !== room.game.round) {
-      st = { phase: room.game.phase, round: room.game.round, count: 0 };
-      this.emittedThisPhase.set(roomCode, st);
+    let st = this.phaseStates.get(roomCode);
+    const phaseId = `${room.game.phase}:${room.game.round}`;
+    if (!st || st.phaseId !== phaseId) {
+      st = this.createPhaseState(room, maxTotalBotSpeechPerPhase(aliveBots(room).length));
+      this.phaseStates.set(roomCode, st);
     }
 
     const bots = aliveBots(room);
     const maxTotal = maxTotalBotSpeechPerPhase(bots.length);
-    if (st.count >= maxTotal) return;
+    if (st.totalEmitted >= maxTotal) return;
 
-    const shuffled = [...bots].sort(() => Math.random() - 0.5);
-    for (const speaker of shuffled) {
+    for (const speaker of shuffled(bots)) {
+      if (st.usedSpeakerPlayerIds.has(speaker.playerId)) continue;
       const memory = this.deps.getBotMemory(roomCode, speaker.playerId);
       const ctx = buildBotSpeechContext(room, speaker, memory);
       if (!ctx) continue;
 
-      const built = composeBotSpeech(ctx);
+      const built = composeBotSpeech(ctx, st);
       if (!built) continue;
 
       const { templateId, fingerprint, ...event } = built;
-      st.count += 1;
+      st.usedTemplateIds.add(templateId);
+      st.usedFingerprints.add(fingerprint);
+      st.usedSpeakerPlayerIds.add(speaker.playerId);
+      st.usedIntentTargetPairs.add(intentTargetPair(event.intent, bots.find((p) => p.playerId === event.targetPlayerId)));
+      st.totalEmitted += 1;
       this.deps.emit(roomCode, event);
       this.deps.onSpeechCommitted(roomCode, speaker.playerId, event.intent, event.targetPlayerId, templateId, fingerprint);
       this.getLog().info(
@@ -421,6 +489,14 @@ export class BotSpeechEngine {
       return;
     }
 
-    this.getLog().info({ roomCode, phase: room.game.phase }, "bot.speech.skipped");
+    this.getLog().info(
+      {
+        roomCode,
+        phaseId,
+        eligibleCount: Math.max(0, maxTotal - st.totalEmitted),
+        requestedSpeakerCount: st.totalScheduled
+      },
+      "bot.speech.low_template_pool"
+    );
   }
 }

@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveRuleSettings } from "@vampir-koylu/shared";
-import { createEmptyBotMemory } from "../src/bots/bot-memory.js";
+import { BotMemoryStore, createEmptyBotMemory } from "../src/bots/bot-memory.js";
 import {
+  BotSpeechEngine,
   buildBotSpeechContext,
   chooseBotSpeechIntent,
   composeBotSpeech,
   selectSpeechTargetForIntent
 } from "../src/bots/bot-speech-engine.js";
+import { speechTemplates } from "../src/bots/bot-speech-templates.js";
 import type { PlayerState, RoomState } from "../src/game/game-types.js";
 
 function player(options: Partial<PlayerState> & Pick<PlayerState, "playerId" | "nickname" | "role">): PlayerState {
@@ -175,5 +177,122 @@ describe("bot speech context and selector", () => {
     mem.speechCountThisPhase = 1;
     const ctx = buildBotSpeechContext(room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]), bot, mem);
     expect(composeBotSpeech(ctx!)).toBeNull();
+  });
+});
+
+describe("bot speech phase coordinator", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  function makeEngine(r: RoomState) {
+    const memory = new BotMemoryStore();
+    const emitted: unknown[] = [];
+    const committed: { botPlayerId: string; templateId?: string; fingerprint?: string }[] = [];
+    const logs: { payload: object; message?: string }[] = [];
+    const engine = new BotSpeechEngine({
+      getRoom: () => r,
+      getBotMemory: (roomCode, botPlayerId) => memory.get(roomCode, botPlayerId),
+      emit: (_roomCode, event) => emitted.push(event),
+      onSpeechCommitted: (roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint) => {
+        committed.push({ botPlayerId, templateId, fingerprint });
+        memory.onBotSpeech(roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint);
+      },
+      log: { info: (payload, message) => logs.push({ payload, message }) }
+    });
+    return { engine, memory, emitted, committed, logs };
+  }
+
+  it("limits six DayDiscussion bots to three staggered speeches without duplicate templates or text", () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const players = Array.from({ length: 6 }, (_, i) =>
+      player({
+        playerId: `b${i}`,
+        nickname: `Bot${i}`,
+        role: "Villager",
+        isBot: true,
+        botPersonality: "accuser",
+        botIntelligence: "balanced"
+      })
+    );
+    const r = room(players, { phase: "DayDiscussion" });
+    const { engine, emitted, committed } = makeEngine(r);
+
+    engine.onPhaseAdvanced(r);
+    vi.advanceTimersByTime(1329);
+    expect(emitted).toHaveLength(0);
+    vi.advanceTimersByTime(1);
+    expect(emitted).toHaveLength(1);
+    vi.advanceTimersByTime(1939);
+    expect(emitted).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(emitted).toHaveLength(2);
+    vi.runAllTimers();
+
+    expect(emitted).toHaveLength(3);
+    expect(new Set(committed.map((x) => x.botPlayerId)).size).toBe(3);
+    expect(new Set(committed.map((x) => x.templateId)).size).toBe(3);
+    expect(new Set(committed.map((x) => x.fingerprint)).size).toBe(3);
+  });
+
+  it("does not emit twice for the same bot in the same phase", () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const r = room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]);
+    const { engine, emitted } = makeEngine(r);
+
+    engine.onPhaseAdvanced(r);
+    vi.runAllTimers();
+
+    expect(emitted).toHaveLength(1);
+  });
+
+  it("skips instead of repeating when the template pool is exhausted", () => {
+    vi.useFakeTimers();
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const r = room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]);
+    const { engine, memory, emitted, logs } = makeEngine(r);
+    memory.get(r.roomCode, bot.playerId).recentSpeechTemplateIds = speechTemplates.map((template) => template.id);
+
+    engine.onPhaseAdvanced(r);
+    vi.runAllTimers();
+
+    expect(emitted).toHaveLength(0);
+    expect(logs.some((log) => log.message === "bot.speech.low_template_pool")).toBe(true);
+  });
+
+  it("clears old phase timers when the phase changes", () => {
+    vi.useFakeTimers();
+    const players = Array.from({ length: 6 }, (_, i) =>
+      player({ playerId: `b${i}`, nickname: `Bot${i}`, role: "Villager", isBot: true })
+    );
+    const r = room(players, { phase: "DayDiscussion" });
+    const { engine, emitted } = makeEngine(r);
+
+    engine.onPhaseAdvanced(r);
+    expect(vi.getTimerCount()).toBe(3);
+    r.game.phase = "DayVote";
+    engine.onPhaseAdvanced(r);
+    expect(vi.getTimerCount()).toBe(3);
+    vi.runAllTimers();
+
+    expect(emitted).toHaveLength(3);
+  });
+
+  it("does not schedule speech for GameOver or night phases", () => {
+    vi.useFakeTimers();
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const r = room([bot], { phase: "VampireVote" });
+    const { engine, emitted } = makeEngine(r);
+
+    engine.onPhaseAdvanced(r);
+    r.game.phase = "GameOver";
+    engine.onPhaseAdvanced(r);
+    vi.runAllTimers();
+
+    expect(emitted).toHaveLength(0);
   });
 });

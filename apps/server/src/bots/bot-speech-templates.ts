@@ -27,11 +27,15 @@ export type SpeechTemplateValues = {
 };
 
 export function maxTotalBotSpeechPerPhase(botCount: number): number {
-  return Math.min(6, Math.ceil(botCount * 1.5));
+  return Math.min(3, Math.max(1, Math.ceil(botCount * 0.45)));
+}
+
+export function speechInitialDelayMs(): number {
+  return 1200 + Math.floor(Math.random() * (2500 - 1200 + 1));
 }
 
 export function speechStaggerDelayMs(): number {
-  return 1200 + Math.floor(Math.random() * (4500 - 1200 + 1));
+  return 1800 + Math.floor(Math.random() * (3200 - 1800 + 1));
 }
 
 export function pickRandomLine(lines: readonly string[]): string {

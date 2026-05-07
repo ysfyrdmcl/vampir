@@ -105,10 +105,10 @@ export class BotMemoryStore {
     m.lastSpeechIntent = intent;
     m.lastSpeechTargetId = targetPlayerId;
     if (templateId) {
-      m.recentSpeechTemplateIds = [templateId, ...m.recentSpeechTemplateIds.filter((id) => id !== templateId)].slice(0, 8);
+      m.recentSpeechTemplateIds = [templateId, ...m.recentSpeechTemplateIds.filter((id) => id !== templateId)].slice(0, 10);
     }
     if (fingerprint) {
-      m.recentSpeechFingerprints = [fingerprint, ...m.recentSpeechFingerprints.filter((fp) => fp !== fingerprint)].slice(0, 8);
+      m.recentSpeechFingerprints = [fingerprint, ...m.recentSpeechFingerprints.filter((fp) => fp !== fingerprint)].slice(0, 10);
     }
     // BOT-D: speech accuse → suspicion; speech support → trust (vote_hint does not bump scores here).
     if (intent === "accuse_soft" && targetPlayerId) {
