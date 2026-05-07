@@ -18,8 +18,10 @@ export function resolveBotSpeechDisplayTone(event: BotSpeechEvent): BotSpeechDis
   const { intent, tone } = event;
   if (intent === "accuse_soft") return "accusing";
   if (intent === "self_defense" || intent === "support_soft") return "defensive";
-  if (intent === "vote_hint") return "confident";
-  if (intent === "generic_observation") {
+  if (intent === "vote_hint" || intent === "mayor_hint" || intent === "analysis") return "confident";
+  if (intent === "chaos") return "deceptive";
+  if (intent === "tie_reaction" || intent === "execution_reaction" || intent === "hunter_reaction") return "suspicious";
+  if (intent === "generic_observation" || intent === "small_talk") {
     if (tone === "sharp") return "suspicious";
     if (tone === "playful") return "deceptive";
     return "neutral";

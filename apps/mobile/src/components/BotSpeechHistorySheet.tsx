@@ -60,7 +60,7 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
         >
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={2}>
-              Bot Söylentileri
+              Köy Söylentileri
             </Text>
             <Pressable
               onPress={onClose}

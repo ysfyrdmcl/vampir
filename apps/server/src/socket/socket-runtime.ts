@@ -70,8 +70,8 @@ export class SocketRuntime {
       emit: (roomCode, event: BotSpeechEvent) => {
         this.io.to(roomCode).emit(SOCKET_EVENTS.GAME_BOT_SPEECH, event);
       },
-      onSpeechCommitted: (roomCode, botPlayerId, intent, targetPlayerId) => {
-        this.botMemoryStore.onBotSpeech(roomCode, botPlayerId, intent, targetPlayerId);
+      onSpeechCommitted: (roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint) => {
+        this.botMemoryStore.onBotSpeech(roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint);
       },
       log: logger
     });

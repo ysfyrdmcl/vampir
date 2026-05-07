@@ -6,7 +6,11 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { useToastStore, type GameToastPayload } from "../ui/toast-store";
 
-export function GameToast() {
+interface GameToastProps {
+  topOffset?: number;
+}
+
+export function GameToast({ topOffset }: GameToastProps) {
   const insets = useSafeAreaInsets();
   const toast = useToastStore((s) => s.toast);
   const clearToast = useToastStore((s) => s.clearToast);
@@ -46,7 +50,7 @@ export function GameToast() {
   const isDanger = activeToast.variant === "danger";
 
   return (
-    <Animated.View style={[styles.wrap, { top: 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
+    <Animated.View style={[styles.wrap, { top: topOffset ?? 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
       <View style={[styles.toast, isDanger ? styles.toastDanger : null]}>
         <Ionicons name={isDanger ? "alert-circle-outline" : "checkmark-circle-outline"} size={16} color={isDanger ? colors.danger : colors.secondary} />
         <Text style={styles.text}>{activeToast.text}</Text>

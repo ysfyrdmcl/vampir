@@ -22,7 +22,14 @@ const PHASE_TR: Record<GamePhase, string> = {
 const INTENT_TR: Record<BotSpeechIntent, string> = {
   self_defense: "Savunma",
   accuse_soft: "İtham",
+  analysis: "Analiz",
+  chaos: "Kargaşa",
+  execution_reaction: "İnfaz yorumu",
+  hunter_reaction: "Avcı yorumu",
+  mayor_hint: "Başkan ipucu",
+  small_talk: "Sohbet",
   support_soft: "Destek",
+  tie_reaction: "Beraberlik yorumu",
   vote_hint: "Oy ipucu",
   generic_observation: "Gözlem"
 };

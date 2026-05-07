@@ -284,7 +284,7 @@ export function ScreenShell({
           </Animated.View>
         ) : null}
         <ResultPopup />
-        <GameToast />
+        <GameToast topOffset={isGameTopBar ? topBarHeight + 8 : undefined} />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? bottomNavHeight : 0 }]}>
             <View style={styles.pausePanel}>

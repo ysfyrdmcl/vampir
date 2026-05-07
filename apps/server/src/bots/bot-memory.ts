@@ -14,6 +14,10 @@ export type BotMemory = {
   suspicionByPlayerId: Record<string, number>;
   trustByPlayerId: Record<string, number>;
   lastSpeechPhaseId?: string;
+  lastSpeechIntent?: BotSpeechIntent;
+  lastSpeechTargetId?: string;
+  recentSpeechTemplateIds: string[];
+  recentSpeechFingerprints: string[];
   speechCountThisPhase: number;
   /** Resets when `speechDayTrackedRound` !== current game round (day cycle). */
   speechCountThisDay: number;
@@ -27,6 +31,8 @@ export function createEmptyBotMemory(): BotMemory {
     knownVampires: [],
     suspicionByPlayerId: {},
     trustByPlayerId: {},
+    recentSpeechTemplateIds: [],
+    recentSpeechFingerprints: [],
     speechCountThisPhase: 0,
     speechCountThisDay: 0,
     speechDayTrackedRound: -1
@@ -85,10 +91,25 @@ export class BotMemoryStore {
     }
   }
 
-  onBotSpeech(roomCode: string, botPlayerId: string, intent: BotSpeechIntent, targetPlayerId?: string): void {
+  onBotSpeech(
+    roomCode: string,
+    botPlayerId: string,
+    intent: BotSpeechIntent,
+    targetPlayerId?: string,
+    templateId?: string,
+    fingerprint?: string
+  ): void {
     const m = this.get(roomCode, botPlayerId);
     m.speechCountThisPhase += 1;
     m.speechCountThisDay += 1;
+    m.lastSpeechIntent = intent;
+    m.lastSpeechTargetId = targetPlayerId;
+    if (templateId) {
+      m.recentSpeechTemplateIds = [templateId, ...m.recentSpeechTemplateIds.filter((id) => id !== templateId)].slice(0, 8);
+    }
+    if (fingerprint) {
+      m.recentSpeechFingerprints = [fingerprint, ...m.recentSpeechFingerprints.filter((fp) => fp !== fingerprint)].slice(0, 8);
+    }
     // BOT-D: speech accuse → suspicion; speech support → trust (vote_hint does not bump scores here).
     if (intent === "accuse_soft" && targetPlayerId) {
       m.suspicionByPlayerId[targetPlayerId] = (m.suspicionByPlayerId[targetPlayerId] ?? 0) + 1;

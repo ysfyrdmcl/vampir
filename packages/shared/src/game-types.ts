@@ -209,7 +209,14 @@ export type BotSpeechTone = "calm" | "sharp" | "neutral" | "playful";
 export type BotSpeechIntent =
   | "self_defense"
   | "accuse_soft"
+  | "analysis"
+  | "chaos"
+  | "execution_reaction"
+  | "hunter_reaction"
+  | "mayor_hint"
+  | "small_talk"
   | "support_soft"
+  | "tie_reaction"
   | "vote_hint"
   | "generic_observation";
 
