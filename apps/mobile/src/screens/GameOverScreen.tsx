@@ -34,6 +34,7 @@ export function GameOverScreen({ navigation }: Props) {
   const timeline = buildTimeline(logs, players);
   const analysis = buildGameAnalysis(logs, winner, players);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const winnerReady = winner === "Vampires" || winner === "Villagers";
   const isVampireWin = winner === "Vampires";
   const winnerIcon = isVampireWin ? "moon-outline" : "sunny-outline";
   const winnerTitle = isVampireWin ? "VAMPİRLER KAZANDI" : "KÖYLÜLER KAZANDI";
@@ -49,6 +50,16 @@ export function GameOverScreen({ navigation }: Props) {
 
   return (
     <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="">
+      {!winnerReady ? (
+        <View style={styles.loadingWrap}>
+          <View style={styles.loadingIcon}>
+            <Ionicons name="hourglass-outline" size={34} color={colors.secondary} />
+          </View>
+          <Text style={styles.loadingTitle}>Sonuç Hazırlanıyor</Text>
+          <Text style={styles.loadingText}>Kazanan kesinleşiyor, final ekranı birazdan açılacak.</Text>
+        </View>
+      ) : (
+        <>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Oyun Bitti</Text>
 
@@ -149,6 +160,8 @@ export function GameOverScreen({ navigation }: Props) {
         }}
         onCancel={() => setConfirmOpen(false)}
       />
+        </>
+      )}
     </ScreenShell>
   );
 }
@@ -160,6 +173,36 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: spacing.xl,
     gap: 14
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: spacing.lg
+  },
+  loadingIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.38)",
+    backgroundColor: "rgba(34,28,15,0.72)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  loadingTitle: {
+    color: colors.secondary,
+    fontFamily: typography.serif,
+    fontSize: 30,
+    textAlign: "center"
+  },
+  loadingText: {
+    color: colors.textDim,
+    fontFamily: typography.serifRegular,
+    fontSize: 16,
+    lineHeight: 23,
+    textAlign: "center"
   },
   title: {
     color: colors.text,

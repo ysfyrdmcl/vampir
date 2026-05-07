@@ -34,6 +34,7 @@ configureStableTextScale();
 export default function App() {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
+  const gameWinner = useGameStore((s) => s.gameWinner);
   const [bootstrapDone, setBootstrapDone] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -104,10 +105,11 @@ export default function App() {
       return "Lobby" as const;
     }
     if (roomState.status === "GameOver") {
+      if (!gameWinner) return null;
       return "GameOver" as const;
     }
     return getRouteForCurrentPhase(gameState?.phase ?? null);
-  }, [gameState?.phase, roomState]);
+  }, [gameState?.phase, gameWinner, roomState]);
 
   useEffect(() => {
     if (!targetRoute || !navigationRef.isReady()) {
@@ -117,9 +119,15 @@ export default function App() {
     if ((current === "GameLog" || current === "GameSettings" || current === "RoleGuide" || current === "RoleCard") && targetRoute !== "GameOver") {
       return;
     }
-    if (current !== targetRoute) {
-      navigationRef.navigate(targetRoute);
-    }
+    if (current === targetRoute) return;
+    const delayMs = targetRoute === "GameOver" ? 450 : 0;
+    const timer = setTimeout(() => {
+      const latest = navigationRef.getCurrentRoute()?.name;
+      if (latest !== targetRoute) {
+        navigationRef.navigate(targetRoute);
+      }
+    }, delayMs);
+    return () => clearTimeout(timer);
   }, [targetRoute]);
 
   if (!fontsLoaded || !bootstrapDone) {

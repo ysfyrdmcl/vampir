@@ -197,6 +197,12 @@ export class SocketRuntime {
     this.broadcastRoomState(room);
     if (room.status !== "Lobby") {
       this.broadcastGamePhase(room);
+      if (room.status === "GameOver" && room.game.winner) {
+        socket.emit(SOCKET_EVENTS.GAME_OVER, {
+          winner: room.game.winner,
+          round: room.game.round
+        });
+      }
     }
   }
 
