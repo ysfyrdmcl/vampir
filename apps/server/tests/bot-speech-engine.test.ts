@@ -178,6 +178,19 @@ describe("bot speech context and selector", () => {
     const ctx = buildBotSpeechContext(room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]), bot, mem);
     expect(composeBotSpeech(ctx!)).toBeNull();
   });
+
+  it("can select templates whose intent is present in template metadata for the phase", () => {
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true, botPersonality: "accuser" });
+    const mem = createEmptyBotMemory();
+    mem.recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "mayor-spotlight-vampire-suspicion-1");
+    const ctx = buildBotSpeechContext(room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]), bot, mem);
+
+    const speech = composeBotSpeech(ctx!);
+
+    expect(speech?.templateId).toBe("mayor-spotlight-vampire-suspicion-1");
+  });
 });
 
 describe("bot speech phase coordinator", () => {
@@ -248,6 +261,31 @@ describe("bot speech phase coordinator", () => {
     vi.runAllTimers();
 
     expect(emitted).toHaveLength(1);
+  });
+
+  it("keeps recently emitted room templates out of the next phase", () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const other = player({ playerId: "p1", nickname: "P1", role: "Villager" });
+    const r = room([bot, other], { phase: "DayStart" });
+    const { engine, memory, committed } = makeEngine(r);
+    memory.get(r.roomCode, bot.playerId).recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "small-village-innocent");
+
+    engine.onPhaseAdvanced(r);
+    vi.runAllTimers();
+    expect(committed[0]?.templateId).toBe("small-village-innocent");
+
+    r.game.phase = "DayDiscussion";
+    memory.get(r.roomCode, bot.playerId).recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "small-village-innocent");
+    engine.onPhaseAdvanced(r);
+    vi.runAllTimers();
+
+    expect(committed).toHaveLength(1);
   });
 
   it("skips instead of repeating when the template pool is exhausted", () => {

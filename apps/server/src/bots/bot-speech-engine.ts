@@ -92,6 +92,11 @@ type BotSpeechPhaseState = {
   totalEmitted: number;
 };
 
+type BotSpeechRoomRecent = {
+  templateIds: string[];
+  fingerprints: string[];
+};
+
 const PHASE_NAMES: Partial<Record<GamePhase, string>> = {
   DayStart: "gündüz",
   DayDiscussion: "tartışma",
@@ -163,6 +168,17 @@ function pickRandom<T>(list: readonly T[]): T | null {
 
 function shuffled<T>(list: readonly T[]): T[] {
   return [...list].sort(() => Math.random() - 0.5);
+}
+
+function weightedPickCandidate<T extends { weight: number }>(items: T[]): T | null {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
+  if (total <= 0) return null;
+  let roll = Math.random() * total;
+  for (const item of items) {
+    roll -= item.weight;
+    if (roll <= 0) return item;
+  }
+  return items[items.length - 1] ?? null;
 }
 
 function weightedPick(items: IntentWeight[]): BotSpeechIntent | null {
@@ -293,6 +309,14 @@ function speechFingerprint(message: string): string {
   return message.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
 }
 
+function templateCanAppearInPhase(template: SpeechTemplate, phase: GamePhase): boolean {
+  return !template.phases || template.phases.includes(phase);
+}
+
+function templateIntentsForPhase(phase: GamePhase): BotSpeechIntent[] {
+  return Array.from(new Set(speechTemplates.filter((template) => templateCanAppearInPhase(template, phase)).map((template) => template.intent)));
+}
+
 function templateMatches(
   ctx: BotSpeechContext,
   template: SpeechTemplate,
@@ -317,15 +341,24 @@ export function composeBotSpeech(ctx: BotSpeechContext, exclusions?: BotSpeechPh
   if (ctx.phaseSpeechCount >= MAX_SPEECH_PER_BOT_PER_PHASE) return null;
 
   const firstIntent = chooseBotSpeechIntent(ctx);
-  const fallbackIntents = PHASE_INTENTS[ctx.phase] ?? ["generic_observation"];
+  const fallbackIntents = templateIntentsForPhase(ctx.phase);
   const intents = [firstIntent, ...fallbackIntents].filter((x, i, arr): x is BotSpeechIntent => Boolean(x) && arr.indexOf(x) === i);
+  const candidates: { intent: BotSpeechIntent; target: PlayerState | undefined; template: SpeechTemplate; weight: number }[] = [];
 
   for (const intent of intents) {
     const target = selectSpeechTargetForIntent(ctx, intent);
     if (exclusions?.usedIntentTargetPairs.has(intentTargetPair(intent, target))) continue;
-    const candidates = shuffled(speechTemplates.filter((template) => template.intent === intent && templateMatches(ctx, template, target, exclusions)));
-    const template = candidates[0] ?? null;
-    if (!template) continue;
+    for (const template of shuffled(speechTemplates.filter((item) => item.intent === intent && templateMatches(ctx, item, target, exclusions)))) {
+      candidates.push({ intent, target, template, weight: intent === firstIntent ? 4 : 1 });
+    }
+  }
+
+  const firstCandidate = weightedPickCandidate(candidates);
+  const orderedCandidates = firstCandidate
+    ? [firstCandidate, ...shuffled(candidates.filter((candidate) => candidate !== firstCandidate))]
+    : shuffled(candidates);
+
+  for (const { intent, target, template } of orderedCandidates) {
 
     const message = renderSpeechTemplate(template, {
       speakerName: ctx.speaker.nickname,
@@ -361,6 +394,7 @@ export class BotSpeechEngine {
   private readonly scheduleGen = new Map<string, number>();
   private readonly phaseStates = new Map<string, BotSpeechPhaseState>();
   private readonly timersByRoom = new Map<string, Set<ReturnType<typeof setTimeout>>>();
+  private readonly recentByRoom = new Map<string, BotSpeechRoomRecent>();
 
   constructor(
     private readonly deps: {
@@ -387,6 +421,7 @@ export class BotSpeechEngine {
     this.bumpGeneration(roomCode);
     this.scheduleGen.delete(roomCode);
     this.phaseStates.delete(roomCode);
+    this.recentByRoom.delete(roomCode);
   }
 
   onGamePaused(roomCode: string): void {
@@ -414,11 +449,12 @@ export class BotSpeechEngine {
   }
 
   private createPhaseState(room: RoomState, totalScheduled: number): BotSpeechPhaseState {
+    const recent = this.recentByRoom.get(room.roomCode);
     return {
       roomCode: room.roomCode,
       phaseId: `${room.game.phase}:${room.game.round}`,
-      usedTemplateIds: new Set(),
-      usedFingerprints: new Set(),
+      usedTemplateIds: new Set(recent?.templateIds ?? []),
+      usedFingerprints: new Set(recent?.fingerprints ?? []),
       usedSpeakerPlayerIds: new Set(),
       usedIntentTargetPairs: new Set(),
       totalScheduled,
@@ -480,6 +516,7 @@ export class BotSpeechEngine {
       st.usedSpeakerPlayerIds.add(speaker.playerId);
       st.usedIntentTargetPairs.add(intentTargetPair(event.intent, bots.find((p) => p.playerId === event.targetPlayerId)));
       st.totalEmitted += 1;
+      this.rememberRoomSpeech(roomCode, templateId, fingerprint);
       this.deps.emit(roomCode, event);
       this.deps.onSpeechCommitted(roomCode, speaker.playerId, event.intent, event.targetPlayerId, templateId, fingerprint);
       this.getLog().info(
@@ -498,5 +535,12 @@ export class BotSpeechEngine {
       },
       "bot.speech.low_template_pool"
     );
+  }
+
+  private rememberRoomSpeech(roomCode: string, templateId: string, fingerprint: string): void {
+    const recent = this.recentByRoom.get(roomCode) ?? { templateIds: [], fingerprints: [] };
+    recent.templateIds = [templateId, ...recent.templateIds.filter((id) => id !== templateId)].slice(0, 12);
+    recent.fingerprints = [fingerprint, ...recent.fingerprints.filter((fp) => fp !== fingerprint)].slice(0, 12);
+    this.recentByRoom.set(roomCode, recent);
   }
 }
