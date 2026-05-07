@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
+import { LiquidGlassChip, LiquidGlassSurface, glassTokens } from "../glass";
 import { emitJoinRoom } from "../socket/runtime";
 import { loadLastRoomCode, loadNickname, saveNickname } from "../storage/session-storage";
 import { useGameStore } from "../store/game-store";
@@ -74,7 +75,7 @@ export function JoinRoomScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="join" headerTitle="ODAYA KATIL">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.introCard}>
+        <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
           <View style={styles.introIcon}>
             <Ionicons name="people-outline" size={26} color={colors.secondary} />
           </View>
@@ -82,27 +83,21 @@ export function JoinRoomScreen({ navigation }: Props) {
           <Text style={styles.title}>Karanlık meclise davet edildin.</Text>
           <Text style={styles.introText}>Oda kodunu gir, lakabını doğrula ve aynı masadaki oyuna katıl.</Text>
           <View style={styles.introChips}>
-            <Pressable style={styles.introChip} onPress={pasteRoomCode}>
-              <Ionicons name="clipboard-outline" size={13} color={colors.secondary} />
-              <Text style={styles.introChipText}>Yapıştır</Text>
-            </Pressable>
+            <LiquidGlassChip iconName="clipboard-outline" label="Yapıştır" onPress={pasteRoomCode} style={styles.introChip} textStyle={styles.introChipText} />
             {lastRoomCode ? (
-              <Pressable style={styles.introChip} onPress={() => normalizeRoomCode(lastRoomCode)}>
-                <Ionicons name="time-outline" size={13} color={colors.secondary} />
-                <Text style={styles.introChipText}>Son oda: {lastRoomCode}</Text>
-              </Pressable>
+              <LiquidGlassChip iconName="time-outline" label={`Son oda: ${lastRoomCode}`} onPress={() => normalizeRoomCode(lastRoomCode)} style={styles.introChip} textStyle={styles.introChipText} />
             ) : null}
           </View>
-        </View>
+        </LiquidGlassSurface>
 
-        <View style={styles.card}>
+        <LiquidGlassSurface variant="panel" radius={uiStandard.screen.cardRadius} style={styles.card} contentStyle={styles.cardContent}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>ODA KODU</Text>
           </View>
           <View style={styles.codeEntry}>
             <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
               {roomCodeSlots.map((char, index) => (
-                <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null]}>
+                <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null, char !== "•" ? styles.slotFilled : null]}>
                   <Text style={[styles.slotChar, char === "•" ? styles.slotPlaceholder : null]}>{char}</Text>
                 </View>
               ))}
@@ -125,13 +120,13 @@ export function JoinRoomScreen({ navigation }: Props) {
           <TextInput
             style={styles.nameInput}
             placeholder="Lakabını yaz"
-            placeholderTextColor="rgba(55,47,35,0.58)"
+            placeholderTextColor="rgba(203,194,188,0.44)"
             value={nickname}
             onChangeText={setNickname}
             returnKeyType="join"
             onSubmitEditing={joinRoom}
           />
-        </View>
+        </LiquidGlassSurface>
 
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} disabled={!canJoin} />
@@ -160,18 +155,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm
   },
   introCard: {
-    borderRadius: uiStandard.screen.cardRadius,
-    borderWidth: 1,
-    borderColor: uiStandard.surfaces.hero.borderColor,
-    backgroundColor: uiStandard.surfaces.hero.backgroundColor,
+  },
+  introCardContent: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     alignItems: "center",
-    gap: 9,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 9 }
+    gap: 9
   },
   introIcon: {
     width: 58,
@@ -210,26 +200,16 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   introChip: {
-    minHeight: 30,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.22)",
-    backgroundColor: "rgba(24,22,18,0.58)",
-    paddingHorizontal: 11,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6
+    minWidth: 98
   },
   introChipText: {
-    color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 12
   },
   card: {
-    borderWidth: 1,
-    borderColor: uiStandard.surfaces.panel.borderColor,
-    borderRadius: uiStandard.screen.cardRadius,
-    backgroundColor: uiStandard.surfaces.panel.backgroundColor,
+  },
+  cardContent: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     gap: spacing.md
@@ -258,15 +238,26 @@ const styles = StyleSheet.create({
     flex: 1,
     height: uiStandard.screen.codeSlotHeight,
     borderRadius: uiStandard.screen.codeSlotRadius,
-    backgroundColor: "rgba(5,7,10,0.92)",
+    backgroundColor: glassTokens.fill.obsidian,
+    borderWidth: 1,
+    borderColor: "rgba(255,232,178,0.10)",
     borderBottomWidth: 2,
-    borderBottomColor: "rgba(233,195,73,0.55)",
+    borderBottomColor: "rgba(234,194,86,0.46)",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    shadowColor: glassTokens.shadow.floatingDark,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 }
   },
   slotActive: {
-    borderColor: "rgba(233,195,73,0.38)",
-    borderWidth: 1
+    borderColor: glassTokens.edge.gold,
+    shadowColor: glassTokens.shadow.warmGlow,
+    shadowOpacity: 0.42
+  },
+  slotFilled: {
+    backgroundColor: "rgba(90,24,28,0.24)",
+    borderColor: "rgba(166,34,42,0.36)"
   },
   slotChar: {
     color: colors.text,
@@ -288,9 +279,9 @@ const styles = StyleSheet.create({
     height: uiStandard.screen.compactInputHeight + 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(87,69,0,0.42)",
-    backgroundColor: "rgba(255,248,232,0.78)",
-    color: colors.parchmentText,
+    borderColor: "rgba(234,194,86,0.30)",
+    backgroundColor: "rgba(8,8,12,0.56)",
+    color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 18,
     paddingHorizontal: 13

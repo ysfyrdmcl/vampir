@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { LiquidGlassPressable } from "../glass";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 
@@ -69,68 +70,50 @@ interface TargetCardProps {
 }
 
 function TargetCard({ item, onSelect }: TargetCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const wasSelected = useRef(item.isSelected);
-
-  useEffect(() => {
-    if (item.isSelected && !wasSelected.current) {
-      Animated.sequence([
-        Animated.spring(scale, { toValue: 1.06, speed: 30, bounciness: 12, useNativeDriver: true }),
-        Animated.spring(scale, { toValue: 1, speed: 18, bounciness: 8, useNativeDriver: true })
-      ]).start();
-    }
-    wasSelected.current = item.isSelected;
-  }, [item.isSelected, scale]);
-
-  const onPressIn = () => {
-    if (!item.isSelectable) return;
-    Animated.spring(scale, { toValue: 0.96, speed: 40, bounciness: 4, useNativeDriver: true }).start();
-  };
-
-  const onPressOut = () => {
-    if (!item.isSelectable) return;
-    Animated.spring(scale, { toValue: 1, speed: 22, bounciness: 8, useNativeDriver: true }).start();
-  };
-
   return (
-    <Pressable
+    <LiquidGlassPressable
       disabled={!item.isSelectable}
       onPress={() => onSelect(item.id)}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       style={styles.cardWrap}
+      surfaceStyle={styles.card}
+      contentStyle={styles.cardContent}
+      selected={item.isSelected}
+      glow={item.isSelected || item.isSelectable}
+      variant={item.isSelected ? "selected" : item.isSelectable ? "panel" : "low"}
+      animatedSheen={item.isSelected}
+      depth={item.isSelected ? "floating" : item.isSelectable ? "raised" : "flat"}
+      feedback={item.isSelectable ? "strong" : "none"}
+      intensity={item.isSelected ? "strong" : item.isSelectable ? "medium" : "subtle"}
+      tone={item.isSelected ? "gold" : item.isSelectable ? "obsidian" : "obsidian"}
     >
-      <Animated.View
-        style={[
-          styles.card,
-          item.isSelectable ? styles.cardSelectable : styles.cardDisabled,
-          item.isSelected ? styles.cardSelected : null,
-          { transform: [{ scale }] }
-        ]}
-      >
-        <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
-          <Text style={styles.avatarText}>{item.initials}</Text>
+      {item.isSelected ? (
+        <View style={styles.selectedBadge}>
+          <Ionicons name="checkmark" size={11} color={colors.backgroundDeep} />
+          <Text style={styles.selectedBadgeText}>SEÇİLDİ</Text>
         </View>
-        <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]} numberOfLines={1} ellipsizeMode="tail">
-          {item.label}
+      ) : null}
+      <View style={[styles.avatar, item.isSelectable ? styles.avatarSelectable : null, item.isSelected ? styles.avatarSelected : null]}>
+        <Text style={[styles.avatarText, item.isSelected ? styles.avatarTextSelected : null]}>{item.initials}</Text>
+      </View>
+      <Text style={[styles.name, item.isSelected ? styles.nameSelected : null]} numberOfLines={1} ellipsizeMode="tail">
+        {item.label}
+      </Text>
+      {item.badgeText ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{item.badgeText}</Text>
+        </View>
+      ) : null}
+      <View style={styles.selectRow}>
+        {item.isSelectable ? (
+          <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
+        ) : (
+          <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
+        )}
+        <Text style={[styles.selectText, item.isSelected ? styles.selectTextSelected : null]} numberOfLines={1} ellipsizeMode="tail">
+          {item.isSelectable ? (item.isSelected ? "Seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}
         </Text>
-        {item.badgeText ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.badgeText}</Text>
-          </View>
-        ) : null}
-        <View style={styles.selectRow}>
-          {item.isSelectable ? (
-            <Ionicons name={item.isSelected ? "checkmark-circle-outline" : "ellipse-outline"} size={16} color={item.isSelected ? colors.secondary : colors.textDim} />
-          ) : (
-            <Ionicons name="lock-closed-outline" size={14} color={colors.textDim} />
-          )}
-          <Text style={styles.selectText} numberOfLines={1} ellipsizeMode="tail">
-            {item.isSelectable ? (item.isSelected ? "Seçildi" : "Seçilebilir") : item.disabledReason ?? "Kilitli"}
-          </Text>
-        </View>
-      </Animated.View>
-    </Pressable>
+      </View>
+    </LiquidGlassPressable>
   );
 }
 
@@ -168,33 +151,13 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     minHeight: 104,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.24)",
-    backgroundColor: colors.surfaceGlass,
+  },
+  cardContent: {
+    minHeight: 104,
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 8,
     gap: 5
-  },
-  cardSelectable: {
-    borderColor: "rgba(233,195,73,0.34)",
-    shadowColor: colors.primary,
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }
-  },
-  cardDisabled: {
-    opacity: 0.48,
-    backgroundColor: "rgba(18,19,21,0.54)"
-  },
-  cardSelected: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 4 }
   },
   avatar: {
     width: 42,
@@ -210,12 +173,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(233,195,73,0.58)"
   },
   avatarSelected: {
-    backgroundColor: "rgba(50,40,17,0.72)"
+    backgroundColor: "rgba(90,24,28,0.38)",
+    borderColor: "rgba(255,213,92,0.72)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 }
   },
   avatarText: {
     color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 16
+  },
+  avatarTextSelected: {
+    color: colors.secondary
   },
   name: {
     color: "#dec1bd",
@@ -226,7 +197,7 @@ const styles = StyleSheet.create({
     maxWidth: "100%"
   },
   nameSelected: {
-    color: colors.parchmentText
+    color: colors.secondary
   },
   badge: {
     position: "absolute",
@@ -244,6 +215,29 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansBold,
     fontSize: 8
   },
+  selectedBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    zIndex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: colors.secondary,
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 }
+  },
+  selectedBadgeText: {
+    color: colors.backgroundDeep,
+    fontFamily: typography.sansBold,
+    fontSize: 8,
+    letterSpacing: 0.4
+  },
   selectRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -256,6 +250,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 10,
     lineHeight: 13
+  },
+  selectTextSelected: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold
   },
   graveyard: {
     borderWidth: 1,

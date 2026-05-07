@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
-import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { LiquidGlassSurface } from "../glass";
 import { uiStandard } from "../ui/ui-standard";
 
 type GothicCardVariant = "panel" | "hero" | "low";
@@ -10,22 +11,24 @@ interface GothicCardProps extends PropsWithChildren {
 }
 
 export function GothicCard({ children, variant = "panel", style }: GothicCardProps) {
-  return <View style={[styles.base, variant === "hero" ? styles.hero : null, variant === "low" ? styles.low : null, style]}>{children}</View>;
+  return (
+    <LiquidGlassSurface
+      variant={variant}
+      glow={variant === "hero"}
+      radius={uiStandard.card.radius}
+      style={[styles.base, style]}
+      contentStyle={styles.content}
+    >
+      {children}
+    </LiquidGlassSurface>
+  );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderWidth: uiStandard.card.borderWidth,
-    borderColor: uiStandard.card.borderColor,
-    borderRadius: uiStandard.card.radius,
-    backgroundColor: uiStandard.card.backgroundColor
+    minHeight: 1
   },
-  hero: {
-    borderColor: uiStandard.surfaces.hero.borderColor,
-    backgroundColor: uiStandard.surfaces.hero.backgroundColor
-  },
-  low: {
-    borderColor: "rgba(170,137,132,0.18)",
-    backgroundColor: "rgba(12,12,14,0.68)"
+  content: {
+    flex: 0
   }
 });

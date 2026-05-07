@@ -1,4 +1,5 @@
 import type { ImageSourcePropType } from "react-native";
+import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { uiStandard } from "../ui/ui-standard";
@@ -44,11 +45,45 @@ interface GameBackgroundProps {
 }
 
 export function GameBackground({ variant, backdropScale }: GameBackgroundProps) {
+  const drift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    drift.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, { toValue: 1, duration: 9000, useNativeDriver: true }),
+        Animated.timing(drift, { toValue: 0, duration: 9000, useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [drift, variant]);
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Animated.Image source={sceneBackgrounds[variant]} resizeMode="cover" style={[styles.backdrop, { transform: [{ scale: backdropScale }] }]} />
-      <LinearGradient colors={["rgba(5,5,5,0.94)", "rgba(9,8,10,0.90)", "rgba(5,5,5,0.96)"]} style={styles.overlay} />
+      <LinearGradient colors={["rgba(5,5,5,0.88)", "rgba(9,8,10,0.86)", "rgba(5,5,5,0.93)"]} style={styles.overlay} />
       <LinearGradient colors={["rgba(15,16,20,0.20)", "rgba(15,16,20,0)", "rgba(15,16,20,0.26)"]} style={styles.textureLayer} />
+      <Animated.View
+        style={[
+          styles.ambientDrift,
+          {
+            opacity: drift.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.32] }),
+            transform: [
+              { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [-34, 36] }) },
+              { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [18, -22] }) },
+              { scale: drift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }
+            ]
+          }
+        ]}
+      >
+        <LinearGradient
+          colors={[uiStandard.phaseTheme[variant].accent, "rgba(12,12,15,0)"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
       <LinearGradient
         colors={[uiStandard.phaseTheme[variant].accent, "rgba(12,12,15,0)", uiStandard.phaseTheme[variant].atmosphere]}
         style={styles.tint}
@@ -71,5 +106,13 @@ const styles = StyleSheet.create({
   textureLayer: {
     ...StyleSheet.absoluteFillObject,
     opacity: uiStandard.fx.textureOpacity
+  },
+  ambientDrift: {
+    position: "absolute",
+    left: "-20%",
+    right: "-20%",
+    top: "-8%",
+    height: "58%",
+    overflow: "hidden"
   }
 });

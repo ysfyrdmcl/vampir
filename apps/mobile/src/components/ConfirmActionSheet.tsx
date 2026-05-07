@@ -3,6 +3,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
+import { LiquidGlassSurface } from "../glass";
 import { PrimaryButton } from "./PrimaryButton";
 
 interface ConfirmActionSheetProps {
@@ -30,14 +31,14 @@ export function ConfirmActionSheet({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onCancel} />
-        <View style={styles.sheet}>
+        <LiquidGlassSurface variant="panel" radius={20} glow style={styles.sheet} contentStyle={styles.sheetContent}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
           <View style={styles.actions}>
             <PrimaryButton label={confirmLabel} variant={variant} onPress={onConfirm} />
             <PrimaryButton label={cancelLabel} variant="ghost" compact onPress={onCancel} />
           </View>
-        </View>
+        </LiquidGlassSurface>
       </View>
     </Modal>
   );
@@ -55,9 +56,13 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0
+  },
+  sheetContent: {
+    flex: 0,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.28)",
-    backgroundColor: "rgba(16,16,18,0.98)",
+    borderColor: "rgba(255,232,178,0.12)",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,

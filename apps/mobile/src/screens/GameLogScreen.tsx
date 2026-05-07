@@ -3,8 +3,11 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Reanimated from "react-native-reanimated";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ScreenShell } from "../components/ScreenShell";
+import { LiquidGlassChip, LiquidGlassPressable, LiquidGlassSurface } from "../glass";
+import { useSegmentedThumbMotion } from "../motion";
 import { buildGameAnalysis } from "../logging/game-analysis";
 import { shouldShowLogEntry, toReadableLogText } from "../logging/log-policy";
 import type { LogFeedEntry } from "../logging/log-feed-store";
@@ -144,29 +147,25 @@ export function GameLogScreen(_: Props) {
         ) : null}
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Günlük</Text>
-        <View style={styles.tabs}>
-          <Pressable style={[styles.tab, tab === "general" ? styles.tabActive : null]} onPress={() => setTab("general")}>
-            <Text style={[styles.tabText, tab === "general" ? styles.tabTextActive : null]}>Genel</Text>
-          </Pressable>
-          <Pressable style={[styles.tab, tab === "personal" ? styles.tabActive : null]} onPress={() => setTab("personal")}>
-            <Text style={[styles.tabText, tab === "personal" ? styles.tabTextActive : null]}>Kişisel</Text>
-          </Pressable>
-        </View>
+        <GlassSegmented
+          activeIndex={tab === "general" ? 0 : 1}
+          options={[
+            { label: "Genel", onPress: () => setTab("general") },
+            { label: "Kişisel", onPress: () => setTab("personal") }
+          ]}
+        />
         {tab === "general" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             {GENERAL_FILTERS.map((filter) => (
-              <Pressable
+              <LiquidGlassChip
                 key={filter.value}
-                style={[styles.filterChip, generalFilter === filter.value ? styles.filterChipActive : null]}
+                iconName={filter.icon}
+                label={filter.label}
+                selected={generalFilter === filter.value}
                 onPress={() => setGeneralFilter(filter.value)}
-              >
-                <Ionicons
-                  name={filter.icon}
-                  size={14}
-                  color={generalFilter === filter.value ? colors.parchmentText : colors.textMuted}
-                />
-                <Text style={[styles.filterText, generalFilter === filter.value ? styles.filterTextActive : null]}>{filter.label}</Text>
-              </Pressable>
+                style={styles.filterChip}
+                textStyle={styles.filterText}
+              />
             ))}
           </ScrollView>
         ) : (
@@ -177,22 +176,13 @@ export function GameLogScreen(_: Props) {
                 {personalSummary.actionCount} aksiyon · {personalSummary.privateIntelCount} kişisel kayıt
               </Text>
             </View>
-            <View style={styles.personalModeRow}>
-              <Pressable
-                style={[styles.personalMode, personalView === "logs" ? styles.personalModeActive : null]}
-                onPress={() => setPersonalView("logs")}
-              >
-                <Ionicons name="reader-outline" size={14} color={personalView === "logs" ? colors.parchmentText : colors.textMuted} />
-                <Text style={[styles.personalModeText, personalView === "logs" ? styles.personalModeTextActive : null]}>Loglar</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.personalMode, personalView === "notebook" ? styles.personalModeActive : null]}
-                onPress={() => setPersonalView("notebook")}
-              >
-                <Ionicons name="create-outline" size={14} color={personalView === "notebook" ? colors.parchmentText : colors.textMuted} />
-                <Text style={[styles.personalModeText, personalView === "notebook" ? styles.personalModeTextActive : null]}>Not Defteri</Text>
-              </Pressable>
-            </View>
+            <GlassSegmented
+              activeIndex={personalView === "logs" ? 0 : 1}
+              options={[
+                { icon: "reader-outline", label: "Loglar", onPress: () => setPersonalView("logs") },
+                { icon: "create-outline", label: "Not Defteri", onPress: () => setPersonalView("notebook") }
+              ]}
+            />
           </View>
         )}
         {tab === "general" && gameAnalysis ? (
@@ -276,13 +266,14 @@ export function GameLogScreen(_: Props) {
                   </Pressable>
                   <View style={styles.tagRow}>
                     {NOTE_TAGS.map((tag) => (
-                      <Pressable
+                      <LiquidGlassChip
                         key={tag.value}
-                        style={[styles.noteTag, note.tag === tag.value ? styles.noteTagActive : null]}
+                        label={tag.label}
+                        selected={note.tag === tag.value}
                         onPress={() => updatePlayerNote(player.playerId, { tag: tag.value })}
-                      >
-                        <Text style={[styles.noteTagText, note.tag === tag.value ? styles.noteTagTextActive : null]}>{tag.label}</Text>
-                      </Pressable>
+                        style={styles.noteTag}
+                        textStyle={styles.noteTagText}
+                      />
                     ))}
                   </View>
                   {isExpanded ? (
@@ -350,6 +341,57 @@ const GENERAL_FILTERS: Array<{ value: GeneralFilter; label: string; icon: keyof 
   { value: "result", label: "Sonuç", icon: "flag-outline" }
 ];
 
+function GlassSegmented({
+  activeIndex,
+  options
+}: {
+  activeIndex: number;
+  options: Array<{ icon?: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }>;
+}) {
+  const [width, setWidth] = useState(0);
+  const segmentWidth = width > 0 ? width / options.length : 0;
+  const thumbStyle = useSegmentedThumbMotion(activeIndex, segmentWidth);
+
+  return (
+    <LiquidGlassSurface
+      depth="raised"
+      intensity="medium"
+      radius={999}
+      style={styles.segmented}
+      contentStyle={styles.segmentedContent}
+      tone="obsidian"
+      variant="chip"
+    >
+      <View style={styles.segmentedMeasure} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+        {segmentWidth > 0 ? (
+          <Reanimated.View pointerEvents="none" style={[styles.segmentedThumb, { width: segmentWidth }, thumbStyle]} />
+        ) : null}
+        {options.map((option, index) => {
+          const selected = activeIndex === index;
+          return (
+            <LiquidGlassPressable
+              key={option.label}
+              feedback="soft"
+              onPress={option.onPress}
+              radius={999}
+              style={styles.segmentedItem}
+              surfaceStyle={styles.segmentedItemSurface}
+              contentStyle={styles.segmentedItemContent}
+              variant="ghost"
+              tone={selected ? "gold" : "obsidian"}
+            >
+              {option.icon ? <Ionicons name={option.icon} size={14} color={selected ? colors.secondary : colors.textDim} /> : null}
+              <Text style={[styles.segmentedLabel, selected ? styles.segmentedLabelActive : null]} numberOfLines={1}>
+                {option.label}
+              </Text>
+            </LiquidGlassPressable>
+          );
+        })}
+      </View>
+    </LiquidGlassSurface>
+  );
+}
+
 const styles = StyleSheet.create({
   root: {
     flex: 1
@@ -367,25 +409,11 @@ const styles = StyleSheet.create({
     gap: 8
   },
   tab: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 9,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.25)",
-    backgroundColor: "rgba(12,12,14,0.8)"
-  },
-  tabActive: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright
+    flex: 1
   },
   tabText: {
-    color: colors.text,
     fontFamily: typography.sansBold,
     fontSize: 13
-  },
-  tabTextActive: {
-    color: colors.parchmentText
   },
   filterRow: {
     flexDirection: "row",
@@ -393,27 +421,11 @@ const styles = StyleSheet.create({
     paddingRight: spacing.safe
   },
   filterChip: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.25)",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    backgroundColor: "rgba(12,12,14,0.76)",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5
-  },
-  filterChipActive: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright
+    minWidth: 78
   },
   filterText: {
-    color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 12
-  },
-  filterTextActive: {
-    color: colors.parchmentText
   },
   personalSummaryRow: {
     minHeight: 32,
@@ -448,33 +460,68 @@ const styles = StyleSheet.create({
   },
   personalMode: {
     flex: 1,
-    minHeight: 36,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.22)",
-    borderRadius: 8,
-    backgroundColor: "rgba(12,12,14,0.72)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6
-  },
-  personalModeActive: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright
+    minHeight: 36
   },
   personalModeText: {
-    color: colors.textMuted,
     fontFamily: typography.sansBold,
     fontSize: 12
   },
-  personalModeTextActive: {
-    color: colors.parchmentText
+  segmented: {
+    minHeight: 43
+  },
+  segmentedContent: {
+    flex: 1,
+    padding: 4
+  },
+  segmentedMeasure: {
+    flex: 1,
+    minHeight: 35,
+    flexDirection: "row",
+    position: "relative"
+  },
+  segmentedThumb: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,213,92,0.56)",
+    backgroundColor: "rgba(90,24,28,0.42)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 }
+  },
+  segmentedItem: {
+    flex: 1,
+    zIndex: 1
+  },
+  segmentedItemSurface: {
+    minHeight: 35,
+    borderWidth: 0,
+    backgroundColor: "transparent"
+  },
+  segmentedItemContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 8
+  },
+  segmentedLabel: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  segmentedLabelActive: {
+    color: colors.secondary
   },
   personalLogPanel: {
     borderWidth: 1,
-    borderColor: uiStandard.logTones.private.border,
+    borderColor: "rgba(169,123,255,0.20)",
     borderRadius: 10,
-    backgroundColor: "rgba(22,16,34,0.58)",
+    backgroundColor: "rgba(14,13,20,0.62)",
     padding: 10,
     gap: 10
   },
@@ -535,11 +582,15 @@ const styles = StyleSheet.create({
   row: {
     borderWidth: 1,
     borderColor: "rgba(170,137,132,0.22)",
-    backgroundColor: "rgba(12,12,14,0.8)",
+    backgroundColor: "rgba(8,8,12,0.68)",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    gap: 3
+    gap: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 }
   },
   timelineGroup: {
     gap: 6
@@ -591,8 +642,8 @@ const styles = StyleSheet.create({
     backgroundColor: uiStandard.logTones.result.background
   },
   rowPersonal: {
-    borderColor: uiStandard.logTones.private.border,
-    backgroundColor: uiStandard.logTones.private.background
+    borderColor: "rgba(169,123,255,0.22)",
+    backgroundColor: "rgba(20,15,32,0.48)"
   },
   rowWarning: {
     borderColor: uiStandard.logTones.warning.border,
@@ -736,24 +787,11 @@ const styles = StyleSheet.create({
     gap: 6
   },
   noteTag: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.26)",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    backgroundColor: "rgba(6,6,8,0.65)"
-  },
-  noteTagActive: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright
+    minWidth: 84
   },
   noteTagText: {
-    color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 12
-  },
-  noteTagTextActive: {
-    color: colors.parchmentText
   },
   noteInput: {
     minHeight: 48,

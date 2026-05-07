@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
+import { LiquidGlassChip, LiquidGlassSurface } from "../glass";
 import { emitCreateRoom } from "../socket/runtime";
 import { saveNickname } from "../storage/session-storage";
 import { useGameStore } from "../store/game-store";
@@ -53,7 +54,7 @@ export function CreateRoomScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="create" headerTitle="ODA KUR">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.introCard}>
+        <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
           <View style={styles.introIcon}>
             <Ionicons name="git-network-outline" size={26} color={colors.secondary} />
           </View>
@@ -61,16 +62,10 @@ export function CreateRoomScreen({ navigation }: Props) {
           <Text style={styles.title}>Karanlık meclisi sen başlat.</Text>
           <Text style={styles.introText}>Oyuncu adını seç, oda kodunu oluştur ve masadaki herkesi aynı lobiye al.</Text>
           <View style={styles.introChips}>
-            <View style={styles.introChip}>
-              <Ionicons name="people-outline" size={13} color={colors.secondary} />
-              <Text style={styles.introChipText}>4+ oyuncu</Text>
-            </View>
-            <View style={styles.introChip}>
-              <Ionicons name="shield-outline" size={13} color={colors.secondary} />
-              <Text style={styles.introChipText}>Host kontrolü</Text>
-            </View>
+            <LiquidGlassChip iconName="people-outline" label="4+ oyuncu" style={styles.introChip} textStyle={styles.introChipText} />
+            <LiquidGlassChip iconName="shield-outline" label="Host kontrolü" style={styles.introChip} textStyle={styles.introChipText} />
           </View>
-        </View>
+        </LiquidGlassSurface>
 
         <View style={styles.formCard}>
           <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
@@ -120,18 +115,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm
   },
   introCard: {
-    borderRadius: uiStandard.screen.cardRadius,
-    borderWidth: 1,
-    borderColor: uiStandard.surfaces.hero.borderColor,
-    backgroundColor: uiStandard.surfaces.hero.backgroundColor,
+  },
+  introCardContent: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     alignItems: "center",
-    gap: 9,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 9 }
+    gap: 9
   },
   introIcon: {
     width: 58,
@@ -170,18 +160,9 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   introChip: {
-    minHeight: 30,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.22)",
-    backgroundColor: "rgba(24,22,18,0.58)",
-    paddingHorizontal: 11,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6
+    minWidth: 112
   },
   introChipText: {
-    color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 12
   },

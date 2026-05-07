@@ -96,8 +96,8 @@ export function RoleRevealScreen(_: Props) {
             pointerEvents="none"
             colors={[
               "rgba(233,195,73,0.0)",
-              "rgba(233,195,73,0.13)",
-              "rgba(181,38,25,0.05)",
+              "rgba(233,195,73,0.12)",
+              "rgba(233,195,73,0.035)",
               "rgba(0,0,0,0.0)"
             ]}
             locations={[0, 0.42, 0.74, 1]}
@@ -106,6 +106,7 @@ export function RoleRevealScreen(_: Props) {
             style={styles.cardVignette}
           />
           <RoleRevealCard
+            key={role ?? "pending-role"}
             role={role}
             loverPartnerName={loverPartnerName}
             maxColumnWidth={CARD_COLUMN_MAX}

@@ -1,6 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useState } from "react";
 import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import Reanimated from "react-native-reanimated";
+import { LiquidGlassSurface } from "../glass";
+import { usePulseProgress } from "../motion";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
@@ -98,19 +101,31 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
               ? "Karar anı. Son saniyeler."
               : tone === "orange"
                 ? "Süre azalıyor, hızlı karar ver."
-                : "Süre dolmadan seçimini tamamla.";
+              : "Süre dolmadan seçimini tamamla.";
+  const pulseStyle = usePulseProgress({ active: isTopBar, warning: tone === "red", paused: isPaused });
 
   if (isTopBar) {
     return (
-      <View style={[styles.topBarPill, compactTopBar ? styles.topBarPillCompact : null]}>
+      <LiquidGlassSurface
+        animatedSheen={!isPaused}
+        depth="floating"
+        glow={!isPaused}
+        intensity={tone === "red" ? "strong" : "medium"}
+        radius={999}
+        style={[styles.topBarPill, compactTopBar ? styles.topBarPillCompact : null, { shadowColor: accent }]}
+        contentStyle={styles.topBarPillContent}
+        tone={tone === "red" ? "crimson" : isPaused ? "obsidian" : "gold"}
+        variant={tone === "red" ? "danger" : "gold"}
+      >
+        <Reanimated.View pointerEvents="none" style={[styles.topBarPulse, { borderColor: accent, backgroundColor: accent }, pulseStyle]} />
         <Animated.View style={[styles.topBarDot, { backgroundColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]} />
-        <Text style={[styles.topBarValue, compactTopBar ? styles.topBarValueCompact : null]} numberOfLines={1}>
+        <Text style={[styles.topBarValue, compactTopBar ? styles.topBarValueCompact : null, isPaused ? styles.topBarValuePaused : null]} numberOfLines={1}>
           {isEndless ? "∞" : seconds}
         </Text>
-        <Text style={[styles.topBarUnit, compactTopBar ? styles.topBarUnitCompact : null]} numberOfLines={1}>
+        <Text style={[styles.topBarUnit, compactTopBar ? styles.topBarUnitCompact : null, isPaused ? styles.topBarUnitPaused : null]} numberOfLines={1}>
           {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SN"}
         </Text>
-      </View>
+      </LiquidGlassSurface>
     );
   }
 
@@ -329,25 +344,27 @@ const styles = StyleSheet.create({
   topBarPill: {
     minWidth: 124,
     height: 46,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.46)",
-    backgroundColor: "rgba(13,13,14,0.9)",
-    paddingHorizontal: 16,
+    borderRadius: 999
+  },
+  topBarPillContent: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 5
+    paddingHorizontal: 16
   },
   topBarPillCompact: {
     minWidth: 106,
-    height: 42,
-    paddingHorizontal: 12,
-    gap: 6
+    height: 42
+  },
+  topBarPulse: {
+    position: "absolute",
+    width: 62,
+    height: 62,
+    borderRadius: 999,
+    borderWidth: 1,
+    opacity: 0.18
   },
   topBarDot: {
     width: 10,
@@ -366,6 +383,9 @@ const styles = StyleSheet.create({
     fontSize: 27,
     lineHeight: 31
   },
+  topBarValuePaused: {
+    color: colors.textMuted
+  },
   topBarUnit: {
     color: colors.textDim,
     fontFamily: typography.sansBold,
@@ -375,6 +395,9 @@ const styles = StyleSheet.create({
   topBarUnitCompact: {
     fontSize: 9,
     letterSpacing: 0.6
+  },
+  topBarUnitPaused: {
+    color: colors.textDim
   },
   roleBadge: {
     height: 44,

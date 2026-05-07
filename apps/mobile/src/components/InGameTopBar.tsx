@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { LiquidGlassPressable } from "../glass";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { PhaseCountdown } from "./PhaseCountdown";
@@ -37,13 +38,22 @@ export function InGameTopBar({
           </Text>
         </View>
 
-        <Pressable
+        <LiquidGlassPressable
           onPress={onPressRumors}
-          style={({ pressed }) => [styles.rumorButton, compact ? styles.rumorButtonCompact : null, pressed ? styles.rumorButtonPressed : null]}
+          style={[styles.rumorButtonWrap, compact ? styles.rumorButtonCompact : null]}
+          surfaceStyle={styles.rumorButton}
+          contentStyle={styles.rumorButtonContent}
+          variant="gold"
+          radius={999}
+          glow={hasRumorAttention}
+          animatedSheen={hasRumorAttention}
+          depth="floating"
+          intensity={hasRumorAttention ? "strong" : "medium"}
+          tone="gold"
           accessibilityRole="button"
           accessibilityLabel="Söylentiler"
         >
-          <Ionicons name="chatbubbles-outline" size={16} color={colors.backgroundDeep} />
+          <Ionicons name="chatbubbles-outline" size={16} color={colors.secondary} />
           {compact ? null : (
             <Text style={styles.rumorText} numberOfLines={1}>
               Söylenti
@@ -58,7 +68,7 @@ export function InGameTopBar({
             </>
           ) : null}
           {hasRumorAttention && !showCount ? <View style={styles.rumorDot} /> : null}
-        </Pressable>
+        </LiquidGlassPressable>
       </View>
 
       <View pointerEvents="none" style={styles.centerAnchor}>
@@ -131,37 +141,30 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     letterSpacing: 1.2
   },
-  rumorButton: {
+  rumorButtonWrap: {
     width: 128,
-    height: 36,
+    height: 36
+  },
+  rumorButton: {
+    height: 36
+  },
+  rumorButtonContent: {
+    flex: 1,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255,232,138,0.62)",
-    backgroundColor: colors.secondary,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    shadowColor: colors.secondary,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 4
+    gap: 6
   },
   rumorButtonCompact: {
     width: 62,
-    paddingHorizontal: 8,
-    gap: 5
-  },
-  rumorButtonPressed: {
-    opacity: 0.84,
-    transform: [{ scale: 0.98 }]
+    paddingHorizontal: 0
   },
   rumorText: {
     minWidth: 0,
     flexShrink: 1,
-    color: colors.backgroundDeep,
+    color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: 12,
     lineHeight: 15
@@ -169,12 +172,12 @@ const styles = StyleSheet.create({
   rumorDivider: {
     width: 1,
     height: 18,
-    backgroundColor: "rgba(47,34,6,0.48)",
+    backgroundColor: "rgba(234,194,86,0.30)",
     marginHorizontal: 2
   },
   rumorCount: {
     minWidth: 10,
-    color: colors.backgroundDeep,
+    color: colors.secondary,
     fontFamily: typography.sansBold,
     fontSize: 12,
     lineHeight: 15,

@@ -343,15 +343,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: uiStandard.actionDock.paddingX,
     paddingVertical: uiStandard.actionDock.paddingY,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.24)",
+    borderColor: "rgba(234,194,86,0.34)",
     borderRadius: 16,
-    backgroundColor: "rgba(12,12,14,0.92)",
+    backgroundColor: "rgba(8,8,12,0.66)",
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     shadowColor: colors.primary,
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8
   },
@@ -415,17 +415,17 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   playerAlive: {
-    backgroundColor: "rgba(30,30,33,0.84)",
-    borderColor: "rgba(170,137,132,0.28)"
+    backgroundColor: "rgba(18,16,20,0.50)",
+    borderColor: "rgba(255,232,178,0.14)"
   },
   playerDead: {
     backgroundColor: "rgba(12,12,14,0.65)",
     borderColor: "rgba(120,90,90,0.2)"
   },
   playerSelected: {
-    borderColor: colors.primaryBright,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
+    borderColor: "rgba(255,213,92,0.72)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
     shadowRadius: 13,
     shadowOffset: { width: 0, height: 6 }
   },

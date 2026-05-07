@@ -1,9 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
-  Image,
   ImageBackground,
   PanResponder,
   Platform,
@@ -14,10 +13,16 @@ import {
 } from "react-native";
 import type { Role } from "@vampir-koylu/shared";
 import { LinearGradient } from "expo-linear-gradient";
+import Reanimated, {
+  Easing as ReanimatedEasing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from "react-native-reanimated";
 import {
   ROLE_REVEAL_ART,
-  ROLE_REVEAL_FRAME,
-  ROLE_REVEAL_MIST
+  ROLE_REVEAL_FRAME
 } from "../data/role-reveal-art";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -32,7 +37,9 @@ interface RoleRevealCardProps {
   maxCardHeight?: number;
 }
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+const FLIP_DURATION_MS = 760;
+const FLIP_CLOSE_DURATION_MS = 680;
+const FLIP_EASING = ReanimatedEasing.bezier(0.16, 1, 0.3, 1);
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
@@ -56,6 +63,7 @@ export function RoleRevealCard({
   maxCardHeight
 }: RoleRevealCardProps) {
   const [revealed, setRevealed] = useState(false);
+  const closeContentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { width, height } = useWindowDimensions();
 
   const roleTheme = useMemo(() => getRoleTheme(role), [role]);
@@ -78,25 +86,27 @@ export function RoleRevealCard({
   const rotateX = useMemo(() => new Animated.Value(0), []);
   const rotateY = useMemo(() => new Animated.Value(0), []);
   const pressDepth = useMemo(() => new Animated.Value(0), []);
-  const glareX = useMemo(() => new Animated.Value(0.5), []);
-  const glareY = useMemo(() => new Animated.Value(0.35), []);
-  const shimmer = useMemo(() => new Animated.Value(0), []);
   const content = useMemo(() => new Animated.Value(0), []);
   const particles = useMemo(() => new Animated.Value(0), []);
+  const idle = useMemo(() => new Animated.Value(0), []);
+  const flipProgress = useSharedValue(0);
 
   useEffect(() => {
     setRevealed(false);
+    if (closeContentTimerRef.current) {
+      clearTimeout(closeContentTimerRef.current);
+      closeContentTimerRef.current = null;
+    }
     entry.setValue(0);
     revealProgress.setValue(0);
     revealBloom.setValue(0);
     rotateX.setValue(0);
     rotateY.setValue(0);
     pressDepth.setValue(0);
-    glareX.setValue(0.5);
-    glareY.setValue(0.35);
-    shimmer.setValue(0);
     content.setValue(0);
     particles.setValue(0);
+    idle.setValue(0);
+    flipProgress.value = 0;
 
     Animated.parallel([
       Animated.timing(entry, {
@@ -115,11 +125,32 @@ export function RoleRevealCard({
         })
       ])
     ]).start();
-  }, [content, entry, glareX, glareY, particles, pressDepth, revealBloom, revealProgress, role, rotateX, rotateY, shimmer]);
+  }, [content, entry, flipProgress, idle, particles, pressDepth, revealBloom, revealProgress, role, rotateX, rotateY]);
 
-  const reveal = () => {
+  useEffect(() => () => {
+    if (closeContentTimerRef.current) clearTimeout(closeContentTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(idle, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(idle, { toValue: -1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(idle, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [idle]);
+
+  const reveal = useCallback(() => {
     if (revealed) return;
+    if (closeContentTimerRef.current) {
+      clearTimeout(closeContentTimerRef.current);
+      closeContentTimerRef.current = null;
+    }
     setRevealed(true);
+    flipProgress.value = withTiming(1, { duration: FLIP_DURATION_MS, easing: FLIP_EASING });
     Animated.parallel([
       Animated.sequence([
         Animated.timing(revealProgress, {
@@ -151,16 +182,6 @@ export function RoleRevealCard({
         })
       ]),
       Animated.sequence([
-        Animated.delay(180),
-        Animated.timing(shimmer, {
-          toValue: 1,
-          duration: 520,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true
-        }),
-        Animated.timing(shimmer, { toValue: 0, duration: 1, useNativeDriver: true })
-      ]),
-      Animated.sequence([
         Animated.delay(420),
         Animated.timing(content, {
           toValue: 1,
@@ -170,7 +191,32 @@ export function RoleRevealCard({
         })
       ])
     ]).start();
-  };
+  }, [content, flipProgress, revealBloom, revealProgress, revealed]);
+
+  const conceal = useCallback(() => {
+    if (!revealed) return;
+    setRevealed(false);
+    flipProgress.value = withTiming(0, { duration: FLIP_CLOSE_DURATION_MS, easing: FLIP_EASING });
+    if (closeContentTimerRef.current) clearTimeout(closeContentTimerRef.current);
+    closeContentTimerRef.current = setTimeout(() => {
+      content.setValue(0);
+      closeContentTimerRef.current = null;
+    }, FLIP_CLOSE_DURATION_MS - 120);
+    Animated.parallel([
+      Animated.timing(revealProgress, {
+        toValue: 0,
+        duration: 620,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.timing(revealBloom, {
+        toValue: 0,
+        duration: 560,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true
+      })
+    ]).start();
+  }, [content, flipProgress, revealBloom, revealProgress, revealed]);
 
   const panResponder = useMemo(
     () =>
@@ -185,29 +231,23 @@ export function RoleRevealCard({
             easing: Easing.out(Easing.quad),
             useNativeDriver: true
           }).start();
-          glareX.setValue(clamp(event.nativeEvent.locationX / cardWidth, 0, 1));
-          glareY.setValue(clamp(event.nativeEvent.locationY / cardHeight, 0, 1));
         },
-        onPanResponderMove: (event, gestureState) => {
+        onPanResponderMove: (_event, gestureState) => {
           if (revealed) {
-            rotateY.setValue(clamp((gestureState.dx / (cardWidth * 0.5)) * 12, -12, 12));
-            rotateX.setValue(clamp((gestureState.dy / (cardHeight * 0.45)) * -8, -8, 8));
+            rotateY.setValue(clamp((gestureState.dx / (cardWidth * 0.5)) * 8, -8, 8));
+            rotateX.setValue(clamp((gestureState.dy / (cardHeight * 0.45)) * -6, -6, 6));
           }
-          glareX.setValue(clamp(event.nativeEvent.locationX / cardWidth, 0, 1));
-          glareY.setValue(clamp(event.nativeEvent.locationY / cardHeight, 0, 1));
         },
         onPanResponderRelease: (_event, gestureState) => {
           if (revealed && (gestureState.dx > cardWidth * 0.28 || gestureState.vx > 0.7)) {
-            setRevealed(false);
-            Animated.timing(revealProgress, {
-              toValue: 0,
-              duration: 480,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true
-            }).start();
+            conceal();
           }
-          if (!revealed && Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5) {
-            reveal();
+          if (Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5) {
+            if (revealed) {
+              conceal();
+            } else {
+              reveal();
+            }
           }
           Animated.parallel([
             Animated.timing(pressDepth, {
@@ -230,8 +270,6 @@ export function RoleRevealCard({
               mass: 0.75,
               useNativeDriver: true
             }),
-            Animated.spring(glareX, { toValue: 0.5, damping: 18, stiffness: 120, useNativeDriver: true }),
-            Animated.spring(glareY, { toValue: 0.35, damping: 18, stiffness: 120, useNativeDriver: true })
           ]).start();
         },
         onPanResponderTerminate: () => {
@@ -242,7 +280,7 @@ export function RoleRevealCard({
           ]).start();
         }
       }),
-    [cardHeight, cardWidth, glareX, glareY, pressDepth, revealProgress, revealed, rotateX, rotateY]
+    [cardHeight, cardWidth, conceal, reveal, revealed, rotateX, rotateY, pressDepth]
   );
 
   const revealScale = revealProgress.interpolate({
@@ -252,105 +290,65 @@ export function RoleRevealCard({
   });
   const pressScale = pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.022] });
   const cardScale = Animated.add(revealScale, pressScale);
+  const cardTiltX = Animated.add(rotateX, idle.interpolate({ inputRange: [-1, 1], outputRange: [-0.8, 0.8] }));
+  const cardTiltY = Animated.add(rotateY, idle.interpolate({ inputRange: [-1, 1], outputRange: [1.1, -1.1] }));
   const cardMotionStyle = {
     opacity: entry,
     transform: [
       { translateY: entry.interpolate({ inputRange: [0, 1], outputRange: [22, 0] }) },
       { perspective: 1200 },
-      { rotateX: rotateX.interpolate({ inputRange: [-8, 8], outputRange: ["-8deg", "8deg"] }) },
-      { rotateY: rotateY.interpolate({ inputRange: [-12, 12], outputRange: ["-12deg", "12deg"] }) },
+      { rotateX: cardTiltX.interpolate({ inputRange: [-8, 8], outputRange: ["-8deg", "8deg"] }) },
+      { rotateY: cardTiltY.interpolate({ inputRange: [-8, 8], outputRange: ["-8deg", "8deg"] }) },
       { scale: cardScale }
     ]
   };
 
   const haloStyle = {
     opacity: Animated.add(
-      Animated.add(entry.interpolate({ inputRange: [0, 1], outputRange: [0, 0.24] }), revealBloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.36] })),
-      pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.16] })
+      Animated.add(entry.interpolate({ inputRange: [0, 1], outputRange: [0, 0.14] }), revealBloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.18] })),
+      pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] })
     ),
     transform: [
       {
         scale: Animated.add(
           Animated.add(entry.interpolate({ inputRange: [0, 1], outputRange: [0.92, 0.98] }), revealBloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] })),
-          pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.04] })
+      pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.025] })
         )
       }
     ]
   };
 
-  const frontStyle = {
-    opacity: revealProgress.interpolate({
-      inputRange: [0, 0.48, 0.5],
-      outputRange: [1, 1, 0],
-      extrapolate: "clamp"
-    }),
-    transform: [
-      { perspective: 1200 },
-      {
-        rotateY: revealProgress.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: ["0deg", "90deg", "90deg"]
-        })
-      },
-      {
-        scale: revealProgress.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [1, 0.97, 0.97],
-          extrapolate: "clamp"
-        })
-      }
-    ]
-  };
+  const frontFlipStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipProgress.value, [0, 1], [0, 180]);
+    const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [1, 1, 0, 0]);
+    return {
+      opacity,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${spin}deg` },
+        { scale: interpolate(flipProgress.value, [0, 0.5, 1], [1, 0.975, 0.99]) }
+      ]
+    };
+  });
 
-  const backStyle = {
-    opacity: revealProgress.interpolate({
-      inputRange: [0, 0.5, 0.52, 1],
-      outputRange: [0, 0, 1, 1],
-      extrapolate: "clamp"
-    }),
-    transform: [
-      { perspective: 1200 },
-      {
-        rotateY: revealProgress.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: ["-90deg", "-90deg", "0deg"]
-        })
-      },
-      {
-        scale: revealProgress.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [0.97, 0.97, 1],
-          extrapolate: "clamp"
-        })
-      }
-    ]
-  };
+  const backFlipStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipProgress.value, [0, 1], [180, 360]);
+    const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [0, 0, 1, 1]);
+    return {
+      opacity,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${spin}deg` },
+        { scale: interpolate(flipProgress.value, [0, 0.5, 1], [0.985, 0.975, 1]) }
+      ]
+    };
+  });
 
   const contentStyle = {
     opacity: content,
     transform: [
       { translateY: content.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
       { scale: content.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] }) }
-    ]
-  };
-
-  const glareStyle = {
-    opacity: Animated.add(
-      pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0.04, 0.22] }),
-      revealBloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] })
-    ),
-    transform: [
-      { translateX: glareX.interpolate({ inputRange: [0, 1], outputRange: [-100, 160] }) },
-      { translateY: glareY.interpolate({ inputRange: [0, 1], outputRange: [-120, 90] }) },
-      { rotate: "-22deg" }
-    ]
-  };
-
-  const shimmerStyle = {
-    opacity: shimmer.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 0.85, 0], extrapolate: "clamp" }),
-    transform: [
-      { translateX: shimmer.interpolate({ inputRange: [0, 1], outputRange: [-150, 340] }) },
-      { rotate: "-18deg" }
     ]
   };
 
@@ -369,25 +367,29 @@ export function RoleRevealCard({
     ]
   };
 
-  const mistStyle = {
-    opacity: Animated.add(
-      Animated.add(new Animated.Value(0.16), revealBloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] })),
-      pressDepth.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] })
-    ),
+  const frameParallaxStyle = {
     transform: [
-      { translateX: rotateY.interpolate({ inputRange: [-12, 12], outputRange: [10.8, -10.8] }) },
-      { translateY: rotateX.interpolate({ inputRange: [-8, 8], outputRange: [-6.4, 6.4] }) },
-      { scale: pressDepth.interpolate({ inputRange: [0, 1], outputRange: [1.04, 1.055] }) }
+      { translateX: cardTiltY.interpolate({ inputRange: [-8, 8], outputRange: [-3, 3] }) },
+      { translateY: cardTiltX.interpolate({ inputRange: [-8, 8], outputRange: [2, -2] }) },
+      { scale: 1.018 }
+    ]
+  };
+  const artParallaxStyle = {
+    transform: [
+      { translateX: cardTiltY.interpolate({ inputRange: [-8, 8], outputRange: [-7, 7] }) },
+      { translateY: cardTiltX.interpolate({ inputRange: [-8, 8], outputRange: [5, -5] }) },
+      { scale: 1.035 }
     ]
   };
 
   const accent = roleTheme.accent;
+  const auraColor = role === "Vampire" ? "rgba(233,195,73,0.18)" : roleTheme.glowOuter;
 
   return (
     <View style={[styles.outer, { maxWidth: maxColumnWidth, width: "100%" }]}>
       <Animated.View
         pointerEvents="none"
-        style={[styles.backGlow, { backgroundColor: roleTheme.glowOuter }, haloStyle]}
+        style={[styles.backGlow, { backgroundColor: auraColor }, haloStyle]}
       />
 
       <Animated.View
@@ -398,17 +400,12 @@ export function RoleRevealCard({
           style={[
             styles.shadowPlate,
             {
-              shadowColor: accent,
-              borderColor: `${accent}30`
+              shadowColor: colors.secondary,
+              borderColor: `${accent}26`
             }
           ]}
         >
-          <Image source={ROLE_REVEAL_FRAME} resizeMode="cover" style={styles.frameImage} />
-          <Animated.Image
-            source={ROLE_REVEAL_MIST}
-            resizeMode="cover"
-            style={[styles.mistImage, mistStyle]}
-          />
+          <Animated.Image source={ROLE_REVEAL_FRAME} resizeMode="cover" style={[styles.frameImage, frameParallaxStyle]} />
 
           <Animated.View pointerEvents="none" style={[styles.particleLayer, particleStyle]}>
             <View style={[styles.spark, styles.sparkA, { backgroundColor: accent }]} />
@@ -416,31 +413,18 @@ export function RoleRevealCard({
             <View style={[styles.spark, styles.sparkC, { backgroundColor: accent }]} />
           </Animated.View>
 
-          <View style={[styles.card, { borderColor: `${accent}55` }]}>
+          <View style={[styles.cardClip, { borderColor: `${accent}55` }]}>
             <LinearGradient
               pointerEvents="none"
-              colors={["rgba(255,232,160,0.10)", "rgba(255,232,160,0.0)"]}
+              colors={["rgba(255,232,160,0.11)", "rgba(255,232,160,0.02)", "rgba(0,0,0,0.16)"]}
+              locations={[0, 0.38, 1]}
               start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 0.45 }}
+              end={{ x: 0.5, y: 1 }}
               style={styles.topHighlight}
             />
+            <View pointerEvents="none" style={[styles.edgeGlow, { borderColor: `${accent}35` }]} />
 
-            <AnimatedLinearGradient
-              pointerEvents="none"
-              colors={["rgba(255,255,255,0)", "rgba(255,244,198,0.62)", "rgba(255,255,255,0)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.shimmer, shimmerStyle]}
-            />
-            <AnimatedLinearGradient
-              pointerEvents="none"
-              colors={["rgba(255,255,255,0)", "rgba(255,242,200,0.18)", "rgba(255,255,255,0)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.glare, glareStyle]}
-            />
-
-            <Animated.View style={[styles.face, styles.front, frontStyle]}>
+            <Reanimated.View style={[styles.face, styles.front, frontFlipStyle]}>
               <View style={styles.hiddenInner}>
                 <View style={[styles.closedInnerFrame, { borderColor: `${accent}45` }]}>
                   <View style={[styles.cornerMark, styles.cornerMarkTopLeft, { borderColor: `${accent}55` }]} />
@@ -476,18 +460,19 @@ export function RoleRevealCard({
                   </View>
                 </View>
               </View>
-            </Animated.View>
+            </Reanimated.View>
 
-            <Animated.View style={[styles.face, styles.back, backStyle]}>
+            <Reanimated.View style={[styles.face, styles.back, backFlipStyle]}>
               <Animated.View style={[styles.revealedContent, contentStyle]}>
                 <View style={[styles.artFrame, { borderColor: `${accent}5c` }]}>
                   {roleArt ? (
-                    <ImageBackground
-                      source={roleArt}
-                      resizeMode="cover"
-                      style={[styles.art, { height: artHeight }]}
-                      imageStyle={styles.artImage}
-                    >
+                    <Animated.View style={[styles.artParallaxWrap, artParallaxStyle]}>
+                      <ImageBackground
+                        source={roleArt}
+                        resizeMode="cover"
+                        style={[styles.art, { height: artHeight }]}
+                        imageStyle={styles.artImage}
+                      >
                       <LinearGradient
                         pointerEvents="none"
                         colors={[
@@ -508,7 +493,8 @@ export function RoleRevealCard({
                         locations={[0, 0.55, 1]}
                         style={StyleSheet.absoluteFillObject}
                       />
-                    </ImageBackground>
+                      </ImageBackground>
+                    </Animated.View>
                   ) : (
                     <View style={[styles.fallbackArt, { height: artHeight }]}>
                       <Ionicons name={roleTheme.icon} size={72} color={accent} />
@@ -572,7 +558,7 @@ export function RoleRevealCard({
                   </View>
                 </View>
               </Animated.View>
-            </Animated.View>
+            </Reanimated.View>
           </View>
         </View>
       </Animated.View>
@@ -628,15 +614,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 1.015 }]
   },
-  mistImage: {
-    position: "absolute",
-    left: "-7%",
-    right: "-7%",
-    top: "-5%",
-    bottom: "-5%",
-    width: "114%",
-    height: "110%"
-  },
   particleLayer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3
@@ -651,7 +628,7 @@ const styles = StyleSheet.create({
   sparkA: { left: "14%", top: "26%" },
   sparkB: { right: "12%", top: "38%" },
   sparkC: { left: "20%", bottom: "26%" },
-  card: {
+  cardClip: {
     margin: 8,
     flex: 1,
     borderWidth: 1,
@@ -664,8 +641,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: 60,
+    height: 92,
     zIndex: 1
+  },
+  edgeGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 23,
+    borderWidth: 1,
+    opacity: 0.75,
+    zIndex: 2
   },
   face: {
     ...StyleSheet.absoluteFillObject,
@@ -683,21 +667,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(5,6,8,0.22)",
     alignItems: "center",
     justifyContent: "flex-start"
-  },
-  shimmer: {
-    position: "absolute",
-    top: "-30%",
-    bottom: "-30%",
-    width: 96,
-    zIndex: 12
-  },
-  glare: {
-    position: "absolute",
-    top: "-18%",
-    bottom: "-18%",
-    width: 140,
-    zIndex: 11,
-    borderRadius: 999
   },
   hiddenInner: {
     flex: 1,
@@ -821,6 +790,9 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "flex-end",
     backgroundColor: "rgba(4,4,5,0.92)"
+  },
+  artParallaxWrap: {
+    width: "100%"
   },
   artImage: {
     borderRadius: 17,

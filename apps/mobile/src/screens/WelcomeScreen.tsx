@@ -8,6 +8,8 @@ import type { RootStackParamList } from "../app/navigation/routes";
 import { HeroBrandArea } from "../components/HeroBrandArea";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
+import { LiquidGlassSurface } from "../glass";
+import { MotionHealthBadge } from "../motion";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -54,7 +56,7 @@ export function WelcomeScreen({ navigation }: Props) {
   return (
     <ScreenShell scene="home" headerTitle="ANA MENÜ">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
+        <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.heroCard} contentStyle={styles.heroCardContent}>
           <View style={styles.heroTopline}>
             <View style={styles.heroPill}>
               <Ionicons name="moon-outline" size={14} color={colors.secondary} />
@@ -76,9 +78,9 @@ export function WelcomeScreen({ navigation }: Props) {
             ))}
           </View>
           {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        </View>
+        </LiquidGlassSurface>
 
-        <View style={styles.menuCard}>
+        <LiquidGlassSurface variant="panel" radius={uiStandard.screen.cardRadius} style={styles.menuCard} contentStyle={styles.menuCardContent}>
           <View style={styles.menuHeader}>
             <Text style={styles.menuKicker}>MASA HAZIRLIĞI</Text>
             <Text style={styles.menuTitle}>Oyunu kur ya da davet koduyla masaya otur.</Text>
@@ -102,10 +104,11 @@ export function WelcomeScreen({ navigation }: Props) {
                 <View style={[styles.statusDot, connectionStatus === "connected" ? styles.statusConnected : styles.statusDisconnected]} />
                 <Text style={styles.statusText}>{connectionText}</Text>
               </View>
+              <MotionHealthBadge />
               <Text style={styles.metaText}>v0.1.0</Text>
             </View>
           </View>
-        </View>
+        </LiquidGlassSurface>
       </ScrollView>
     </ScreenShell>
   );
@@ -121,18 +124,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl
   },
   heroCard: {
-    borderRadius: uiStandard.screen.cardRadius,
-    borderWidth: 1,
-    borderColor: uiStandard.surfaces.hero.borderColor,
-    backgroundColor: uiStandard.surfaces.hero.backgroundColor,
+  },
+  heroCardContent: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
-    gap: spacing.md,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 }
+    gap: spacing.md
   },
   heroTopline: {
     flexDirection: "row",
@@ -233,17 +231,12 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   menuCard: {
-    borderRadius: uiStandard.screen.cardRadius,
-    borderWidth: 1,
-    borderColor: uiStandard.surfaces.panel.borderColor,
-    backgroundColor: uiStandard.surfaces.panel.backgroundColor,
+  },
+  menuCardContent: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    gap: spacing.md,
-    shadowColor: "#000",
-    shadowOpacity: 0.24,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 }
+    gap: spacing.md
   },
   menuHeader: {
     gap: 4

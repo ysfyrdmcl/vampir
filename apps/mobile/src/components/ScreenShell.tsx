@@ -4,7 +4,6 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
+import { LiquidGlassPressable, LiquidGlassSurface, glassTokens } from "../glass";
 import { BotSpeechOverlay } from "../components/BotSpeechOverlay";
 import { BotSpeechHistorySheet } from "../components/BotSpeechHistorySheet";
 import { GameToast } from "../components/GameToast";
@@ -296,33 +296,69 @@ export function ScreenShell({
         ) : null}
 
         {shouldShowBottomNav ? (
-          <View style={[styles.bottomNav, { height: bottomNavHeight, paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <LiquidGlassSurface
+            variant="nav"
+            radius={0}
+            glow
+            style={[styles.bottomNav, { height: bottomNavHeight, paddingBottom: Math.max(insets.bottom, 8) }]}
+            contentStyle={styles.bottomNavContent}
+          >
             <View style={[styles.bottomNavInner, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
-              <Pressable style={[styles.navItem, navActive === 0 ? styles.navItemActive : null]} onPress={goStatus}>
+              <LiquidGlassPressable
+                selected={navActive === 0}
+                glow={navActive === 0}
+                ambientSweep={navActive === 0}
+                radius={glassTokens.radius.md}
+                style={styles.navItemWrap}
+                surfaceStyle={styles.navItem}
+                contentStyle={styles.navItemContent}
+                variant="nav"
+                onPress={goStatus}
+              >
                 <View style={[styles.navIconWrap, navActive === 0 ? styles.navIconWrapActive : null]}>
                   <Ionicons name="eye-outline" size={navIconSize} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
                   {statusAttention ? <View style={styles.navDotDanger} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
-              </Pressable>
-              <Pressable style={[styles.navItem, navActive === 1 ? styles.navItemActive : null]} onPress={() => navigateIfReady("GameLog")}>
+              </LiquidGlassPressable>
+              <LiquidGlassPressable
+                selected={navActive === 1}
+                glow={navActive === 1}
+                ambientSweep={navActive === 1}
+                radius={glassTokens.radius.md}
+                style={styles.navItemWrap}
+                surfaceStyle={styles.navItem}
+                contentStyle={styles.navItemContent}
+                variant="nav"
+                onPress={() => navigateIfReady("GameLog")}
+              >
                 <View style={[styles.navIconWrap, navActive === 1 ? styles.navIconWrapActive : null]}>
                   <Ionicons name="book-outline" size={navIconSize} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
                   {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
-              </Pressable>
-              <Pressable style={[styles.navItem, navActive === 2 ? styles.navItemActive : null]} onPress={() => {
-                if (isPaused && !isHost) return;
-                navigateIfReady("GameSettings");
-              }}>
+              </LiquidGlassPressable>
+              <LiquidGlassPressable
+                selected={navActive === 2}
+                glow={navActive === 2}
+                ambientSweep={navActive === 2}
+                radius={glassTokens.radius.md}
+                style={styles.navItemWrap}
+                surfaceStyle={styles.navItem}
+                contentStyle={styles.navItemContent}
+                variant="nav"
+                onPress={() => {
+                  if (isPaused && !isHost) return;
+                  navigateIfReady("GameSettings");
+                }}
+              >
                 <View style={[styles.navIconWrap, navActive === 2 ? styles.navIconWrapActive : null]}>
                   <Ionicons name="settings-outline" size={navSettingsIconSize} color={navActive === 2 ? colors.secondary : "#6e6d72"} />
                 </View>
                 <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
-              </Pressable>
+              </LiquidGlassPressable>
             </View>
-          </View>
+          </LiquidGlassSurface>
         ) : null}
       </View>
     </View>
@@ -385,19 +421,18 @@ const styles = StyleSheet.create({
     alignSelf: "center"
   },
   bottomNav: {
-    borderTopWidth: 1,
-    borderTopColor: "rgba(233,195,73,0.22)",
-    backgroundColor: "rgba(10,10,12,0.88)",
+    position: "relative",
     height: 74,
     paddingBottom: 8,
     paddingTop: 8,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0
+  },
+  bottomNavContent: {
+    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.secondary,
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -8 },
-    elevation: 12
+    justifyContent: "center"
   },
   bottomNavInner: {
     width: "100%",
@@ -408,28 +443,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 6
   },
-  navItem: {
+  navItemWrap: {
     flex: 1,
-    minWidth: 0,
-    height: 54,
+    minWidth: 0
+  },
+  navItem: {
+    height: 54
+  },
+  navItemContent: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.08)",
-    backgroundColor: "rgba(15,15,17,0.28)",
-    opacity: 0.58
-  },
-  navItemActive: {
-    borderColor: "rgba(233,195,73,0.32)",
-    backgroundColor: "rgba(41,34,18,0.48)",
-    opacity: 1,
-    shadowColor: colors.secondary,
-    shadowOpacity: 0.34,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 4
+    gap: 3
   },
   navIconWrap: {
     width: 26,

@@ -22,8 +22,8 @@ export const uiStandard = {
   card: {
     radius: 14,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.24)",
-    backgroundColor: "rgba(18,19,21,0.84)"
+    borderColor: "rgba(255,232,178,0.14)",
+    backgroundColor: "rgba(18,16,20,0.48)"
   },
   text: {
     heroTitleSize: 42,
@@ -74,14 +74,14 @@ export const uiStandard = {
   },
   buttonVariants: {
     primary: {
-      gradient: ["#b52619", "#8b0000"] as const,
-      border: "rgba(170,137,132,0.28)",
+      gradient: ["rgba(120,18,24,0.42)", "rgba(60,12,16,0.52)"] as const,
+      border: "rgba(234,194,86,0.34)",
       text: colors.text
     },
     secondary: {
-      gradient: ["#3a3939", "#2a2a2a"] as const,
-      border: "rgba(170,137,132,0.28)",
-      text: "#dfdfdf"
+      gradient: ["rgba(18,16,20,0.46)", "rgba(8,8,12,0.58)"] as const,
+      border: "rgba(255,232,178,0.14)",
+      text: colors.textMuted
     },
     destructive: {
       gradient: ["#7f1616", "#4a0707"] as const,
@@ -89,14 +89,14 @@ export const uiStandard = {
       text: "#f7d7d3"
     },
     blood: {
-      gradient: ["#b52619", "#8b0000"] as const,
-      border: "rgba(170,137,132,0.28)",
+      gradient: ["rgba(120,18,24,0.42)", "rgba(60,12,16,0.52)"] as const,
+      border: "rgba(234,194,86,0.34)",
       text: colors.text
     },
     charcoal: {
-      gradient: ["#3a3939", "#2a2a2a"] as const,
-      border: "rgba(170,137,132,0.28)",
-      text: "#dfdfdf"
+      gradient: ["rgba(18,16,20,0.46)", "rgba(8,8,12,0.58)"] as const,
+      border: "rgba(255,232,178,0.14)",
+      text: colors.textMuted
     },
     outline: {
       gradient: ["rgba(13,13,13,0.86)", "rgba(13,13,13,0.86)"] as const,
@@ -104,9 +104,9 @@ export const uiStandard = {
       text: colors.text
     },
     gold: {
-      gradient: ["#d5a932", "#9f7612"] as const,
-      border: "rgba(233,195,73,0.46)",
-      text: "#2f2206"
+      gradient: ["rgba(185,142,48,0.24)", "rgba(38,28,18,0.50)"] as const,
+      border: "rgba(234,194,86,0.52)",
+      text: colors.secondary
     },
     danger: {
       gradient: ["#7f1616", "#4a0707"] as const,
@@ -124,14 +124,14 @@ export const uiStandard = {
       text: "#cbc2bc"
     },
     parchment: {
-      gradient: ["#f1e5d3", "#dbcbb3"] as const,
-      border: "rgba(170,137,132,0.5)",
-      text: "#372f23"
+      gradient: ["rgba(38,28,18,0.50)", "rgba(18,16,20,0.52)"] as const,
+      border: "rgba(234,194,86,0.28)",
+      text: colors.text
     },
     locked: {
-      gradient: ["rgba(63,63,67,0.9)", "rgba(43,43,47,0.9)"] as const,
-      border: "rgba(125,125,125,0.44)",
-      text: "#b7b7bc"
+      gradient: ["rgba(8,8,12,0.34)", "rgba(8,8,12,0.46)"] as const,
+      border: "rgba(255,232,178,0.10)",
+      text: "#8f8d92"
     }
   },
   logTones: {
@@ -180,16 +180,16 @@ export const uiStandard = {
   },
   surfaces: {
     hero: {
-      borderColor: "rgba(170,137,132,0.36)",
-      backgroundColor: colors.surfaceGlass
+      borderColor: "rgba(255,232,178,0.18)",
+      backgroundColor: "rgba(8,8,12,0.56)"
     },
     panel: {
-      borderColor: "rgba(170,137,132,0.22)",
-      backgroundColor: colors.surfaceGlass
+      borderColor: "rgba(255,232,178,0.14)",
+      backgroundColor: "rgba(18,16,20,0.48)"
     },
     parchment: {
-      borderColor: "rgba(170,137,132,0.42)",
-      backgroundColor: colors.parchment
+      borderColor: "rgba(234,194,86,0.28)",
+      backgroundColor: "rgba(38,28,18,0.50)"
     },
     code: {
       borderColor: "rgba(170,137,132,0.32)",

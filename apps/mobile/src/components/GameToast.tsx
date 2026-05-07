@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { useToastStore, type GameToastPayload } from "../ui/toast-store";
+import { LiquidGlassSurface } from "../glass";
 
 interface GameToastProps {
   topOffset?: number;
@@ -51,10 +52,16 @@ export function GameToast({ topOffset }: GameToastProps) {
 
   return (
     <Animated.View style={[styles.wrap, { top: topOffset ?? 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
-      <View style={[styles.toast, isDanger ? styles.toastDanger : null]}>
+      <LiquidGlassSurface
+        variant={isDanger ? "danger" : "panel"}
+        radius={999}
+        glow={isDanger}
+        style={styles.toast}
+        contentStyle={styles.toastContent}
+      >
         <Ionicons name={isDanger ? "alert-circle-outline" : "checkmark-circle-outline"} size={16} color={isDanger ? colors.danger : colors.secondary} />
         <Text style={styles.text}>{activeToast.text}</Text>
-      </View>
+      </LiquidGlassSurface>
     </Animated.View>
   );
 }
@@ -69,19 +76,14 @@ const styles = StyleSheet.create({
   },
   toast: {
     maxWidth: "92%",
+    minHeight: 36
+  },
+  toastContent: {
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.35)",
-    backgroundColor: "rgba(14,14,16,0.92)",
     flexDirection: "row",
     alignItems: "center",
     gap: 6
-  },
-  toastDanger: {
-    borderColor: "rgba(255,143,130,0.42)",
-    backgroundColor: "rgba(30,13,14,0.94)"
   },
   text: {
     color: colors.text,

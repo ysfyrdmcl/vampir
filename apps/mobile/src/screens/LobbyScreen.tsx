@@ -13,6 +13,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { RoomCodeCard } from "../components/RoomCodeCard";
 import { ScreenShell } from "../components/ScreenShell";
 import { StatusBadge } from "../components/StatusBadge";
+import { LiquidGlassChip, LiquidGlassPressable, LiquidGlassSurface } from "../glass";
 import {
   emitAddBot,
   emitFillBotsToMinimum,
@@ -386,13 +387,14 @@ export function LobbyScreen({ navigation }: Props) {
                   { key: "classicPlus", label: "Klasik+" },
                   { key: "socialChaos", label: "Sosyal Kaos" }
                 ].map((preset) => (
-                  <Pressable
+                  <LiquidGlassChip
                     key={preset.key}
-                    style={[styles.modeChip, rolePreset === preset.key ? styles.modeChipActive : null]}
+                    label={preset.label}
+                    selected={rolePreset === preset.key}
                     onPress={() => updateRolePreset(preset.key as RolePresetId)}
-                  >
-                    <Text style={[styles.modeText, rolePreset === preset.key ? styles.modeTextActive : null]}>{preset.label}</Text>
-                  </Pressable>
+                    style={styles.modeChip}
+                    textStyle={styles.modeText}
+                  />
                 ))}
               </View>
 
@@ -404,33 +406,36 @@ export function LobbyScreen({ navigation }: Props) {
                   { key: "FastParty", label: GAME_MODE_DETAILS.FastParty.label },
                   { key: "MysteryVillage", label: GAME_MODE_DETAILS.MysteryVillage.label }
                 ].map((mode) => (
-                  <Pressable
+                  <LiquidGlassChip
                     key={mode.key}
-                    style={[styles.modeChip, gameMode === mode.key ? styles.modeChipActive : null]}
+                    label={mode.label}
+                    selected={gameMode === mode.key}
                     onPress={() => updateGameMode(mode.key as GameMode)}
-                  >
-                    <Text style={[styles.modeText, gameMode === mode.key ? styles.modeTextActive : null]}>{mode.label}</Text>
-                  </Pressable>
+                    style={styles.modeChip}
+                    textStyle={styles.modeText}
+                  />
                 ))}
               </View>
               <Text style={styles.settingHint}>{activeModeInfo.description}</Text>
 
               <Text style={styles.timingSubTitle}>Süre Ayarları</Text>
               <View style={styles.timingModeRow}>
-                <Pressable
-                  style={[styles.segmentButton, phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
+                <LiquidGlassChip
+                  iconName="sparkles-outline"
+                  label="Sistem"
+                  selected={phaseDurations.useSystemDefaults}
                   onPress={() => updateDurationMode(true)}
-                >
-                  <Ionicons name="sparkles-outline" size={14} color={phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
-                  <Text style={[styles.segmentText, phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Sistem</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.segmentButton, !phaseDurations.useSystemDefaults ? styles.segmentButtonActive : null]}
+                  style={styles.segmentButton}
+                  textStyle={styles.segmentText}
+                />
+                <LiquidGlassChip
+                  iconName="options-outline"
+                  label="Özel"
+                  selected={!phaseDurations.useSystemDefaults}
                   onPress={() => updateDurationMode(false)}
-                >
-                  <Ionicons name="options-outline" size={14} color={!phaseDurations.useSystemDefaults ? colors.parchmentText : colors.textDim} />
-                  <Text style={[styles.segmentText, !phaseDurations.useSystemDefaults ? styles.segmentTextActive : null]}>Özel</Text>
-                </Pressable>
+                  style={styles.segmentButton}
+                  textStyle={styles.segmentText}
+                />
               </View>
               {!phaseDurations.useSystemDefaults ? (
                 <View style={styles.timingList}>
@@ -544,13 +549,21 @@ export function LobbyScreen({ navigation }: Props) {
         <PrimaryButton label="Lobiden Ayrıl" iconName="exit-outline" variant="danger-outline" compact onPress={() => setLeaveConfirmOpen(true)} />
       </ScrollView>
 
-      <View
+      <LiquidGlassSurface
+        animatedSheen
+        depth="floating"
+        glow={canStartRoom || meReady}
+        intensity="strong"
+        radius={18}
         style={[
           styles.lobbyStickyBar,
           {
             paddingBottom: Math.max(insets.bottom, 10)
           }
         ]}
+        contentStyle={styles.lobbyStickyContent}
+        tone={canStartRoom ? "crimson" : meReady ? "emerald" : "obsidian"}
+        variant={canStartRoom ? "button" : meReady ? "gold" : "nav"}
       >
         <View style={styles.stickyMainRow}>
           <View style={styles.stickyStatusRow}>
@@ -568,15 +581,25 @@ export function LobbyScreen({ navigation }: Props) {
           </View>
           <View style={styles.stickyActionSlot}>
             {isHost ? (
-              <Pressable
-                style={[styles.stickyHostReadyPill, meReady ? styles.stickyHostReadyPillActive : null]}
+              <LiquidGlassPressable
+                animatedSheen={meReady}
+                depth={meReady ? "floating" : "raised"}
+                glow={meReady}
+                intensity={meReady ? "strong" : "medium"}
+                radius={12}
+                selected={meReady}
+                style={styles.stickyHostReadyPillWrap}
+                surfaceStyle={styles.stickyHostReadyPill}
+                contentStyle={styles.stickyHostReadyPillContent}
+                tone={meReady ? "emerald" : "gold"}
+                variant={meReady ? "gold" : "panel"}
                 onPress={toggleReady}
               >
                 <Ionicons name="checkmark-circle-outline" size={14} color={colors.secondary} />
                 <Text style={styles.stickyHostReadyText} numberOfLines={1}>
                   {meReady ? "Onay Verildi" : "Onay Ver"}
                 </Text>
-              </Pressable>
+              </LiquidGlassPressable>
             ) : (
               <PrimaryButton
                 label={meReady ? "Geri Al" : "Onay Ver"}
@@ -623,7 +646,7 @@ export function LobbyScreen({ navigation }: Props) {
             </View>
           </View>
         )}
-      </View>
+      </LiquidGlassSurface>
       </View>
       <ConfirmActionSheet
         visible={leaveConfirmOpen}
@@ -718,18 +741,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(233,195,73,0.3)",
-    backgroundColor: "rgba(10,10,12,0.98)",
-    paddingTop: 9,
+    bottom: 8,
+    marginHorizontal: 10
+  },
+  lobbyStickyContent: {
+    flex: 0,
+    paddingTop: 10,
     paddingHorizontal: 10,
-    gap: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.46,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -8 },
-    elevation: 18
+    gap: 8
   },
   stickyMainRow: {
     minHeight: 44,
@@ -742,9 +761,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
     minHeight: 44,
     borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.2)",
+    borderColor: "rgba(233,195,73,0.18)",
     borderRadius: 12,
-    backgroundColor: "rgba(22,21,22,0.9)",
+    backgroundColor: "rgba(8,8,12,0.42)",
     paddingHorizontal: 8,
     paddingVertical: 6,
     flexDirection: "row",
@@ -812,22 +831,19 @@ const styles = StyleSheet.create({
   stickyCol: {
     gap: 6
   },
+  stickyHostReadyPillWrap: {
+    flex: 1
+  },
   stickyHostReadyPill: {
+    minHeight: 44
+  },
+  stickyHostReadyPillContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.32)",
-    borderRadius: 12,
-    paddingHorizontal: 9,
-    minHeight: 44,
-    backgroundColor: "rgba(33,29,16,0.54)"
-  },
-  stickyHostReadyPillActive: {
-    borderColor: "rgba(39,190,104,0.38)",
-    backgroundColor: "rgba(18,48,31,0.52)"
+    paddingHorizontal: 9
   },
   stickyHostReadyText: {
     color: colors.secondary,
@@ -1053,27 +1069,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start"
   },
   segmentButton: {
-    minHeight: 32,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.28)",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    backgroundColor: "rgba(12,12,14,0.82)",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5
-  },
-  segmentButtonActive: {
-    borderColor: colors.primaryBright,
-    backgroundColor: colors.parchment
+    minWidth: 86
   },
   segmentText: {
-    color: colors.textDim,
     fontFamily: typography.sansBold,
     fontSize: 11
-  },
-  segmentTextActive: {
-    color: colors.parchmentText
   },
   modeRow: {
     flexDirection: "row",
@@ -1081,24 +1081,11 @@ const styles = StyleSheet.create({
     gap: 7
   },
   modeChip: {
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.3)",
-    borderRadius: 9,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    backgroundColor: "rgba(12,12,14,0.82)"
-  },
-  modeChipActive: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.primaryBright
+    minWidth: 88
   },
   modeText: {
-    color: colors.text,
     fontFamily: typography.sansMedium,
     fontSize: 11
-  },
-  modeTextActive: {
-    color: colors.parchmentText
   },
   timingList: {
     gap: 8
