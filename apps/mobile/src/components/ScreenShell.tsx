@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { GamePhase } from "@vampir-koylu/shared";
 import type { PropsWithChildren } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -14,7 +14,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { GameBackground, type GameBackgroundVariant } from "../components/GameBackground";
 import { BotSpeechOverlay } from "../components/BotSpeechOverlay";
+import { BotSpeechHistorySheet } from "../components/BotSpeechHistorySheet";
 import { GameToast } from "../components/GameToast";
+import { InGameTopBar } from "../components/InGameTopBar";
 import { ResultPopup } from "../components/ResultPopup";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
@@ -72,6 +74,10 @@ export function ScreenShell({
   const privateRole = useGameStore((s) => s.privateRole);
   const errorCode = useGameStore((s) => s.errorCode);
   const connectionStatus = useGameStore((s) => s.connectionStatus);
+  const botSpeechHistory = useGameStore((s) => s.botSpeechHistory);
+  const botSpeechUnreadCount = useGameStore((s) => s.botSpeechUnreadCount);
+  const activeBotSpeech = useGameStore((s) => s.activeBotSpeech);
+  const markBotSpeechInboxRead = useGameStore((s) => s.markBotSpeechInboxRead);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
   const mePlayerId = useGameStore((s) => s.playerId);
   const insets = useSafeAreaInsets();
@@ -91,6 +97,7 @@ export function ScreenShell({
         phase === "MayorElection")
   );
   const hasLogAttention = unreadLogCount > 0;
+  const [rumorsOpen, setRumorsOpen] = useState(false);
 
   const lastErrorToastRef = useRef<{ code: string | null; at: number }>({ code: null, at: 0 });
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -173,6 +180,8 @@ export function ScreenShell({
   const navActive = bottomNavActiveIndex ?? navFromScene;
   const shouldShowTopBar = showTopBar && scene !== "home";
   const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
+  const isGameTopBar = shouldShowTopBar && contentDensity === "game" && roomState?.status === "InGame";
+  const hasRumorAttention = botSpeechUnreadCount > 0 || Boolean(activeBotSpeech);
   const layout = useMemo(() => getResponsiveMetrics(width, height), [height, width]);
   const horizontalPadding = layout.pagePadding + Math.max(insets.left, insets.right);
   const contentMaxWidth = layout.contentMaxWidth;
@@ -194,6 +203,11 @@ export function ScreenShell({
     const route = getRouteForCurrentPhase(phase);
     navigateIfReady(route);
   };
+  const openRumors = () => {
+    markBotSpeechInboxRead();
+    setRumorsOpen(true);
+  };
+  const phaseType = scene === "vote" || scene === "day" ? "day" : scene === "night" || scene === "vampire" || scene === "detective" || scene === "doctor" ? "night" : "other";
 
   return (
     <View style={styles.safe}>
@@ -201,21 +215,32 @@ export function ScreenShell({
         <GameBackground variant={scene} backdropScale={backdropScale} />
 
         {shouldShowTopBar ? (
-          <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
+          <View style={[styles.topBar, isGameTopBar ? styles.topBarGame : null, { height: topBarHeight, paddingTop: insets.top }]}>
             <View
               style={[
-                styles.topBarInner,
+                isGameTopBar ? styles.gameTopBarInner : styles.topBarInner,
                 {
                   maxWidth: contentMaxWidth,
                   paddingLeft: horizontalPadding,
-                  paddingRight: Math.max(horizontalPadding, insets.right) + 108
+                  paddingRight: isGameTopBar ? horizontalPadding : Math.max(horizontalPadding, insets.right) + 108
                 }
               ]}
             >
-              <View style={styles.topLeft}>
-                <Ionicons name="shield-outline" size={20} color={colors.primaryBright} />
-                <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
-              </View>
+              {isGameTopBar ? (
+                <InGameTopBar
+                  phaseLabel={label}
+                  phaseType={phaseType}
+                  phaseEndsAt={gameState?.phaseEndsAt ?? null}
+                  rumorCount={botSpeechUnreadCount}
+                  hasRumorAttention={hasRumorAttention}
+                  onPressRumors={openRumors}
+                />
+              ) : (
+                <View style={styles.topLeft}>
+                  <Ionicons name="shield-outline" size={20} color={colors.primaryBright} />
+                  <Text style={styles.topLabel} numberOfLines={1}>{label}</Text>
+                </View>
+              )}
             </View>
           </View>
         ) : null}
@@ -235,6 +260,7 @@ export function ScreenShell({
           {children}
         </Animated.View>
         <BotSpeechOverlay layoutTopOffset={shouldShowTopBar ? topBarHeight : insets.top + spacing.sm} />
+        <BotSpeechHistorySheet visible={rumorsOpen} onClose={() => setRumorsOpen(false)} entries={botSpeechHistory} />
         {showConnectionBanner ? (
           <Animated.View
             pointerEvents="none"
@@ -320,6 +346,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
+  topBarGame: {
+    borderBottomWidth: 0,
+    borderBottomColor: "rgba(233,195,73,0.18)",
+    backgroundColor: "rgba(8,8,10,0.42)"
+  },
   topBarInner: {
     width: "100%",
     flex: 1,
@@ -327,6 +358,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row"
+  },
+  gameTopBarInner: {
+    width: "100%",
+    flex: 1,
+    alignSelf: "center",
+    justifyContent: "center"
   },
   topLeft: {
     flex: 1,

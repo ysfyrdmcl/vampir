@@ -17,6 +17,7 @@ interface PhaseBannerProps {
   infoIcon?: keyof typeof Ionicons.glyphMap;
   infoActive?: boolean;
   compact?: boolean;
+  showCountdown?: boolean;
 }
 
 export function PhaseBanner({
@@ -29,7 +30,8 @@ export function PhaseBanner({
   infoDetail,
   infoIcon = "information-circle-outline",
   infoActive = false,
-  compact = false
+  compact = false,
+  showCountdown = true
 }: PhaseBannerProps) {
   return (
     <GothicCard style={[styles.wrap, compact ? styles.wrapCompact : null]}>
@@ -39,7 +41,7 @@ export function PhaseBanner({
           <Text style={styles.description} numberOfLines={compact ? 1 : 2}>{description}</Text>
           {notice ? <Text style={styles.notice} numberOfLines={compact ? 1 : 2}>{notice}</Text> : null}
         </View>
-        <PhaseCountdown phaseEndsAt={phaseEndsAt} mode="compact" presentation="phaseSummary" />
+        {showCountdown ? <PhaseCountdown phaseEndsAt={phaseEndsAt} mode="compact" presentation="phaseSummary" /> : null}
       </View>
       {infoText ? (
         <View style={styles.infoStrip}>

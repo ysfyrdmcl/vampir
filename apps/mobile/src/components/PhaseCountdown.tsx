@@ -1,5 +1,6 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
@@ -9,10 +10,11 @@ interface PhaseCountdownProps {
   phaseEndsAt: number | null;
   mode?: "dramatic" | "compact";
   /** Rol açılımı alt bandı: kart genişliğiyle hizalı, metin ortada. */
-  presentation?: "default" | "roleRevealFooter" | "phaseSummary";
+  presentation?: "default" | "roleRevealFooter" | "roleRevealBadge" | "phaseSummary" | "topBar";
 }
 
 export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
+  const { width } = useWindowDimensions();
   const isPaused = useGameStore((s) => Boolean(s.gameState?.isPaused));
   const [now, setNow] = useState(Date.now());
   const [maxSeconds, setMaxSeconds] = useState<number | null>(null);
@@ -73,8 +75,11 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
   });
 
   const isRoleFooter = presentation === "roleRevealFooter";
+  const isRoleBadge = presentation === "roleRevealBadge";
   const isPhaseSummary = presentation === "phaseSummary";
-  const effectiveMode = isRoleFooter || isPhaseSummary ? "compact" : mode;
+  const isTopBar = presentation === "topBar";
+  const compactTopBar = isTopBar && width < 380;
+  const effectiveMode = isRoleFooter || isRoleBadge || isPhaseSummary || isTopBar ? "compact" : mode;
   const countdownText = isRoleFooter
     ? "Oyun başlıyor..."
     : isPaused
@@ -94,6 +99,34 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
               : tone === "orange"
                 ? "Süre azalıyor, hızlı karar ver."
                 : "Süre dolmadan seçimini tamamla.";
+
+  if (isTopBar) {
+    return (
+      <View style={[styles.topBarPill, compactTopBar ? styles.topBarPillCompact : null]}>
+        <Animated.View style={[styles.topBarDot, { backgroundColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]} />
+        <Text style={[styles.topBarValue, compactTopBar ? styles.topBarValueCompact : null]} numberOfLines={1}>
+          {isEndless ? "∞" : seconds}
+        </Text>
+        <Text style={[styles.topBarUnit, compactTopBar ? styles.topBarUnitCompact : null]} numberOfLines={1}>
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SN"}
+        </Text>
+      </View>
+    );
+  }
+
+  if (isRoleBadge) {
+    return (
+      <View style={styles.roleBadge}>
+        <Ionicons name="hourglass-outline" size={17} color={colors.secondary} />
+        <Text style={styles.roleBadgeValue} numberOfLines={1}>
+          {isEndless ? "∞" : seconds}
+        </Text>
+        <Text style={styles.roleBadgeUnit} numberOfLines={1}>
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SN"}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -292,5 +325,86 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: "center",
     color: colors.textMuted
+  },
+  topBarPill: {
+    minWidth: 124,
+    height: 46,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.46)",
+    backgroundColor: "rgba(13,13,14,0.9)",
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 5
+  },
+  topBarPillCompact: {
+    minWidth: 106,
+    height: 42,
+    paddingHorizontal: 12,
+    gap: 6
+  },
+  topBarDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 }
+  },
+  topBarValue: {
+    color: colors.text,
+    fontFamily: typography.serifSemi,
+    fontSize: 31,
+    lineHeight: 35
+  },
+  topBarValueCompact: {
+    fontSize: 27,
+    lineHeight: 31
+  },
+  topBarUnit: {
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 11,
+    letterSpacing: 0.8
+  },
+  topBarUnitCompact: {
+    fontSize: 9,
+    letterSpacing: 0.6
+  },
+  roleBadge: {
+    height: 44,
+    minWidth: 94,
+    maxWidth: 114,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.36)",
+    backgroundColor: "rgba(8,9,11,0.78)",
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 }
+  },
+  roleBadgeValue: {
+    color: colors.text,
+    fontFamily: typography.serifSemi,
+    fontSize: 18,
+    lineHeight: 22
+  },
+  roleBadgeUnit: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    lineHeight: 13,
+    letterSpacing: 0.6
   }
 });

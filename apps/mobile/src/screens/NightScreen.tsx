@@ -263,6 +263,7 @@ export function NightScreen(_: Props) {
           infoIcon={currentActionSummary.icon}
           infoActive={canAct}
           compact
+          showCountdown={false}
         />
         <ScrollView
           style={styles.targetScroll}

@@ -135,6 +135,7 @@ export function VoteScreen(_: Props) {
           infoIcon={meAlive ? "people-outline" : "skull-outline"}
           infoActive={meAlive}
           compact
+          showCountdown={false}
         />
         {hasTieRevote ? (
           <View style={styles.tieCard}>

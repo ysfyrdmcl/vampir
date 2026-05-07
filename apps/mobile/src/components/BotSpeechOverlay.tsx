@@ -1,18 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import { Animated, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGameStore } from "../store/game-store";
-import { colors } from "../theme/colors";
-import { spacing } from "../theme/spacing";
-import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
 import type { BotSpeechEvent } from "@vampir-koylu/shared";
 import { BotSpeechBubble } from "./BotSpeechBubble";
-import { BotSpeechHistorySheet } from "./BotSpeechHistorySheet";
 
 const ENTER_MS = 240;
 const EXIT_MS = 380;
-const COLLECTOR_CHIP_H = 34;
 
 function resolveDisplayMs(event: BotSpeechEvent): number {
   const n = event.durationMs;
@@ -30,11 +25,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
   const insets = useSafeAreaInsets();
   const roomState = useGameStore((s) => s.roomState);
   const active = useGameStore((s) => s.activeBotSpeech);
-  const botSpeechHistory = useGameStore((s) => s.botSpeechHistory);
-  const unread = useGameStore((s) => s.botSpeechUnreadCount);
   const dismissActiveBotSpeech = useGameStore((s) => s.dismissActiveBotSpeech);
-  const markBotSpeechInboxRead = useGameStore((s) => s.markBotSpeechInboxRead);
-  const [historyOpen, setHistoryOpen] = useState(false);
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-14)).current;
@@ -46,10 +37,6 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
   const horizontalPad = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
   const availableWidth = Math.max(220, width - horizontalPad * 2);
   const contentMaxWidth = width >= 768 ? Math.min(680, availableWidth) : availableWidth;
-
-  const hasTopBar = layoutTopOffset > 80;
-  const collectorTop = hasTopBar ? insets.top + Math.round((64 - COLLECTOR_CHIP_H) / 2) : insets.top + 6;
-  const collectorRight = Math.max(insets.right, 10) + 8;
 
   const resetBubbleMotion = useCallback(() => {
     opacity.setValue(0);
@@ -139,68 +126,37 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
 
   const inGame = roomState?.status === "InGame";
   const gameOver = roomState?.status === "GameOver";
-  const showRumorChrome = (inGame || gameOver) && (botSpeechHistory.length > 0 || Boolean(active));
   const showBubble = Boolean(active) && inGame;
 
-  const openHistory = () => {
-    markBotSpeechInboxRead();
-    setHistoryOpen(true);
-  };
-
-  const sheet = (
-    <BotSpeechHistorySheet visible={historyOpen} onClose={() => setHistoryOpen(false)} entries={botSpeechHistory} />
-  );
-
   if (!inGame && !gameOver) {
-    return historyOpen ? sheet : null;
+    return null;
   }
 
   return (
     <>
-      {sheet}
-      {showRumorChrome ? (
+      {showBubble && active ? (
         <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-          <Pressable
-            onPress={openHistory}
-            style={({ pressed }) => [
-              styles.collector,
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.bubbleBand,
               {
-                top: collectorTop,
-                right: collectorRight,
-                opacity: pressed ? 0.88 : 1
+                top: layoutTopOffset + 8,
+                paddingHorizontal: horizontalPad
               }
             ]}
-            accessibilityRole="button"
-            accessibilityLabel="Söylentiler geçmişi"
           >
-            <Text style={styles.collectorText} numberOfLines={1}>
-              {unread > 0 ? `Söylentiler · ${unread}` : "Söylentiler"}
-            </Text>
-          </Pressable>
-
-          {showBubble && active ? (
-            <View
-              pointerEvents="box-none"
-              style={[
-                styles.bubbleBand,
-                {
-                  top: layoutTopOffset + 8,
-                  paddingHorizontal: horizontalPad
-                }
-              ]}
-            >
-              <View style={[styles.bubbleInner, { width: availableWidth, maxWidth: contentMaxWidth }]}>
-                <Animated.View
-                  style={{
-                    opacity,
-                    transform: [{ translateY }, { translateX }, { scale }]
-                  }}
-                >
-                  <BotSpeechBubble event={active} onPress={dismissFromUser} />
-                </Animated.View>
-              </View>
+            <View style={[styles.bubbleInner, { width: availableWidth, maxWidth: contentMaxWidth }]}>
+              <Animated.View
+                style={{
+                  opacity,
+                  transform: [{ translateY }, { translateX }, { scale }]
+                }}
+              >
+                <BotSpeechBubble event={active} onPress={dismissFromUser} />
+              </Animated.View>
             </View>
-          ) : null}
+          </View>
         </View>
       ) : null}
     </>
@@ -208,28 +164,6 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
 }
 
 const styles = StyleSheet.create({
-  collector: {
-    position: "absolute",
-    zIndex: 60,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-    minHeight: COLLECTOR_CHIP_H,
-    maxWidth: 220,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.38)",
-    backgroundColor: "rgba(14,12,10,0.92)"
-  },
-  collectorText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 11,
-    letterSpacing: 0.35,
-    flexShrink: 1
-  },
   bubbleBand: {
     position: "absolute",
     left: 0,

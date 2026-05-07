@@ -1,8 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PhaseCountdown } from "../components/PhaseCountdown";
@@ -27,11 +26,10 @@ export function RoleRevealScreen(_: Props) {
       ? roomState?.players.find((player) => player.playerId === loverPartnerPlayerId)?.nickname ?? loverPartnerPlayerId
       : null;
 
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const compact = height < 720;
-  const footerPadBottom = Math.max(insets.bottom, spacing.sm);
-  const maxCardHeight = Math.max(compact ? 430 : 560, height - (compact ? 270 : 286));
+  const narrow = width < 380;
+  const maxCardHeight = Math.max(compact ? 374 : 520, height - (compact ? 278 : 310));
 
   const headerEntry = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -48,65 +46,70 @@ export function RoleRevealScreen(_: Props) {
     ]
   };
 
-  const titleSize = compact ? 28 : 32;
-  const titleLineHeight = compact ? 33 : 38;
+  const titleSize = compact ? 38 : 46;
+  const titleLineHeight = compact ? 43 : 52;
 
   return (
-    <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="">
+    <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="" showTopBar={false}>
       <View style={styles.root}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          bounces={false}
-        >
-          <View style={styles.column}>
-            <Animated.View style={[styles.header, headerEntryStyle]}>
-              <View style={styles.headerOrnament}>
-                <View style={styles.headerLine} />
-                <Ionicons name="diamond-outline" size={11} color={colors.secondary} />
-                <View style={styles.headerLine} />
-              </View>
-              <Text style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]}>
-                Rolün
-              </Text>
-              <View style={styles.privacyPill}>
-                <Ionicons name="lock-closed-outline" size={12} color={colors.secondary} />
-                <Text style={styles.privacyText}>Ekranı sadece sen gör</Text>
-              </View>
-              <Text style={styles.subtitle}>Karta dokun — kimliğin açılsın</Text>
-            </Animated.View>
+        <Animated.View style={[styles.header, compact ? styles.headerCompact : null, headerEntryStyle]}>
+          <View style={styles.topRule}>
+            <View style={styles.headerLine} />
+            <Ionicons name="diamond-outline" size={12} color={colors.secondary} />
+            <View style={styles.headerLine} />
+          </View>
 
-            <View style={styles.cardStage}>
-              <LinearGradient
-                pointerEvents="none"
-                colors={[
-                  "rgba(233,195,73,0.0)",
-                  "rgba(233,195,73,0.08)",
-                  "rgba(181,38,25,0.04)",
-                  "rgba(0,0,0,0.0)"
-                ]}
-                locations={[0, 0.4, 0.7, 1]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.cardVignette}
-              />
-              <RoleRevealCard
-                role={role}
-                loverPartnerName={loverPartnerName}
-                maxColumnWidth={CARD_COLUMN_MAX}
-                maxCardHeight={maxCardHeight}
+          <View style={styles.headerRow}>
+            <View style={styles.headerSideLeft}>
+              <PhaseCountdown
+                phaseEndsAt={gameState?.phaseEndsAt ?? null}
+                presentation="roleRevealBadge"
               />
             </View>
-          </View>
-        </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: footerPadBottom }]}>
-          <View style={styles.footerDivider} />
-          <PhaseCountdown
-            phaseEndsAt={gameState?.phaseEndsAt ?? null}
-            presentation="roleRevealFooter"
+            <View style={styles.headerCenter}>
+              <View style={styles.titleRow}>
+                <View style={styles.titleLine} />
+                <Text style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]} numberOfLines={1}>
+                  ROLÜN
+                </Text>
+                <View style={styles.titleLine} />
+              </View>
+              <View style={[styles.privacyPill, narrow ? styles.privacyPillNarrow : null]}>
+                <Ionicons name="lock-closed-outline" size={12} color={colors.secondary} />
+                <Text style={styles.privacyText} numberOfLines={1}>
+                  SADECE SEN GÖR
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.headerSideRight}>
+              <View style={styles.moonBadge}>
+                <Ionicons name="moon" size={compact ? 18 : 21} color={colors.secondary} />
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+
+        <View style={styles.cardStage}>
+          <LinearGradient
+            pointerEvents="none"
+            colors={[
+              "rgba(233,195,73,0.0)",
+              "rgba(233,195,73,0.13)",
+              "rgba(181,38,25,0.05)",
+              "rgba(0,0,0,0.0)"
+            ]}
+            locations={[0, 0.42, 0.74, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.cardVignette}
+          />
+          <RoleRevealCard
+            role={role}
+            loverPartnerName={loverPartnerName}
+            maxColumnWidth={CARD_COLUMN_MAX}
+            maxCardHeight={maxCardHeight}
           />
         </View>
       </View>
@@ -116,118 +119,135 @@ export function RoleRevealScreen(_: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1
-  },
-  scroll: {
     flex: 1,
-    flexGrow: 1,
-    flexShrink: 1,
-    minHeight: 0
-  },
-  scrollContent: {
-    flexGrow: 1,
     alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 0,
-    paddingBottom: spacing.xs
-  },
-  column: {
-    width: "100%",
-    maxWidth: CARD_COLUMN_MAX,
-    alignSelf: "center",
-    alignItems: "center"
+    justifyContent: "flex-start"
   },
   header: {
     width: "100%",
+    maxWidth: 430,
     alignItems: "center",
-    paddingHorizontal: spacing.sm,
     paddingTop: 0,
-    paddingBottom: 2,
-    gap: 3
+    paddingBottom: 8,
+    gap: 8
   },
-  headerOrnament: {
-    width: 104,
+  headerCompact: {
+    paddingBottom: 5,
+    gap: 6
+  },
+  topRule: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    marginBottom: 0
+    gap: 8,
+    opacity: 0.76
   },
   headerLine: {
     flex: 1,
     height: 1,
+    backgroundColor: "rgba(233,195,73,0.20)"
+  },
+  headerRow: {
+    width: "100%",
+    minHeight: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8
+  },
+  headerSideLeft: {
+    width: 96,
+    alignItems: "flex-start",
+    justifyContent: "center"
+  },
+  headerSideRight: {
+    width: 96,
+    alignItems: "flex-end",
+    justifyContent: "center"
+  },
+  headerCenter: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: 5
+  },
+  titleRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10
+  },
+  titleLine: {
+    flex: 1,
+    maxWidth: 52,
+    height: 1,
     backgroundColor: "rgba(233,195,73,0.24)"
   },
   title: {
-    color: colors.text,
+    color: "#f4dfad",
     fontFamily: typography.serif,
     textAlign: "center",
-    letterSpacing: 0.2,
-    textShadowColor: "rgba(0,0,0,0.55)",
+    letterSpacing: 3,
+    textShadowColor: "rgba(233,195,73,0.18)",
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6
+    textShadowRadius: 10
   },
   privacyPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.3)",
+    borderColor: "rgba(233,195,73,0.42)",
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: "rgba(9,9,10,0.78)",
+    paddingHorizontal: 17,
+    paddingVertical: 6,
+    backgroundColor: "rgba(5,6,8,0.72)",
     alignSelf: "center",
     marginTop: 0
+  },
+  privacyPillNarrow: {
+    paddingHorizontal: 11
   },
   privacyText: {
     color: colors.secondary,
     fontFamily: typography.sansBold,
-    fontSize: 9.5,
-    letterSpacing: 1.1,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 2,
     textTransform: "uppercase"
   },
-  subtitle: {
-    color: "rgba(229,226,225,0.66)",
-    fontFamily: typography.serifRegular,
-    fontSize: 12.5,
-    lineHeight: 17,
-    textAlign: "center",
-    marginTop: 1,
-    paddingHorizontal: spacing.sm
+  moonBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.34)",
+    backgroundColor: "rgba(8,9,11,0.74)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 }
   },
   cardStage: {
     flex: 1,
     width: "100%",
+    maxWidth: CARD_COLUMN_MAX,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
-    paddingTop: 0,
-    paddingBottom: 0
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs
   },
   cardVignette: {
     position: "absolute",
-    left: -28,
-    right: -28,
-    top: -8,
-    bottom: -16,
+    left: -42,
+    right: -42,
+    top: -22,
+    bottom: -22,
     borderRadius: 999,
     opacity: 0.85
-  },
-  footer: {
-    width: "100%",
-    maxWidth: 360,
-    alignSelf: "center",
-    paddingTop: 4,
-    paddingHorizontal: 4
-  },
-  footerDivider: {
-    height: 1,
-    width: "100%",
-    marginBottom: 7,
-    backgroundColor: "rgba(233,195,73,0.16)",
-    shadowColor: colors.secondary,
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 }
   }
 });
