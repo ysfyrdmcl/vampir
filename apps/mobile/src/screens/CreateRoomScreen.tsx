@@ -56,7 +56,7 @@ export function CreateRoomScreen({ navigation }: Props) {
       scene="create"
       headerTitle="ODA KUR"
       keyboardAware
-      keyboardExtraScrollPadding={spacing.xxl}
+      keyboardExtraScrollPadding={spacing.xxl + spacing.lg}
       keyboardAwareContentContainerStyle={styles.content}
     >
       <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
@@ -112,7 +112,8 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     gap: spacing.md,
-    paddingTop: spacing.sm
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm
   },
   introCard: {
   },

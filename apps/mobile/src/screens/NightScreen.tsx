@@ -286,6 +286,8 @@ export function NightScreen(_: Props) {
               title="Vampir Oyları"
               subtitle="Gece Bilgisi"
               tone="night"
+              compact
+              style={styles.vampireVotesRibbon}
               body={vampireVotePreview.votes
                 .map((row) => `${row.voterName}${row.isBot ? " (bot)" : ""}: ${row.targetName ?? "Henüz seçmedi"}`)
                 .join(" · ")}
@@ -336,6 +338,10 @@ const styles = StyleSheet.create({
   },
   targetContent: {
     gap: 8
+  },
+  vampireVotesRibbon: {
+    borderColor: "rgba(128,159,210,0.28)",
+    backgroundColor: "rgba(9,13,24,0.58)"
   },
   stickyAction: {
     position: "absolute",

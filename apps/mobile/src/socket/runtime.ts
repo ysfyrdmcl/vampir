@@ -257,7 +257,15 @@ export function initSocketRuntime(): void {
             round: payload.round,
             source: elimination.source,
             playerId: elimination.playerId,
-            revealedRole: elimination.revealedRole ?? null
+            revealedRole: elimination.revealedRole ?? null,
+            cause:
+              prevPhaseForLog === "HunterLastBreath"
+                ? "hunter"
+                : payload.phase === "ExecutionResolve"
+                  ? "day_vote"
+                  : elimination.source === "Night"
+                    ? "night"
+                    : "day"
           });
         }
       }
@@ -408,7 +416,7 @@ export function initSocketRuntime(): void {
       return;
     }
     if (payload.accepted) {
-      showToast("Aksiyon gönderildi", "gold", 1400);
+      logPersonalEvent("game.private_result.accepted", { accepted: true });
     }
   });
 

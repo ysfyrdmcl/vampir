@@ -319,29 +319,28 @@ export function RoleRevealCard({
     ]
   };
 
-  const frontFlipStyle = useAnimatedStyle(() => {
+  const cardFlipStyle = useAnimatedStyle(() => {
     const spin = interpolate(flipProgress.value, [0, 1], [0, 180]);
-    const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [1, 1, 0, 0]);
     return {
-      opacity,
       transform: [
         { perspective: 1200 },
         { rotateY: `${spin}deg` },
-        { scale: interpolate(flipProgress.value, [0, 0.5, 1], [1, 0.975, 0.99]) }
+        { scale: interpolate(flipProgress.value, [0, 0.5, 1], [1, 0.975, 1]) }
       ]
     };
   });
 
+  const frontFlipStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [1, 1, 0, 0]);
+    return {
+      opacity
+    };
+  });
+
   const backFlipStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipProgress.value, [0, 1], [180, 360]);
     const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [0, 0, 1, 1]);
     return {
-      opacity,
-      transform: [
-        { perspective: 1200 },
-        { rotateY: `${spin}deg` },
-        { scale: interpolate(flipProgress.value, [0, 0.5, 1], [0.985, 0.975, 1]) }
-      ]
+      opacity
     };
   });
 
@@ -397,13 +396,14 @@ export function RoleRevealCard({
         style={[styles.cardShell, { width: cardWidth, height: cardHeight }, cardMotionStyle]}
         {...panResponder.panHandlers}
       >
-        <View
+        <Reanimated.View
           style={[
             styles.shadowPlate,
             {
               shadowColor: colors.secondary,
               borderColor: `${accent}26`
-            }
+            },
+            cardFlipStyle
           ]}
         >
           <Animated.Image source={ROLE_REVEAL_FRAME} resizeMode="cover" style={[styles.frameImage, frameParallaxStyle]} />
@@ -563,7 +563,7 @@ export function RoleRevealCard({
               </Animated.View>
             </Reanimated.View>
           </View>
-        </View>
+        </Reanimated.View>
       </Animated.View>
     </View>
   );
@@ -673,7 +673,8 @@ const styles = StyleSheet.create({
   back: {
     backgroundColor: "rgba(5,6,8,0.22)",
     alignItems: "center",
-    justifyContent: "flex-start"
+    justifyContent: "flex-start",
+    transform: [{ rotateY: "180deg" }]
   },
   hiddenInner: {
     flex: 1,

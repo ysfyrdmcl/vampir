@@ -166,7 +166,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intelligences: ["balanced", "deceptive"],
     phases: ["DayVote", "DayDiscussion"],
     requiresTarget: true,
-    text: "Ben rastgele oy vermek istemiyorum; {targetName} daha mantıklı hedef."
+    text: "Rastgele oy yerine {targetName} üstünden konuşalım."
   },
   {
     id: "defense-easy",
@@ -180,7 +180,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "self_defense",
     personalities: ["defensive", "quiet"],
     phases: DAY_PHASES,
-    text: "Benim üzerime gelmeniz vampirlerin işine yarıyor olabilir."
+    text: "Üstüme bu kadar hızlı gelinmesi bana temiz görünmedi."
   },
   {
     id: "support-consistent",
@@ -216,7 +216,7 @@ export const speechTemplates: SpeechTemplate[] = [
     id: "doctor-no-claim",
     intent: "generic_observation",
     phases: ["DayDiscussion"],
-    text: "Koruma konusunda konuşmak doğru değil; köy stratejisi konuşsun.",
+    text: "Geceyi açık etmeyelim; bugün oy düzenine bakalım.",
     tags: ["doctor_safe"]
   },
   {
@@ -359,7 +359,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "self_defense",
     personalities: ["defensive", "analyst"],
     phases: ["DayDiscussion", "DayVote"],
-    text: "Benim üstüme gelmeniz vampirlerin işine yarıyor olabilir. Bence biraz fazla acele ediyorsunuz."
+    text: "Benim üstüme gelişiniz fazla aceleci. Bu telaşın kaynağını konuşalım."
   },
   {
     id: "chaos-mirror-1",

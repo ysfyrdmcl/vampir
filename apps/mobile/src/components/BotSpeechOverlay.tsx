@@ -36,7 +36,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
 
   const horizontalPad = uiStandard.screen.pagePadding + Math.max(insets.left, insets.right);
   const availableWidth = Math.max(220, width - horizontalPad * 2);
-  const contentMaxWidth = width >= 768 ? Math.min(680, availableWidth) : availableWidth;
+  const contentMaxWidth = Math.min(width >= 768 ? 430 : 380, availableWidth);
 
   const resetBubbleMotion = useCallback(() => {
     opacity.setValue(0);

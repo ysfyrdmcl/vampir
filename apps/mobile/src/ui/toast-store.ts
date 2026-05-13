@@ -16,10 +16,14 @@ interface ToastStoreState {
 }
 
 let nextToastId = 1;
+let lastToast: { text: string; at: number } | null = null;
 
 export const useToastStore = create<ToastStoreState>((set) => ({
   toast: null,
-  showToast: (text, variant = "gold", durationMs = 1600) =>
+  showToast: (text, variant = "gold", durationMs = 1600) => {
+    const now = Date.now();
+    if (lastToast?.text === text && now - lastToast.at < 2200) return;
+    lastToast = { text, at: now };
     set({
       toast: {
         id: nextToastId++,
@@ -27,7 +31,8 @@ export const useToastStore = create<ToastStoreState>((set) => ({
         variant,
         durationMs
       }
-    }),
+    });
+  },
   clearToast: (id) =>
     set((state) => ({
       toast: state.toast?.id === id ? null : state.toast

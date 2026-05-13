@@ -74,7 +74,7 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
             </Pressable>
           </View>
           <Text style={styles.subtitle} numberOfLines={2}>
-            En yeni üstte · Metinler sunucudan gelir
+            En yeni üstte
           </Text>
           <ScrollView
             style={[styles.scroll, { height: scrollAreaHeight, maxHeight: scrollAreaHeight }]}

@@ -1,7 +1,6 @@
 import type { LogFeedEntry } from "./log-feed-store";
 import {
   formatJournalRoundPrefix,
-  formatJournalRoundTur,
   formatPersonalTurnLogLine,
   journalPersonalPhaseLabel
 } from "../utils/journal-labels";
@@ -21,12 +20,10 @@ const GENERAL_EVENTS = new Set<string>([
   "vote.mayor_started",
   "vote.tie",
   "vote.revote_started",
-  "vote.execution",
   "summary.elimination",
   "summary.chain_elimination",
   "summary.night_no_elimination",
   "role.hunter.triggered",
-  "role.hunter.shot",
   "role.mayor.selected",
   "role.guard.protect",
   "game.over"
@@ -77,29 +74,29 @@ function isPersonalOnlyEvent(event: string): boolean {
 export function toReadableLogText(event: string, payload?: Record<string, unknown>): string {
   const p = payload ?? {};
   const rp = formatJournalRoundPrefix(p.round);
-  const rt = formatJournalRoundTur(p.round);
   if (event === "room.joined") return `Odaya katıldın (${String(p.roomCode ?? "-")}).`;
   if (event === "phase.night_started") return `${rp}Gece başladı.`;
   if (event === "phase.day_started") return `${rp}Gündüz başladı.`;
   if (event === "vote.started") return `${rp}Gündüz oylaması başladı.`;
   if (event === "vote.mayor_started") return `${rp}Başkan seçimi başladı.`;
   if (event === "vote.tie") {
-    return `${rp}Oylama berabere bitti. En çok oy alanlar: ${formatCandidates(p.tiedTopCandidates)}.`;
+    return `${rp}Oylar eşitlendi; tekrar oylama yapılacak. Adaylar: ${formatCandidates(p.tiedTopCandidates)}.`;
   }
-  if (event === "vote.revote_started") return `${rp}İkinci oylama başladı.`;
+  if (event === "vote.revote_started") return `${rp}Tekrar oylama başladı.`;
   if (event === "vote.execution") {
     const who = String(p.executedPlayerId ?? "bir oyuncu");
-    return `${rp}İnfaz: ${who} köyden gönderildi.`;
+    return `${rp}Köy kararı: ${who} gönderildi.`;
   }
   if (event === "summary.elimination") {
-    const source = String(p.source ?? "Day") === "Night" ? "Gece sonucu" : "Gündüz sonucu";
     const player = String(p.playerId ?? "bir oyuncu");
     const roleText = p.revealedRole ? ` Rol: ${toRoleLabel(p.revealedRole)}.` : "";
-    return `${rp}Sonuç (${source}): ${player} elendi.${roleText}`;
+    if (p.cause === "hunter") return `${rp}Avcı atışı: ${player} elendi.${roleText}`;
+    if (p.cause === "day_vote" || p.source === "Day") return `${rp}Köy kararı: ${player} gönderildi.${roleText}`;
+    return `${rp}Gece sona erdi: ${player} elendi.${roleText}`;
   }
   if (event === "summary.players_eliminated") return `Elenen oyuncular: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.chain_elimination") return `Aşık bağı tetiklendi. Birbirine bağlı oyuncular elendi: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
-  if (event === "summary.night_no_elimination") return `${rp}Gece kimse elenmedi.`;
+  if (event === "summary.night_no_elimination") return `${rp}Gece sona erdi: Kimse elenmedi.`;
   if (event === "game.phase.personal_turn_info") {
     return `${formatPersonalTurnLogLine(p)}.`;
   }
@@ -115,11 +112,11 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   }
   if (event === "personal.hunter.shot_selected") return `Son nefes hedefin: ${String(p.targetName ?? p.targetPlayerId ?? "hedef")}.`;
   if (event === "personal.guard.protect_selected") return `${String(p.targetName ?? p.targetPlayerId ?? "Hedef")} bugün oylamayla elenemez.`;
-  if (event === "role.hunter.triggered") return `${rp}Avcı son nefes hakkını kullanacak.`;
-  if (event === "role.hunter.shot") return `${rp}Avcı bir hedef seçti (${String(p.targetPlayerId ?? "-")}).`;
+  if (event === "role.hunter.triggered") return `${rp}Avcı son nefes hakkını kullanıyor.`;
+  if (event === "role.hunter.shot") return `${rp}Avcı atışı: ${String(p.targetPlayerId ?? "hedef")} elendi.`;
   if (event === "role.mayor.selected") return `${rp}Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;
   if (event === "role.guard.protect") return `${rp}Gardiyan koruma açtı (${String(p.protectedPlayerId ?? "-")}).`;
-  if (event === "game.over") return `Oyun bitti. Kazanan: ${toWinnerLabel(p.winner as string | null | undefined)}.`;
+  if (event === "game.over") return `Oyun bitti: ${toWinnerLabel(p.winner as string | null | undefined)} kazandı.`;
   return event;
 }
 

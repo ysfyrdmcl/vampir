@@ -65,13 +65,10 @@ export function WelcomeScreen({ navigation }: Props) {
         <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.heroCard} contentStyle={styles.heroCardContent}>
           <View style={styles.heroTopline}>
             <View style={styles.heroPill}>
-              <Ionicons name="moon-outline" size={14} color={colors.secondary} />
+              <Ionicons name="moon-outline" size={12} color={colors.secondary} />
               <Text style={styles.heroPillText}>GECE MECLİSİ</Text>
             </View>
-            <View style={styles.heroPillMuted}>
-              <Ionicons name="wifi-outline" size={14} color={colors.textDim} />
-              <Text style={styles.heroPillMutedText}>{connectionText}</Text>
-            </View>
+
           </View>
           <HeroBrandArea title="Vampir Köylü" subtitle="Aynı masada oynanan sosyal çıkarım oyunu" />
           <View style={styles.heroStats}>

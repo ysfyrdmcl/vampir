@@ -56,11 +56,12 @@ export function GameToast({ topOffset }: GameToastProps) {
   return (
     <Animated.View style={[styles.wrap, { top: topOffset ?? 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
       <CinematicMinorRibbon
-        title={isDanger ? "Uyarı" : "Hamle Alındı"}
-        subtitle={isDanger ? "Sistem" : "Durum"}
+        title={isDanger ? "Uyarı" : "Durum"}
+        subtitle={isDanger ? "Sistem" : undefined}
         body={activeToast.text}
         tone={isDanger ? "blood" : "gold"}
         style={styles.toast}
+        compact
       />
     </Animated.View>
   );
@@ -75,6 +76,6 @@ const styles = StyleSheet.create({
     zIndex: 30
   },
   toast: {
-    maxWidth: 430
+    maxWidth: 360
   }
 });

@@ -143,7 +143,7 @@ export function GameLogScreen(_: Props) {
       headerTitle="GÜNLÜK"
       showPauseOverlay={false}
       keyboardAware
-      keyboardExtraScrollPadding={spacing.xl}
+      keyboardExtraScrollPadding={spacing.xxl + spacing.md}
       keyboardAwareContentContainerStyle={styles.content}
     >
       <View style={styles.root}>
@@ -833,6 +833,11 @@ function eventHeadline(event: string, payload?: Record<string, unknown>): string
   if (event === "summary.night_no_elimination") return "Kimse elenmedi";
   if (event.startsWith("vote.tie")) return "Beraberlik";
   if (event.startsWith("vote.")) return "Oylama";
+  if (event === "summary.elimination") {
+    if (payload?.cause === "hunter") return "Avcı atışı";
+    if (payload?.cause === "day_vote" || payload?.source === "Day") return "Köy kararı";
+    return "Gece sonucu";
+  }
   if (event.startsWith("summary.")) return "Sonuç";
   if (event === "game.over") return "Oyun bitti";
   if (event.startsWith("personal.")) return "Kişisel bilgi";

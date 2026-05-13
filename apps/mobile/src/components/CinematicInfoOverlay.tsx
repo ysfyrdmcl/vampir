@@ -29,6 +29,7 @@ interface RibbonProps {
   chips?: string[];
   tone?: CinematicOverlayTone;
   style?: StyleProp<ViewStyle>;
+  compact?: boolean;
 }
 
 function toneStyle(tone: CinematicOverlayTone | undefined) {
@@ -78,14 +79,21 @@ function CinematicMajorOverlayBase({ payload, visual }: MajorProps) {
   );
 }
 
-function CinematicMinorRibbonBase({ title, body, subtitle, chips, tone = "neutral", style }: RibbonProps) {
+function CinematicMinorRibbonBase({ title, body, subtitle, chips, tone = "neutral", style, compact = false }: RibbonProps) {
   return (
-    <View style={[styles.ribbon, toneStyle(tone), style]}>
-      <ParchmentCornerSvg width={24} height={24} style={[styles.ribbonCorner, styles.ribbonCornerLeft]} opacity={0.22} />
-      <View style={styles.ribbonCopy}>
+    <View style={[styles.ribbon, compact ? styles.ribbonCompact : null, toneStyle(tone), style]}>
+      <ParchmentCornerSvg
+        width={compact ? 18 : 22}
+        height={compact ? 18 : 22}
+        style={[styles.ribbonCorner, styles.ribbonCornerLeft]}
+        opacity={compact ? 0.16 : 0.18}
+      />
+      <View style={[styles.ribbonCopy, compact ? styles.ribbonCopyCompact : null]}>
         {subtitle ? <Text style={styles.ribbonKicker}>{subtitle}</Text> : null}
         <Text style={styles.ribbonTitle} numberOfLines={1}>{title}</Text>
-        <Text style={styles.ribbonBody}>{body}</Text>
+        <Text style={[styles.ribbonBody, compact ? styles.ribbonBodyCompact : null]} numberOfLines={compact ? 2 : undefined}>
+          {body}
+        </Text>
         {chips?.length ? (
           <View style={styles.ribbonChips}>
             {chips.slice(0, 3).map((chip) => (
@@ -219,22 +227,33 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 10,
     overflow: "hidden",
     shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 }
   },
+  ribbonCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowOpacity: 0.16,
+    shadowRadius: 8
+  },
   ribbonCorner: {
     position: "absolute"
   },
   ribbonCornerLeft: {
-    left: 5,
-    top: 5
+    left: 7,
+    top: 8
   },
   ribbonCopy: {
     gap: 4,
-    paddingLeft: 8
+    paddingLeft: 18,
+    minWidth: 0
+  },
+  ribbonCopyCompact: {
+    gap: 2,
+    paddingLeft: 16
   },
   ribbonKicker: {
     color: colors.textDim,
@@ -254,6 +273,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 12.5,
     lineHeight: 18
+  },
+  ribbonBodyCompact: {
+    fontSize: 12,
+    lineHeight: 16
   },
   ribbonChips: {
     flexDirection: "row",

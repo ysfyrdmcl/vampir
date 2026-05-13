@@ -60,9 +60,11 @@ export function formatBotSpeechPhaseContext(phaseId: string): string {
   return `${phaseName} · Tur ${round}`;
 }
 
-/** Liste satırı: konuşmacı · niyet · ton (Türkçe). */
+/** Liste satırı: konuşmacı. Teknik niyet/ton kullanıcıya gösterilmez. */
 export function formatBotSpeechMetaLine(speakerName: string, intent: BotSpeechIntent, tone: BotSpeechTone): string {
-  return `${speakerName} · ${botSpeechIntentLabel(intent)} · ${botSpeechToneLabel(tone)}`;
+  void intent;
+  void tone;
+  return speakerName;
 }
 
 /**

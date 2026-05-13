@@ -84,7 +84,7 @@ export function BotSpeechBubble({ event, onPress, animatedStyle }: BotSpeechBubb
         subtitle="Söylenti"
         body={event.message}
         tone={tone}
-        chips={event.intent ? [event.intent.replace(/_/g, " ")] : undefined}
+        compact
       />
     </Pressable>
   );
