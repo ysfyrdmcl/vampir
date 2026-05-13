@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="goldFrame" x1="96" y1="48" x2="416" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF0B7"/>
+      <stop offset="42%" stop-color="#C98B36"/>
+      <stop offset="74%" stop-color="#7A4A1E"/>
+      <stop offset="100%" stop-color="#E7BF68"/>
+    </linearGradient>
+    <linearGradient id="warmVillage" x1="150" y1="116" x2="366" y2="426" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE3A2"/>
+      <stop offset="46%" stop-color="#D5963F"/>
+      <stop offset="100%" stop-color="#5A2A17"/>
+    </linearGradient>
+    <linearGradient id="obsidianBase" x1="132" y1="150" x2="386" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#23202A"/>
+      <stop offset="48%" stop-color="#0C0D15"/>
+      <stop offset="100%" stop-color="#05060B"/>
+    </linearGradient>
+    <radialGradient id="lanternGlow" cx="50%" cy="52%" r="56%">
+      <stop offset="0%" stop-color="#FFF8D8" stop-opacity="0.72"/>
+      <stop offset="45%" stop-color="#F2B95B" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#180704" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="badgeAura" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#F5C86C" stop-opacity="0.34"/>
+      <stop offset="70%" stop-color="#2A1A10" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="soft-glow">
+    <circle cx="256" cy="258" r="210" fill="url(#badgeAura)"/>
+    <ellipse cx="256" cy="430" rx="138" ry="28" fill="#02040A" opacity="0.32"/>
+  </g>
+
+  <g id="badge-frame">
+    <path fill="url(#goldFrame)" d="M256 44c24 29 72 60 134 70 11 2 19 11 19 22-4 169-54 283-138 345-9 7-21 7-30 0-84-62-134-176-138-345 0-11 8-20 19-22 62-10 110-41 134-70Z"/>
+    <path fill="#090D16" d="M256 84c23 22 62 43 108 53 8 2 14 9 14 18-8 133-47 228-122 287-75-59-114-154-122-287 0-9 6-16 14-18 46-10 85-31 108-53Z"/>
+    <path fill="url(#warmVillage)" d="M256 116c21 16 53 32 91 41 7 2 12 8 12 15-10 102-42 182-103 234-61-52-93-132-103-234 0-7 5-13 12-15 38-9 70-25 91-41Z"/>
+  </g>
+
+  <g id="lantern-aura">
+    <circle cx="256" cy="285" r="118" fill="url(#lanternGlow)"/>
+  </g>
+
+  <g id="village-house">
+    <path fill="url(#obsidianBase)" d="M158 294h196v105H158z"/>
+    <path fill="#070A12" d="M144 294l112-112 114 112H144Z"/>
+    <path fill="url(#goldFrame)" opacity="0.92" d="M170 289l86-86 88 86h-36l-52-52-51 52h-35Z"/>
+    <path fill="#111725" d="M187 301h138v88H187z"/>
+    <rect x="238" y="326" width="36" height="63" rx="8" fill="#3A1A12"/>
+    <rect x="197" y="321" width="24" height="34" rx="5" fill="#FFE3A2" opacity="0.76"/>
+    <rect x="291" y="321" width="24" height="34" rx="5" fill="#FFE3A2" opacity="0.72"/>
+    <path fill="#FFF4C8" opacity="0.38" d="M203 327h11v23h-11zM297 327h11v23h-11z"/>
+  </g>
+
+  <g id="candle-mark">
+    <path fill="#21100A" d="M238 218h36c9 0 16 7 16 16v58h-68v-58c0-9 7-16 16-16Z"/>
+    <path fill="#F2D083" d="M241 225h30c7 0 12 5 12 12v48h-54v-48c0-7 5-12 12-12Z" opacity="0.82"/>
+    <path fill="#FFF4C8" d="M256 166c20 32 10 55-3 76-11 17-9 32 4 46-28-7-45-29-45-57 0-27 20-45 44-65Z"/>
+    <path fill="#D95A2E" opacity="0.72" d="M260 194c10 19 4 33-6 47-6 9-5 18 3 27-18-6-27-19-25-36 2-16 15-27 28-38Z"/>
+  </g>
+
+  <g id="wheat-and-roof-details" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M148 379c32-16 63-17 94-2" stroke="#F2D083" stroke-width="9" opacity="0.72"/>
+    <path d="M364 379c-32-16-63-17-94-2" stroke="#F2D083" stroke-width="9" opacity="0.72"/>
+    <path d="M172 371c-7-27-1-52 18-74" stroke="#E7BF68" stroke-width="7" opacity="0.62"/>
+    <path d="M340 371c7-27 1-52-18-74" stroke="#E7BF68" stroke-width="7" opacity="0.62"/>
+  </g>
+
+  <g id="tiny-gold-details" fill="#F4D38A" opacity="0.82">
+    <path d="M256 95l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <path d="M127 378l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <path d="M385 378l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="178" cy="139" r="5"/>
+    <circle cx="334" cy="139" r="5"/>
+  </g>
+</svg>

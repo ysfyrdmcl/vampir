@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="goldFrame" x1="96" y1="48" x2="416" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF0B7"/>
+      <stop offset="42%" stop-color="#C98B36"/>
+      <stop offset="74%" stop-color="#7A4A1E"/>
+      <stop offset="100%" stop-color="#E7BF68"/>
+    </linearGradient>
+    <linearGradient id="moonBlue" x1="148" y1="104" x2="370" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DCEEFF"/>
+      <stop offset="42%" stop-color="#6E9DCD"/>
+      <stop offset="100%" stop-color="#132945"/>
+    </linearGradient>
+    <linearGradient id="obsidian" x1="126" y1="138" x2="392" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#20283A"/>
+      <stop offset="48%" stop-color="#0A0F1B"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+    <radialGradient id="eyeGlow" cx="50%" cy="48%" r="54%">
+      <stop offset="0%" stop-color="#FFF8D8"/>
+      <stop offset="38%" stop-color="#BFE4FF"/>
+      <stop offset="72%" stop-color="#3E6FA4"/>
+      <stop offset="100%" stop-color="#07101D"/>
+    </radialGradient>
+    <radialGradient id="badgeAura" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#9FD5FF" stop-opacity="0.42"/>
+      <stop offset="68%" stop-color="#203A61" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="soft-glow">
+    <circle cx="256" cy="258" r="210" fill="url(#badgeAura)"/>
+    <ellipse cx="256" cy="430" rx="138" ry="28" fill="#02040A" opacity="0.32"/>
+  </g>
+
+  <g id="badge-frame">
+    <path fill="url(#goldFrame)" d="M256 44c24 29 72 60 134 70 11 2 19 11 19 22-4 169-54 283-138 345-9 7-21 7-30 0-84-62-134-176-138-345 0-11 8-20 19-22 62-10 110-41 134-70Z"/>
+    <path fill="#080D18" d="M256 84c23 22 62 43 108 53 8 2 14 9 14 18-8 133-47 228-122 287-75-59-114-154-122-287 0-9 6-16 14-18 46-10 85-31 108-53Z"/>
+    <path fill="url(#moonBlue)" d="M256 116c21 16 53 32 91 41 7 2 12 8 12 15-10 102-42 182-103 234-61-52-93-132-103-234 0-7 5-13 12-15 38-9 70-25 91-41Z"/>
+  </g>
+
+  <g id="magnifier">
+    <circle cx="245" cy="246" r="92" fill="none" stroke="url(#goldFrame)" stroke-width="24"/>
+    <circle cx="245" cy="246" r="68" fill="#07101D" opacity="0.70"/>
+    <path fill="none" stroke="#FFF0B7" stroke-width="9" stroke-linecap="round" opacity="0.44" d="M192 205c25-33 72-46 113-26"/>
+    <path fill="url(#goldFrame)" d="M310 309l105 105c8 8 8 21 0 29l-8 8c-8 8-21 8-29 0L273 346l37-37Z"/>
+    <path fill="#FFF0B7" opacity="0.34" d="M326 326l72 72-18 18-72-72 18-18Z"/>
+  </g>
+
+  <g id="detective-eye">
+    <path fill="url(#eyeGlow)" d="M156 246c23-40 55-63 89-63s66 23 89 63c-23 40-55 63-89 63s-66-23-89-63Z"/>
+    <path fill="#07101D" opacity="0.72" d="M178 247c20-25 43-38 67-38s47 13 67 38c-20 25-43 38-67 38s-47-13-67-38Z"/>
+    <circle cx="245" cy="246" r="36" fill="#BFE4FF"/>
+    <circle cx="245" cy="246" r="22" fill="#102846"/>
+    <circle cx="236" cy="235" r="8" fill="#FFF8D8"/>
+    <path fill="none" stroke="#E7BF68" stroke-width="7" stroke-linecap="round" opacity="0.72" d="M171 246c21-35 46-52 74-52s53 17 74 52"/>
+    <path fill="none" stroke="#E7BF68" stroke-width="7" stroke-linecap="round" opacity="0.48" d="M171 246c21 35 46 52 74 52s53-17 74-52"/>
+  </g>
+
+  <g id="moon-crescent">
+    <path fill="#EAF5FF" opacity="0.86" d="M331 126c-31 13-53 42-56 76-4 41 22 78 61 89-15 13-35 20-56 20-49 0-89-40-89-89s40-89 89-89c19 0 37 6 51 17Z"/>
+    <path fill="#315A92" opacity="0.58" d="M333 126c-29 15-49 43-52 77-3 39 20 74 56 88-12 8-26 13-41 14 19-22 29-51 26-83-3-32-17-58-40-78 18-7 35-13 51-18Z"/>
+  </g>
+
+  <g id="clue-lines" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M149 355c35 15 70 15 105 0" stroke="#FFF0B7" stroke-width="8" opacity="0.58"/>
+    <path d="M165 379c26 10 52 10 78 0" stroke="#BFE4FF" stroke-width="6" opacity="0.46"/>
+    <path d="M350 166c21 11 42 12 63 4" stroke="#FFF0B7" stroke-width="7" opacity="0.50"/>
+  </g>
+
+  <g id="tiny-stars" fill="#F4D38A" opacity="0.82">
+    <path d="M256 95l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <path d="M124 374l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <path d="M386 374l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="178" cy="137" r="5"/>
+    <circle cx="337" cy="342" r="5"/>
+  </g>
+</svg>

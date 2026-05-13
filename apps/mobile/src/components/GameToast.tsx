@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Animated, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
-import { typography } from "../theme/typography";
 import { useToastStore, type GameToastPayload } from "../ui/toast-store";
-import { LiquidGlassSurface } from "../glass";
+import { CinematicMinorRibbon } from "./CinematicInfoOverlay";
 
 interface GameToastProps {
   topOffset?: number;
@@ -23,6 +20,12 @@ export function GameToast({ topOffset }: GameToastProps) {
   useEffect(() => {
     if (!toast) return;
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.log("[CINEMATIC_OVERLAY] compact_show", {
+        kind: toast.variant === "danger" ? "system-feedback" : "action-feedback",
+        id: toast.id
+      });
+    }
     setActiveToast(toast);
     opacity.setValue(0);
     translateY.setValue(-10);
@@ -52,16 +55,13 @@ export function GameToast({ topOffset }: GameToastProps) {
 
   return (
     <Animated.View style={[styles.wrap, { top: topOffset ?? 12 + insets.top, opacity, transform: [{ translateY }] }]} pointerEvents="none">
-      <LiquidGlassSurface
-        variant={isDanger ? "danger" : "panel"}
-        radius={999}
-        glow={isDanger}
+      <CinematicMinorRibbon
+        title={isDanger ? "Uyarı" : "Hamle Alındı"}
+        subtitle={isDanger ? "Sistem" : "Durum"}
+        body={activeToast.text}
+        tone={isDanger ? "blood" : "gold"}
         style={styles.toast}
-        contentStyle={styles.toastContent}
-      >
-        <Ionicons name={isDanger ? "alert-circle-outline" : "checkmark-circle-outline"} size={16} color={isDanger ? colors.danger : colors.secondary} />
-        <Text style={styles.text}>{activeToast.text}</Text>
-      </LiquidGlassSurface>
+      />
     </Animated.View>
   );
 }
@@ -69,25 +69,12 @@ export function GameToast({ topOffset }: GameToastProps) {
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    left: 0,
-    right: 0,
+    left: 16,
+    right: 16,
     alignItems: "center",
     zIndex: 30
   },
   toast: {
-    maxWidth: "92%",
-    minHeight: 36
-  },
-  toastContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6
-  },
-  text: {
-    color: colors.text,
-    fontFamily: typography.sansMedium,
-    fontSize: 12
+    maxWidth: 430
   }
 });

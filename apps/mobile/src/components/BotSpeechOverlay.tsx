@@ -98,6 +98,14 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
       return;
     }
 
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.log("[CINEMATIC_OVERLAY] compact_show", {
+        kind: "bot-speech",
+        phaseId: active.phaseId,
+        speakerPlayerId: active.speakerPlayerId
+      });
+    }
+
     resetBubbleMotion();
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: ENTER_MS, useNativeDriver: true }),

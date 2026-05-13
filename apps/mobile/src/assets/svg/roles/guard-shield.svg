@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="goldFrame" x1="94" y1="46" x2="418" y2="466" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF1BA"/>
+      <stop offset="40%" stop-color="#C98B36"/>
+      <stop offset="73%" stop-color="#7B471A"/>
+      <stop offset="100%" stop-color="#E8BF68"/>
+    </linearGradient>
+    <linearGradient id="guardBlue" x1="145" y1="104" x2="370" y2="426" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#EAF7FF"/>
+      <stop offset="42%" stop-color="#6EA9D6"/>
+      <stop offset="100%" stop-color="#10243D"/>
+    </linearGradient>
+    <linearGradient id="obsidianShield" x1="132" y1="134" x2="388" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#232B3B"/>
+      <stop offset="50%" stop-color="#09101C"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+    <linearGradient id="lockGold" x1="174" y1="150" x2="342" y2="386" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF3BF"/>
+      <stop offset="44%" stop-color="#D79B44"/>
+      <stop offset="100%" stop-color="#7F4A1C"/>
+    </linearGradient>
+    <radialGradient id="guardAura" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#BFE9FF" stop-opacity="0.48"/>
+      <stop offset="62%" stop-color="#315A92" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="45%" r="58%">
+      <stop offset="0%" stop-color="#F4FBFF" stop-opacity="0.82"/>
+      <stop offset="42%" stop-color="#8ED6FF" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#07101D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="soft-glow">
+    <circle cx="256" cy="258" r="212" fill="url(#guardAura)"/>
+    <ellipse cx="256" cy="430" rx="140" ry="28" fill="#02040A" opacity="0.32"/>
+  </g>
+
+  <g id="badge-frame">
+    <path fill="url(#goldFrame)" d="M256 44c24 29 73 61 136 70 11 2 19 11 19 22-4 170-55 284-140 347-9 7-21 7-30 0-85-63-136-177-140-347 0-11 8-20 19-22 63-9 112-41 136-70Z"/>
+    <path fill="#080D18" d="M256 84c23 22 62 44 109 54 8 2 14 9 14 18-8 134-47 230-123 289-76-59-115-155-123-289 0-9 6-16 14-18 47-10 86-32 109-54Z"/>
+    <path fill="url(#guardBlue)" d="M256 116c21 16 54 32 92 41 7 2 12 8 12 15-10 103-42 184-104 236-62-52-94-133-104-236 0-7 5-13 12-15 38-9 71-25 92-41Z"/>
+  </g>
+
+  <g id="main-shield">
+    <path fill="url(#goldFrame)" d="M256 136c24 24 72 47 126 55 9 1 16 9 15 19-8 119-47 205-125 268-10 8-23 8-33 0-78-63-117-149-125-268-1-10 6-18 15-19 55-8 103-31 127-55Z"/>
+    <path fill="url(#obsidianShield)" d="M256 170c22 17 58 33 100 41 6 1 11 7 10 14-10 91-43 159-110 212-67-53-100-121-110-212-1-7 4-13 10-14 42-8 78-24 100-41Z"/>
+    <path fill="url(#innerGlow)" d="M256 194c20 13 49 26 83 33-11 72-38 128-83 174-45-46-72-102-83-174 34-7 63-20 83-33Z"/>
+    <path fill="#FFFFFF" opacity="0.24" d="M189 234c9 63 31 113 67 151-26-21-50-58-65-99-9-24-12-42-2-52Z"/>
+  </g>
+
+  <g id="lock-rune">
+    <path fill="none" stroke="url(#lockGold)" stroke-width="20" stroke-linecap="round" d="M205 267v-34c0-31 22-56 51-56s51 25 51 56v34"/>
+    <rect x="189" y="256" width="134" height="102" rx="18" fill="url(#lockGold)"/>
+    <rect x="211" y="276" width="90" height="62" rx="12" fill="#07101D" opacity="0.78"/>
+    <path fill="#BFE9FF" d="M256 291c10 0 18 8 18 18 0 7-4 13-9 16l7 28h-32l7-28c-5-3-9-9-9-16 0-10 8-18 18-18Z"/>
+    <path fill="#FFF3BF" opacity="0.34" d="M216 266h83c-25 9-52 14-83 14v-14Z"/>
+  </g>
+
+  <g id="guard-runes" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M158 339c40 20 80 21 119 3" stroke="#FFF1BA" stroke-width="8" opacity="0.58"/>
+    <path d="M354 339c-40 20-80 21-119 3" stroke="#FFF1BA" stroke-width="8" opacity="0.58"/>
+    <path d="M171 358c32 13 63 13 94 0" stroke="#BFE9FF" stroke-width="6" opacity="0.44"/>
+    <path d="M341 358c-32 13-63 13-94 0" stroke="#BFE9FF" stroke-width="6" opacity="0.44"/>
+  </g>
+
+  <g id="tiny-sparks" fill="#F4D38A" opacity="0.84">
+    <path d="M256 95l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <path d="M124 372l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <path d="M388 372l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="178" cy="138" r="5"/>
+    <circle cx="334" cy="138" r="5"/>
+    <circle cx="256" cy="402" r="5"/>
+  </g>
+</svg>

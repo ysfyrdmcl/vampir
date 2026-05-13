@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="goldStroke" x1="26" y1="18" x2="214" y2="226" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF1BA"/>
+      <stop offset="42%" stop-color="#C98B36"/>
+      <stop offset="72%" stop-color="#7B471A"/>
+      <stop offset="100%" stop-color="#E8BF68"/>
+    </linearGradient>
+    <linearGradient id="parchmentFill" x1="34" y1="26" x2="192" y2="208" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF2CA" stop-opacity="0.72"/>
+      <stop offset="50%" stop-color="#C99A54" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#4E2814" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="cornerGlow" cx="22%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#FFF4C8" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#E0AA55" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="crimsonAccent" x1="44" y1="38" x2="174" y2="174" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B32642" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#4A0712" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+
+  <g id="soft-corner-glow">
+    <path fill="url(#cornerGlow)" d="M0 0h256v256H0V0Z"/>
+  </g>
+
+  <g id="parchment-corner-base">
+    <path fill="url(#parchmentFill)" d="M18 18h177c-77 27-128 78-155 155V18Z"/>
+    <path fill="none" stroke="url(#goldStroke)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M28 218V28h190"/>
+    <path fill="none" stroke="#FFF1BA" stroke-width="4" stroke-linecap="round" opacity="0.46" d="M47 198V47h151"/>
+  </g>
+
+  <g id="gothic-scrollwork" fill="none" stroke="url(#goldStroke)" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="9" d="M57 172c5-46 23-84 55-114"/>
+    <path stroke-width="7" d="M78 152c24 4 43-5 57-28 9-15 24-24 45-26"/>
+    <path stroke-width="7" d="M72 116c21 2 38-4 51-20 12-15 27-22 45-22"/>
+    <path stroke-width="6" d="M106 176c-16-30-12-56 12-78"/>
+    <path stroke-width="5" d="M121 133c22 9 42 7 59-8"/>
+  </g>
+
+  <g id="crimson-inlay" fill="none" stroke="url(#crimsonAccent)" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">
+    <path stroke-width="6" d="M54 54c55 12 95 42 120 90"/>
+    <path stroke-width="5" d="M54 83c35 7 61 25 79 55"/>
+    <path stroke-width="4" d="M84 53c34 18 58 44 72 79"/>
+  </g>
+
+  <g id="small-leaves" fill="url(#goldStroke)" opacity="0.90">
+    <path d="M72 169c22-9 42-7 61 6-20 11-40 9-61-6Z"/>
+    <path d="M133 70c19-10 37-11 55-3-16 13-34 14-55 3Z"/>
+    <path d="M111 113c16-5 30-2 43 9-14 7-28 4-43-9Z"/>
+  </g>
+
+  <g id="tiny-sparks" fill="#F4D38A" opacity="0.86">
+    <path d="M42 42l6 14 15 6-15 6-6 15-6-15-14-6 14-6 6-14Z"/>
+    <path d="M202 42l5 12 13 5-13 5-5 13-5-13-12-5 12-5 5-12Z"/>
+    <path d="M42 202l5 12 13 5-13 5-5 13-5-13-12-5 12-5 5-12Z"/>
+    <circle cx="84" cy="84" r="4"/>
+    <circle cx="158" cy="158" r="4"/>
+  </g>
+</svg>

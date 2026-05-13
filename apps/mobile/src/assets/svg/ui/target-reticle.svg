@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="focusGlow" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#FFF0B7" stop-opacity="0.20"/>
+      <stop offset="42%" stop-color="#B32642" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="76" y1="56" x2="438" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF1BA"/>
+      <stop offset="44%" stop-color="#C98B36"/>
+      <stop offset="76%" stop-color="#7B471A"/>
+      <stop offset="100%" stop-color="#E8BF68"/>
+    </linearGradient>
+    <linearGradient id="crimson" x1="88" y1="82" x2="430" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D94A58"/>
+      <stop offset="52%" stop-color="#8F1428"/>
+      <stop offset="100%" stop-color="#30050D"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="124" y1="114" x2="388" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#20283A"/>
+      <stop offset="52%" stop-color="#080D18"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+  </defs>
+
+  <g id="glow">
+    <circle cx="256" cy="256" r="230" fill="url(#focusGlow)"/>
+  </g>
+
+  <g id="corner-brackets" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M83 172V92h80" stroke="url(#gold)" stroke-width="18"/>
+    <path d="M349 92h80v80" stroke="url(#gold)" stroke-width="18"/>
+    <path d="M83 340v80h80" stroke="url(#gold)" stroke-width="18"/>
+    <path d="M349 420h80v-80" stroke="url(#gold)" stroke-width="18"/>
+
+    <path d="M112 172v-51h51" stroke="#FFF1BA" stroke-width="6" opacity="0.54"/>
+    <path d="M349 121h51v51" stroke="#FFF1BA" stroke-width="6" opacity="0.54"/>
+    <path d="M112 340v51h51" stroke="#FFF1BA" stroke-width="6" opacity="0.54"/>
+    <path d="M349 391h51v-51" stroke="#FFF1BA" stroke-width="6" opacity="0.54"/>
+  </g>
+
+  <g id="target-diamond">
+    <path fill="url(#dark)" stroke="url(#crimson)" stroke-width="12" d="M256 126l130 130-130 130-130-130 130-130Z"/>
+    <path fill="none" stroke="url(#gold)" stroke-width="8" opacity="0.75" d="M256 163l93 93-93 93-93-93 93-93Z"/>
+    <path fill="url(#crimson)" opacity="0.56" d="M256 196l60 60-60 60-60-60 60-60Z"/>
+    <circle cx="256" cy="256" r="24" fill="#FFF1BA" opacity="0.90"/>
+    <circle cx="256" cy="256" r="11" fill="#8F1428"/>
+  </g>
+
+  <g id="aim-lines" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 40v69" stroke="url(#crimson)" stroke-width="12"/>
+    <path d="M256 403v69" stroke="url(#crimson)" stroke-width="12"/>
+    <path d="M40 256h69" stroke="url(#crimson)" stroke-width="12"/>
+    <path d="M403 256h69" stroke="url(#crimson)" stroke-width="12"/>
+    <path d="M256 136v56m0 128v56m-120-120h56m128 0h56" stroke="#FFF1BA" stroke-width="6" opacity="0.58"/>
+  </g>
+
+  <g id="selection-teeth" fill="url(#gold)" opacity="0.84">
+    <path d="M256 73l13 27-13 18-13-18 13-27Z"/>
+    <path d="M256 439l-13-27 13-18 13 18-13 27Z"/>
+    <path d="M73 256l27-13 18 13-18 13-27-13Z"/>
+    <path d="M439 256l-27 13-18-13 18-13 27 13Z"/>
+  </g>
+
+  <g id="small-red-sparks" fill="#F4D38A" opacity="0.78">
+    <path d="M79 79l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <path d="M433 79l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <path d="M79 433l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <path d="M433 433l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+  </g>
+</svg>

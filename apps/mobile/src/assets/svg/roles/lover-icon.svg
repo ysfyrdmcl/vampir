@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="goldFrame" x1="94" y1="46" x2="418" y2="466" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF0B7"/>
+      <stop offset="40%" stop-color="#D49A44"/>
+      <stop offset="72%" stop-color="#7B471A"/>
+      <stop offset="100%" stop-color="#E8BF68"/>
+    </linearGradient>
+    <linearGradient id="loverField" x1="146" y1="104" x2="370" y2="426" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFD69A"/>
+      <stop offset="44%" stop-color="#B32642"/>
+      <stop offset="100%" stop-color="#2B050D"/>
+    </linearGradient>
+    <linearGradient id="heartCrimson" x1="158" y1="146" x2="354" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF8A86"/>
+      <stop offset="44%" stop-color="#C62B48"/>
+      <stop offset="100%" stop-color="#580914"/>
+    </linearGradient>
+    <linearGradient id="chainGold" x1="144" y1="168" x2="374" y2="386" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF3BF"/>
+      <stop offset="46%" stop-color="#D89B43"/>
+      <stop offset="100%" stop-color="#7B471A"/>
+    </linearGradient>
+    <radialGradient id="loverAura" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#FFB1A3" stop-opacity="0.44"/>
+      <stop offset="62%" stop-color="#B32642" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="heartGlow" cx="46%" cy="34%" r="58%">
+      <stop offset="0%" stop-color="#FFF0C8" stop-opacity="0.72"/>
+      <stop offset="52%" stop-color="#F06A72" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#30050D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="soft-glow">
+    <circle cx="256" cy="258" r="212" fill="url(#loverAura)"/>
+    <ellipse cx="256" cy="430" rx="140" ry="28" fill="#02040A" opacity="0.32"/>
+  </g>
+
+  <g id="badge-frame">
+    <path fill="url(#goldFrame)" d="M256 44c24 29 73 61 136 70 11 2 19 11 19 22-4 170-55 284-140 347-9 7-21 7-30 0-85-63-136-177-140-347 0-11 8-20 19-22 63-9 112-41 136-70Z"/>
+    <path fill="#080D18" d="M256 84c23 22 62 44 109 54 8 2 14 9 14 18-8 134-47 230-123 289-76-59-115-155-123-289 0-9 6-16 14-18 47-10 86-32 109-54Z"/>
+    <path fill="url(#loverField)" d="M256 116c21 16 54 32 92 41 7 2 12 8 12 15-10 103-42 184-104 236-62-52-94-133-104-236 0-7 5-13 12-15 38-9 71-25 92-41Z"/>
+  </g>
+
+  <g id="heart-symbol">
+    <path fill="url(#heartCrimson)" d="M256 371c-69-50-116-93-140-132-26-42-18-88 18-113 34-24 77-14 102 20 5 7 15 7 20 0 25-34 68-44 102-20 36 25 44 71 18 113-24 39-71 82-140 132Z"/>
+    <path fill="url(#heartGlow)" d="M230 163c-22-27-55-34-82-16-25 18-32 51-14 84 13 25 36 51 69 79-26-42-21-91 27-147Z" opacity="0.76"/>
+    <path fill="#FFF0C8" opacity="0.28" d="M176 154c29-15 57-7 78 21-35-12-65-6-90 20-3-17 1-31 12-41Z"/>
+  </g>
+
+  <g id="linked-chain" fill="none" stroke="url(#chainGold)" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="18" d="M166 303c-30-30-30-78 0-108 30-30 78-30 108 0"/>
+    <path stroke-width="18" d="M338 303c30-30 30-78 0-108-30-30-78-30-108 0"/>
+    <path stroke-width="10" d="M208 237c26-28 69-31 99-7" opacity="0.50"/>
+    <path stroke-width="10" d="M304 237c-26-28-69-31-99-7" opacity="0.50"/>
+  </g>
+
+  <g id="broken-shadow">
+    <path fill="#26050C" opacity="0.58" d="M256 368c28-22 52-43 72-63-31 15-65 20-102 14 8 17 18 33 30 49Z"/>
+    <path fill="none" stroke="#FFF0B7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.46" d="M255 187l-16 42 34 24-20 43"/>
+  </g>
+
+  <g id="lover-ribbons" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M152 372c45 21 90 23 135 6" stroke="#FFF0B7" stroke-width="8" opacity="0.56"/>
+    <path d="M360 372c-45 21-90 23-135 6" stroke="#FFF0B7" stroke-width="8" opacity="0.56"/>
+    <path d="M180 391c30 10 60 10 90 0" stroke="#FFB1A3" stroke-width="6" opacity="0.44"/>
+    <path d="M332 391c-30 10-60 10-90 0" stroke="#FFB1A3" stroke-width="6" opacity="0.44"/>
+  </g>
+
+  <g id="tiny-sparks" fill="#F4D38A" opacity="0.84">
+    <path d="M256 95l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <path d="M124 372l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <path d="M388 372l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="178" cy="138" r="5"/>
+    <circle cx="334" cy="138" r="5"/>
+    <circle cx="256" cy="405" r="5"/>
+  </g>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="batBody" x1="134" y1="124" x2="378" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#202B44"/>
+      <stop offset="52%" stop-color="#07101E"/>
+      <stop offset="100%" stop-color="#02050B"/>
+    </linearGradient>
+    <linearGradient id="batWing" x1="48" y1="176" x2="462" y2="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#050914"/>
+      <stop offset="48%" stop-color="#121B2D"/>
+      <stop offset="100%" stop-color="#050914"/>
+    </linearGradient>
+    <linearGradient id="crimsonEdge" x1="92" y1="164" x2="420" y2="346" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A61F3E" stop-opacity="0.72"/>
+      <stop offset="54%" stop-color="#4A0D1A" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#B5344C" stop-opacity="0.62"/>
+    </linearGradient>
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FFE3A6"/>
+      <stop offset="100%" stop-color="#C05B35"/>
+    </radialGradient>
+  </defs>
+
+  <g id="bat-shadow" opacity="0.38">
+    <ellipse cx="256" cy="366" rx="136" ry="28" fill="#00040A"/>
+  </g>
+
+  <g id="wings">
+    <path fill="url(#batWing)" d="M251 211c-40-42-79-66-116-72-37-5-65 9-88 38 38 2 58 18 70 40-29-1-57 11-79 38 35 6 58 23 72 51-23 6-41 20-55 43 71 3 126-8 166-34 34-22 50-53 53-91-5-4-12-8-23-13Z"/>
+    <path fill="url(#batWing)" d="M261 211c40-42 79-66 116-72 37-5 65 9 88 38-38 2-58 18-70 40 29-1 57 11 79 38-35 6-58 23-72 51 23 6 41 20 55 43-71 3-126-8-166-34-34-22-50-53-53-91 5-4 12-8 23-13Z"/>
+    <path fill="none" stroke="url(#crimsonEdge)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.72" d="M250 218c-38-40-74-60-108-62m-18 62c31 4 55 23 70 55m-78 37c43 3 81-6 112-27"/>
+    <path fill="none" stroke="url(#crimsonEdge)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.72" d="M262 218c38-40 74-60 108-62m18 62c-31 4-55 23-70 55m78 37c-43 3-81-6-112-27"/>
+  </g>
+
+  <g id="body">
+    <path fill="url(#batBody)" d="M256 167c23 0 44 15 55 40 10 24 8 54-2 82-12 34-31 64-53 64s-41-30-53-64c-10-28-12-58-2-82 11-25 32-40 55-40Z"/>
+    <path fill="#02050B" d="M225 174l-15-50 42 34-27 16Zm62 0 15-50-42 34 27 16Z"/>
+    <path fill="#1C2940" opacity="0.9" d="M234 211c-13 22-10 58 3 89 6 15 13 27 19 34 7-8 15-21 21-38 11-31 12-64 1-85-8-15-34-15-44 0Z"/>
+    <path fill="#E8DDAF" opacity="0.22" d="M228 194c-14 25-12 60-1 91 7 19 17 38 29 51-23-10-44-82-34-124 2-9 4-14 6-18Z"/>
+  </g>
+
+  <g id="face">
+    <ellipse cx="239" cy="226" rx="8" ry="10" fill="url(#eyeGlow)"/>
+    <ellipse cx="273" cy="226" rx="8" ry="10" fill="url(#eyeGlow)"/>
+    <path fill="#F4E6C1" d="M245 249l8 19 8-19c-5 3-11 3-16 0Z" opacity="0.9"/>
+    <path fill="none" stroke="#B8894C" stroke-width="5" stroke-linecap="round" opacity="0.42" d="M232 209c8-6 17-7 27-4m-6 0c11-3 20-2 28 4"/>
+  </g>
+
+  <g id="small-highlights" opacity="0.68">
+    <path fill="#C54758" d="M98 185l20 4-15 14-5-18Zm316 0-20 4 15 14 5-18Z"/>
+    <path fill="#A7B8D8" opacity="0.28" d="M166 176c29 8 56 24 80 49-38-18-70-27-104-29 6-8 14-15 24-20Zm180 0c-29 8-56 24-80 49 38-18 70-27 104-29-6-8-14-15-24-20Z"/>
+  </g>
+</svg>

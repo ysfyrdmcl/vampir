@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="waxCore" cx="43%" cy="35%" r="62%">
+      <stop offset="0%" stop-color="#D94A56"/>
+      <stop offset="46%" stop-color="#8D1527"/>
+      <stop offset="100%" stop-color="#370611"/>
+    </radialGradient>
+    <linearGradient id="waxEdge" x1="188" y1="138" x2="820" y2="858" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B72" stop-opacity="0.72"/>
+      <stop offset="48%" stop-color="#64101D" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#22030B" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="goldCrack" x1="256" y1="210" x2="724" y2="812" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE3A2"/>
+      <stop offset="46%" stop-color="#A86B2B"/>
+      <stop offset="100%" stop-color="#E6B85F"/>
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="48%" cy="43%" r="55%">
+      <stop offset="0%" stop-color="#FFE0A7" stop-opacity="0.26"/>
+      <stop offset="70%" stop-color="#C42F42" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#120208" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="seal-shadow" opacity="0.38">
+    <ellipse cx="512" cy="808" rx="296" ry="58" fill="#050107"/>
+  </g>
+
+  <g id="wax-seal">
+    <path fill="url(#waxEdge)" d="M512 117c48 0 83 34 124 41 44 8 88-13 130 3 43 16 59 64 92 93 34 30 84 40 106 80 22 39 4 87 14 132 9 43 43 80 39 126-5 45-46 73-62 115-16 43-6 92-37 126-31 33-82 32-121 55-39 24-61 69-105 80-44 11-87-16-132-12-45 4-84 36-129 27-44-8-71-50-111-70-40-19-90-13-124-43-34-30-35-80-59-118-24-39-69-61-80-105-11-44 16-87 12-132-4-45-36-84-27-129 8-44 50-71 70-111 19-40 13-90 43-124 30-34 80-35 118-59 39-24 61-69 105-80 44-11 87 16 132 12 6-1 13-1 20-1Z"/>
+    <path fill="url(#waxCore)" d="M512 164c41 0 71 27 106 34 39 8 79-8 114 7 36 15 49 56 77 82 28 26 71 36 88 71 17 34 1 75 8 113 8 38 36 70 31 109-5 38-40 62-55 98-15 36-8 78-35 106-27 29-70 28-105 48-34 20-54 58-92 66-37 8-73-15-111-12-38 3-72 30-110 21-37-8-60-43-94-59-35-17-77-10-106-35-29-26-30-69-50-102-21-33-58-53-67-91-8-37 15-73 12-111-3-38-30-72-21-110 8-37 43-60 59-94 17-35 10-77 35-106 26-29 69-30 102-50 33-21 53-58 91-67 37-8 73 15 111 12 4 0 8 0 12 0Z"/>
+    <path fill="url(#innerGlow)" d="M512 197c147 0 267 113 267 252 0 164-109 302-267 302S245 613 245 449c0-139 120-252 267-252Z"/>
+  </g>
+
+  <g id="pressed-ring" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="512" cy="510" r="247" stroke="#2A050D" stroke-width="34" opacity="0.42"/>
+    <circle cx="512" cy="510" r="216" stroke="url(#goldCrack)" stroke-width="12" opacity="0.56"/>
+    <path d="M302 503c13-100 91-180 193-193 84-10 165 26 214 91" stroke="#FFD990" stroke-width="8" opacity="0.28"/>
+  </g>
+
+  <g id="gothic-decision-mark">
+    <path fill="#170309" opacity="0.86" d="M512 275c36 73 87 128 153 165-43 17-82 46-116 86 23 49 63 84 119 105-79 10-130 44-156 101-27-57-78-91-157-101 56-21 96-56 119-105-34-40-73-69-116-86 66-37 117-92 154-165Z"/>
+    <path fill="url(#goldCrack)" d="M512 318c28 53 68 94 120 122-38 19-70 48-96 88 18 35 46 62 84 82-52 7-88 31-108 72-20-41-56-65-108-72 38-20 66-47 84-82-26-40-58-69-96-88 52-28 92-69 120-122Z" opacity="0.92"/>
+    <path fill="#4D0B18" d="M512 374c18 31 43 55 75 73-28 18-50 43-66 75 14 24 35 43 62 56-34 7-58 24-71 52-13-28-37-45-71-52 27-13 48-32 62-56-16-32-38-57-66-75 32-18 57-42 75-73Z"/>
+    <path fill="#FFE1A0" opacity="0.38" d="M512 331c-21 39-50 71-88 95 32-8 67-19 103-33-7-15-12-35-15-62Z"/>
+  </g>
+
+  <g id="gold-cracks" fill="none" stroke="url(#goldCrack)" stroke-linecap="round" stroke-linejoin="round" opacity="0.72">
+    <path stroke-width="9" d="M357 251c23 42 50 70 82 86"/>
+    <path stroke-width="7" d="M366 267c-20 10-39 13-58 10" opacity="0.7"/>
+    <path stroke-width="8" d="M697 315c-31 34-49 71-52 113"/>
+    <path stroke-width="6" d="M691 330c24-2 45-11 63-27" opacity="0.65"/>
+    <path stroke-width="8" d="M305 641c45-6 81-2 109 13"/>
+    <path stroke-width="7" d="M704 703c-39-18-69-43-90-75"/>
+    <path stroke-width="5" d="M715 716c21 5 42 3 63-5" opacity="0.62"/>
+  </g>
+
+  <g id="wax-highlights" opacity="0.38">
+    <path fill="#FFB0A0" d="M301 206c41-31 86-42 134-33-73 16-128 53-166 111 3-32 13-58 32-78Z"/>
+    <path fill="#F06C6F" d="M772 238c42 36 70 81 84 134-40-62-92-102-155-121 23-14 47-18 71-13Z" opacity="0.44"/>
+    <path fill="#120208" d="M256 760c49 58 113 91 192 101-75 20-145 3-211-50-10-18-4-35 19-51Z" opacity="0.5"/>
+  </g>
+
+  <g id="tiny-gold-dust" fill="#F7D58B" opacity="0.76">
+    <path d="M223 415l9 20 20 8-20 8-9 20-8-20-20-8 20-8 8-20Z"/>
+    <path d="M801 487l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="730" cy="233" r="6"/>
+    <circle cx="279" cy="688" r="5"/>
+    <circle cx="824" cy="675" r="5"/>
+  </g>
+</svg>

@@ -4,9 +4,15 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   View,
+  type ScrollViewProps,
+  type StyleProp,
+  type ViewStyle,
   useWindowDimensions
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +23,6 @@ import { BotSpeechOverlay } from "../components/BotSpeechOverlay";
 import { BotSpeechHistorySheet } from "../components/BotSpeechHistorySheet";
 import { GameToast } from "../components/GameToast";
 import { InGameTopBar } from "../components/InGameTopBar";
-import { ResultPopup } from "../components/ResultPopup";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
@@ -39,6 +44,11 @@ interface ScreenShellProps extends PropsWithChildren {
   showBottomNav?: boolean;
   showPauseOverlay?: boolean;
   contentDensity?: "default" | "game";
+  keyboardAware?: boolean;
+  keyboardVerticalOffset?: number;
+  keyboardExtraScrollPadding?: number;
+  keyboardShouldPersistTaps?: ScrollViewProps["keyboardShouldPersistTaps"];
+  keyboardAwareContentContainerStyle?: StyleProp<ViewStyle>;
 }
 
 function phaseLabelFromState(phase: GamePhase | null): string {
@@ -66,7 +76,12 @@ export function ScreenShell({
   showTopBar = true,
   showBottomNav = true,
   showPauseOverlay = true,
-  contentDensity = "default"
+  contentDensity = "default",
+  keyboardAware = false,
+  keyboardVerticalOffset,
+  keyboardExtraScrollPadding = spacing.lg,
+  keyboardShouldPersistTaps = "handled",
+  keyboardAwareContentContainerStyle
 }: ScreenShellProps) {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
@@ -257,7 +272,29 @@ export function ScreenShell({
             }
           ]}
         >
-          {children}
+          {keyboardAware ? (
+            <KeyboardAvoidingView
+              style={styles.keyboardAvoiding}
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              keyboardVerticalOffset={keyboardVerticalOffset ?? (shouldShowTopBar ? topBarHeight : insets.top)}
+            >
+              <ScrollView
+                style={styles.keyboardScroll}
+                contentContainerStyle={[
+                  styles.keyboardScrollContent,
+                  keyboardAwareContentContainerStyle,
+                  { paddingBottom: keyboardExtraScrollPadding }
+                ]}
+                keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                showsVerticalScrollIndicator={false}
+              >
+                {children}
+              </ScrollView>
+            </KeyboardAvoidingView>
+          ) : (
+            children
+          )}
         </Animated.View>
         <BotSpeechOverlay layoutTopOffset={shouldShowTopBar ? topBarHeight : insets.top + spacing.sm} />
         <BotSpeechHistorySheet visible={rumorsOpen} onClose={() => setRumorsOpen(false)} entries={botSpeechHistory} />
@@ -283,7 +320,6 @@ export function ScreenShell({
             </Text>
           </Animated.View>
         ) : null}
-        <ResultPopup />
         <GameToast topOffset={isGameTopBar ? topBarHeight + 8 : undefined} />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? bottomNavHeight : 0 }]}>
@@ -419,6 +455,15 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     alignSelf: "center"
+  },
+  keyboardAvoiding: {
+    flex: 1
+  },
+  keyboardScroll: {
+    flex: 1
+  },
+  keyboardScrollContent: {
+    flexGrow: 1
   },
   bottomNav: {
     position: "relative",

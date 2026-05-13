@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600">
+  <defs>
+    <linearGradient id="skyFade" x1="0" y1="110" x2="1600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#16233A" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#0A1020" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="forestDark" x1="0" y1="230" x2="1600" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F1726"/>
+      <stop offset="52%" stop-color="#060A13"/>
+      <stop offset="100%" stop-color="#10121B"/>
+    </linearGradient>
+    <linearGradient id="villageDark" x1="0" y1="300" x2="1600" y2="590" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#111622"/>
+      <stop offset="42%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#13070B"/>
+    </linearGradient>
+    <linearGradient id="roofEdge" x1="120" y1="220" x2="1480" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2A344A" stop-opacity="0.76"/>
+      <stop offset="46%" stop-color="#0A0F19" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#281018" stop-opacity="0.70"/>
+    </linearGradient>
+    <linearGradient id="windowGlow" x1="0" y1="350" x2="1600" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8D98E"/>
+      <stop offset="52%" stop-color="#FFC766"/>
+      <stop offset="100%" stop-color="#B86A32"/>
+    </linearGradient>
+    <linearGradient id="mistLow" x1="0" y1="445" x2="1600" y2="585" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DCEBFA" stop-opacity="0"/>
+      <stop offset="26%" stop-color="#DCEBFA" stop-opacity="0.20"/>
+      <stop offset="58%" stop-color="#FFF1C5" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#DCEBFA" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g id="sky-hint">
+    <rect x="0" y="0" width="1600" height="600" fill="url(#skyFade)"/>
+  </g>
+
+  <g id="distant-forest">
+    <path fill="url(#forestDark)" opacity="0.78" d="M0 318l38-70 35 70 48-98 48 98 36-76 42 76 57-120 60 120 42-84 45 84 58-108 56 108 40-76 44 76 62-130 67 130 41-78 43 78 51-99 53 99 40-82 44 82 61-116 63 116 43-86 48 86 56-105 58 105 38-75 45 75 53-96 54 96 40-71 38 71 55-112 60 112v108H0V318Z"/>
+    <path fill="#03060C" opacity="0.46" d="M0 354c158-28 296-32 414-12 101 17 197 41 324 23 116-16 196-45 316-32 119 12 246 50 546 4v123H0V354Z"/>
+  </g>
+
+  <g id="village-ground">
+    <path fill="url(#villageDark)" d="M0 402h1600v198H0z"/>
+    <path fill="#02040A" opacity="0.62" d="M0 493c126-28 252-29 379-4 132 25 250 23 354-8 108-32 218-30 331 6 143 45 321 40 536-16v129H0V493Z"/>
+  </g>
+
+  <g id="left-houses">
+    <path fill="url(#roofEdge)" d="M50 402l82-82 84 82H50Zm136 0l112-132 119 132H186Zm326 0l92-104 99 104H512Z"/>
+    <path fill="#050811" d="M77 402h112v116H77zm143 0h158v126H220zm318 0h135v121H538z"/>
+    <path fill="#03050B" d="M113 358h40v160h-40zm279-52h52v222h-52zm198 47h46v170h-46z"/>
+    <path fill="#050811" d="M93 360l39-70 43 70H93Zm365-18l44-78 48 78h-92Zm109 25l45-73 48 73h-93Z"/>
+    <rect x="118" y="430" width="18" height="31" rx="3" fill="url(#windowGlow)" opacity="0.72"/>
+    <rect x="264" y="430" width="22" height="36" rx="4" fill="url(#windowGlow)" opacity="0.78"/>
+    <rect x="329" y="444" width="18" height="29" rx="3" fill="url(#windowGlow)" opacity="0.58"/>
+    <rect x="596" y="427" width="18" height="31" rx="3" fill="url(#windowGlow)" opacity="0.62"/>
+  </g>
+
+  <g id="center-houses">
+    <path fill="url(#roofEdge)" d="M660 402l94-106 101 106H660Zm812 402-81-89-86 89h167Z"/>
+    <path fill="url(#roofEdge)" d="M802 402l142-170 151 170H802Zm1021 402-70-77-75 77h145Z"/>
+    <path fill="url(#roofEdge)" d="M1030 402l100-112 108 112H1030Z"/>
+    <path fill="#050811" d="M692 402h132v138H692zm842 0h142v138h-142z" opacity="0"/>
+    <path fill="#050811" d="M692 402h132v138H692zm849 0h0v0h0z"/>
+    <path fill="#050811" d="M838 402h220v148H838z"/>
+    <path fill="#050811" d="M1061 402h149v136h-149z"/>
+    <path fill="#03050B" d="M745 344h50v196h-50zm919 0h0v0h0z"/>
+    <path fill="#03050B" d="M925 260h64v290h-64zm111 330h0v0h0zm111 68h0v0h0"/>
+    <path fill="#03050B" d="M1114 345h51v193h-51z"/>
+    <path fill="#050811" d="M720 359l48-80 52 80H720Zm903 0h0v0h0Z"/>
+    <path fill="#050811" d="M893 289l63-118 68 118H893Zm1084 0h0v0h0Z"/>
+    <path fill="#050811" d="M1092 360l47-78 52 78h-99Z"/>
+    <rect x="754" y="431" width="19" height="34" rx="3" fill="url(#windowGlow)" opacity="0.70"/>
+    <rect x="918" y="418" width="24" height="43" rx="4" fill="url(#windowGlow)" opacity="0.82"/>
+    <rect x="980" y="432" width="20" height="35" rx="3" fill="url(#windowGlow)" opacity="0.58"/>
+    <rect x="1130" y="428" width="18" height="32" rx="3" fill="url(#windowGlow)" opacity="0.64"/>
+  </g>
+
+  <g id="right-houses">
+    <path fill="url(#roofEdge)" d="M1222 402l104-121 111 121H1222Zm1388 402-90-98-96 98h186Z"/>
+    <path fill="url(#roofEdge)" d="M1390 402l76-82 82 82H1390Z"/>
+    <path fill="#050811" d="M1255 402h151v134h-151zm1418 0h0v0h0z"/>
+    <path fill="#050811" d="M1414 402h106v115h-106z"/>
+    <path fill="#03050B" d="M1309 326h55v210h-55zm1456 326h0v0h0z"/>
+    <path fill="#03050B" d="M1453 361h42v156h-42z"/>
+    <path fill="#050811" d="M1281 340l54-91 59 91h-113Zm1433 340h0v0h0Z"/>
+    <path fill="#050811" d="M1434 368l39-68 43 68h-82Z"/>
+    <rect x="1318" y="423" width="20" height="36" rx="3" fill="url(#windowGlow)" opacity="0.68"/>
+    <rect x="1462" y="431" width="16" height="29" rx="3" fill="url(#windowGlow)" opacity="0.54"/>
+  </g>
+
+  <g id="graveyard-and-fence">
+    <path fill="#03050B" d="M438 448h13v64h-13zM466 448h13v64h-13zM494 448h13v64h-13z"/>
+    <path fill="#050811" d="M418 470h112v12H418z"/>
+    <path fill="#0A0F19" d="M1384 456c0-18 13-31 28-31s28 13 28 31v50h-56v-50Z"/>
+    <path fill="#0A0F19" d="M1368 498h88v16h-88z"/>
+    <path fill="#0A0F19" d="M1518 452c0-15 11-26 24-26s24 11 24 26v52h-48v-52Z"/>
+  </g>
+
+  <g id="low-mist">
+    <path fill="url(#mistLow)" d="M0 482c127-26 250-28 369-6 127 24 234 51 373 28 115-19 200-45 323-31 117 14 250 48 535-7v134H0V482Z"/>
+    <path fill="#EFF6FF" opacity="0.14" d="M144 520c118-18 220-13 306 15 91 30 194 31 309 3-87 48-199 63-334 44-97-14-191-34-281-62Zm716 20c122-36 236-32 342 12 119 50 251 49 398-3v51H850c-30-23-27-43 10-60Z"/>
+  </g>
+
+  <g id="tiny-window-sparks" fill="#F6D98E" opacity="0.72">
+    <circle cx="201" cy="474" r="4"/>
+    <circle cx="828" cy="465" r="4"/>
+    <circle cx="1200" cy="468" r="4"/>
+    <path d="M62 353l8 17 18 7-18 7-8 18-7-18-18-7 18-7 7-17Z"/>
+    <path d="M1535 344l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+  <defs>
+    <linearGradient id="mistMain" x1="0" y1="132" x2="1600" y2="378" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D8E5F7" stop-opacity="0"/>
+      <stop offset="15%" stop-color="#D8E5F7" stop-opacity="0.34"/>
+      <stop offset="45%" stop-color="#F3EBD7" stop-opacity="0.44"/>
+      <stop offset="76%" stop-color="#B8CAE6" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#D8E5F7" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mistBlue" x1="0" y1="92" x2="1600" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7F9DBD" stop-opacity="0"/>
+      <stop offset="23%" stop-color="#AFC3DD" stop-opacity="0.24"/>
+      <stop offset="58%" stop-color="#E9EEF7" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#7F9DBD" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mistIvory" x1="0" y1="250" x2="1600" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF4D7" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#FFF4D7" stop-opacity="0.22"/>
+      <stop offset="62%" stop-color="#DCE8F6" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#FFF4D7" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g id="back-mist" opacity="0.62">
+    <path fill="url(#mistBlue)" d="M0 184c94-35 171-39 253-12 67 23 125 21 194 0 75-23 148-33 239-9 80 21 141 28 224 6 87-23 176-30 273-4 81 22 147 22 223 0 65-19 126-20 194-2v118H0V184Z"/>
+    <path fill="#EFF6FF" opacity="0.12" d="M87 149c83-15 153-7 212 23 46 23 96 28 151 15-47 28-103 39-169 27-66-11-130-37-194-65Zm656 7c73-19 142-18 207 4 58 20 119 21 182 2-51 32-111 45-180 32-70-12-140-30-209-38Zm603 16c72-17 137-10 199 22 25 13 43 18 55 19v42c-63-3-111-16-145-38-35-23-71-38-109-45Z"/>
+  </g>
+
+  <g id="main-mist" opacity="0.78">
+    <path fill="url(#mistMain)" d="M0 278c76-31 154-44 236-28 72 15 124 44 207 38 84-5 120-43 206-52 82-8 133 23 207 41 98 23 161-19 244-26 101-8 162 36 251 42 79 5 147-22 249-50v181H0V278Z"/>
+    <path fill="#F6F0DD" opacity="0.22" d="M0 317c110-38 200-43 292-19 78 20 140 54 232 40 78-12 119-42 197-43 83-2 142 30 218 45 81 15 151-14 224-38 76-24 142-17 211 2 69 19 141 8 226-25v130H0v-92Z"/>
+    <path fill="#D8E7F8" opacity="0.20" d="M0 243c70-20 128-23 178-8 70 21 132 48 210 32 48-10 90-28 134-45 56-21 119-21 189-1 72 20 131 39 207 25 75-14 134-44 213-43 70 2 124 27 186 43 87 22 178 2 283-37v75c-102 35-196 45-281 26-64-15-117-38-185-39-74-2-132 25-204 39-84 16-150-3-226-24-67-19-125-19-179-1-48 16-90 34-145 42-79 11-139-11-207-34-51-17-108-16-173 3v-53Z"/>
+  </g>
+
+  <g id="front-mist" opacity="0.86">
+    <path fill="url(#mistIvory)" d="M0 372c73-19 143-22 211-8 73 14 137 38 218 27 81-12 129-38 206-37 76 1 131 31 206 45 87 16 152-9 230-28 88-21 159-11 235 17 79 29 173 25 294-16v128H0V372Z"/>
+    <path fill="#F9F2DE" opacity="0.24" d="M128 394c73-12 138-8 198 11 58 19 120 21 185 7-61 34-131 45-211 30-63-12-120-28-172-48Zm607 22c76-20 144-19 204 2 67 23 136 22 208-1-57 37-127 52-210 38-72-11-139-24-202-39Zm544-5c69-18 137-13 204 16 43 19 82 26 117 20v51c-72 9-130 0-175-25-43-24-92-45-146-62Z"/>
+  </g>
+
+  <g id="small-wisps" opacity="0.48" fill="none" stroke-linecap="round">
+    <path d="M104 248c74-22 147-22 221 0" stroke="#EDF5FF" stroke-width="18" opacity="0.28"/>
+    <path d="M450 203c57-18 118-18 184 0" stroke="#F8F0D8" stroke-width="14" opacity="0.24"/>
+    <path d="M805 237c81-24 160-23 237 1" stroke="#E0ECFA" stroke-width="18" opacity="0.24"/>
+    <path d="M1196 215c63-18 124-17 185 2" stroke="#F6EED8" stroke-width="15" opacity="0.22"/>
+    <path d="M310 354c91-20 177-18 258 6" stroke="#FFFFFF" stroke-width="16" opacity="0.18"/>
+    <path d="M948 365c112-28 218-27 318 3" stroke="#FFFFFF" stroke-width="16" opacity="0.18"/>
+  </g>
+</svg>

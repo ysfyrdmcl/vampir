@@ -11,9 +11,10 @@ import {
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
-import { Text, TextInput, type TextInputProps, type TextProps } from "react-native";
+import { StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BootSplash } from "../components/BootSplash";
+import { PhaseTransitionOverlay } from "../components/PhaseTransitionOverlay";
 import { logGameEvent } from "../logging/game-logger";
 import { connectSocket, emitJoinRoom, initSocketRuntime } from "../socket/runtime";
 import { loadDeviceId, loadLastRoomCode, loadNickname, loadSessionToken, saveDeviceId } from "../storage/session-storage";
@@ -141,7 +142,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" translucent backgroundColor="transparent" />
-      <RootNavigator />
+      <View style={styles.appRoot}>
+        <RootNavigator />
+        <PhaseTransitionOverlay phase={gameState?.phase ?? null} />
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1
+  }
+});

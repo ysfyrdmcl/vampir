@@ -20,6 +20,7 @@ import Reanimated, {
   useSharedValue,
   withTiming
 } from "react-native-reanimated";
+import { RoleAuraAnimation } from "../animations";
 import {
   ROLE_REVEAL_ART,
   ROLE_REVEAL_FRAME
@@ -425,6 +426,7 @@ export function RoleRevealCard({
             <View pointerEvents="none" style={[styles.edgeGlow, { borderColor: `${accent}35` }]} />
 
             <Reanimated.View style={[styles.face, styles.front, frontFlipStyle]}>
+              <RoleAuraAnimation role={role} color={accent} style={styles.closedAura} />
               <View style={styles.hiddenInner}>
                 <View style={[styles.closedInnerFrame, { borderColor: `${accent}45` }]}>
                   <View style={[styles.cornerMark, styles.cornerMarkTopLeft, { borderColor: `${accent}55` }]} />
@@ -465,6 +467,7 @@ export function RoleRevealCard({
             <Reanimated.View style={[styles.face, styles.back, backFlipStyle]}>
               <Animated.View style={[styles.revealedContent, contentStyle]}>
                 <View style={[styles.artFrame, { borderColor: `${accent}5c` }]}>
+                  <RoleAuraAnimation role={role} color={accent} size={118} style={styles.artAura} />
                   {roleArt ? (
                     <Animated.View style={[styles.artParallaxWrap, artParallaxStyle]}>
                       <ImageBackground
@@ -663,6 +666,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
+  closedAura: {
+    top: "31%",
+    alignSelf: "center"
+  },
   back: {
     backgroundColor: "rgba(5,6,8,0.22)",
     alignItems: "center",
@@ -785,6 +792,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 }
+  },
+  artAura: {
+    top: "12%",
+    alignSelf: "center",
+    zIndex: 1
   },
   art: {
     width: "100%",

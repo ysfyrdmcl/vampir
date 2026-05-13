@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="moonCore" cx="42%" cy="34%" r="56%">
+      <stop offset="0%" stop-color="#FFF6D8" stop-opacity="1"/>
+      <stop offset="42%" stop-color="#D9E9FA" stop-opacity="1"/>
+      <stop offset="76%" stop-color="#8FAFD4" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#3B5680" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="moonAura" cx="50%" cy="48%" r="54%">
+      <stop offset="0%" stop-color="#DCEEFF" stop-opacity="0.46"/>
+      <stop offset="54%" stop-color="#678BBC" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#06101F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldOrnament" x1="232" y1="142" x2="790" y2="844" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8D98E"/>
+      <stop offset="50%" stop-color="#A56E2A"/>
+      <stop offset="100%" stop-color="#E8C46F"/>
+    </linearGradient>
+    <linearGradient id="batDark" x1="256" y1="312" x2="748" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#030711"/>
+      <stop offset="52%" stop-color="#101A2C"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+    <linearGradient id="crimsonAccent" x1="320" y1="270" x2="722" y2="554" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A9223D" stop-opacity="0.62"/>
+      <stop offset="100%" stop-color="#4C0C18" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+
+  <g id="moon-aura">
+    <circle cx="512" cy="492" r="392" fill="url(#moonAura)"/>
+    <circle cx="512" cy="492" r="305" fill="none" stroke="#D8ECFF" stroke-width="12" opacity="0.16"/>
+    <circle cx="512" cy="492" r="248" fill="none" stroke="#F4D68A" stroke-width="7" opacity="0.18"/>
+  </g>
+
+  <g id="gothic-ornament" fill="none" stroke="url(#goldOrnament)" stroke-linecap="round" stroke-linejoin="round" opacity="0.76">
+    <path stroke-width="18" d="M512 109c33 49 82 83 145 103"/>
+    <path stroke-width="18" d="M512 109c-33 49-82 83-145 103"/>
+    <path stroke-width="13" d="M263 296c-52 78-77 158-73 239"/>
+    <path stroke-width="13" d="M761 296c52 78 77 158 73 239"/>
+    <path stroke-width="10" d="M236 381c33-5 65 2 95 20"/>
+    <path stroke-width="10" d="M788 381c-33-5-65 2-95 20"/>
+    <path stroke-width="12" d="M302 740c48 60 118 99 210 118"/>
+    <path stroke-width="12" d="M722 740c-48 60-118 99-210 118"/>
+    <path stroke-width="8" d="M397 823c23-24 61-37 115-37 54 0 92 13 115 37" opacity="0.58"/>
+  </g>
+
+  <g id="night-moon">
+    <circle cx="512" cy="492" r="242" fill="url(#moonCore)"/>
+    <path fill="#0A1425" opacity="0.22" d="M643 292c-52 34-89 87-104 148-23 95 17 193 97 246-36 29-81 47-130 47-132 0-239-107-239-239 0-131 106-238 237-239 50 0 98 14 139 37Z"/>
+    <path fill="#FFFFFF" opacity="0.28" d="M387 337c-48 38-79 97-79 163 0 51 19 98 49 134-47-37-78-94-78-159 0-83 51-154 123-185-4 14-9 29-15 47Z"/>
+    <circle cx="421" cy="417" r="33" fill="#7794BE" opacity="0.34"/>
+    <circle cx="586" cy="370" r="45" fill="#6F8DBA" opacity="0.24"/>
+    <circle cx="615" cy="563" r="30" fill="#5876A2" opacity="0.25"/>
+    <circle cx="472" cy="641" r="24" fill="#496A98" opacity="0.22"/>
+    <path fill="#FFF4CE" opacity="0.34" d="M391 303c48-23 103-29 159-15-72 8-127 36-166 84-8-25-6-48 7-69Z"/>
+  </g>
+
+  <g id="bats">
+    <path fill="url(#batDark)" d="M279 401c-24-21-48-34-72-37-25-4-45 6-60 26 26 1 41 11 49 27-20 0-40 8-55 26 25 4 42 16 52 36-16 4-29 13-39 29 48 2 86-5 114-23 23-15 34-36 36-62-4-6-12-13-25-22Z"/>
+    <path fill="url(#batDark)" d="M309 401c24-21 48-34 72-37 25-4 45 6 60 26-26 1-41 11-49 27 20 0 40 8 55 26-25 4-42 16-52 36 16 4 29 13 39 29-48 2-86-5-114-23-23-15-34-36-36-62 4-6 12-13 25-22Z"/>
+    <ellipse cx="294" cy="426" rx="28" ry="46" fill="#07101E"/>
+    <path fill="#07101E" d="M276 393l-10-34 29 23-19 11Zm36 0 10-34-29 23 19 11Z"/>
+    <path fill="url(#crimsonAccent)" d="M154 510c47 2 85-6 114-25 12-8 21-17 27-28-40 18-84 24-132 16-5 10-8 22-9 37Zm716 0c-47 2-85-6-114-25-12-8-21-17-27-28 40 18 84 24 132 16 5 10 8 22 9 37Z" opacity="0.38"/>
+
+    <path fill="#050914" opacity="0.84" d="M663 317c-17-14-35-23-53-25-18-3-32 4-43 18 19 1 29 8 35 19-14 0-28 6-39 19 18 3 30 11 37 26-12 3-21 9-28 21 35 1 62-4 82-17 17-11 24-26 26-45-3-4-8-9-17-16Z"/>
+    <path fill="#050914" opacity="0.84" d="M684 317c17-14 35-23 53-25 18-3 32 4 43 18-19 1-29 8-35 19 14 0 28 6 39 19-18 3-30 11-37 26 12 3 21 9 28 21-35 1-62-4-82-17-17-11-24-26-26-45 3-4 8-9 17-16Z"/>
+    <ellipse cx="674" cy="334" rx="20" ry="33" fill="#08111E" opacity="0.9"/>
+    <path fill="#08111E" opacity="0.9" d="M661 311l-7-24 21 16-14 8Zm26 0 7-24-21 16 14 8Z"/>
+
+    <path fill="#060A13" opacity="0.72" d="M502 642c-13-10-26-16-39-18-14-2-25 3-33 14 14 1 22 6 26 14-10 0-21 4-29 14 14 2 23 8 28 19-9 2-16 7-21 15 26 1 46-3 61-13 13-8 18-19 20-33-3-3-7-7-13-12Z"/>
+    <path fill="#060A13" opacity="0.72" d="M518 642c13-10 26-16 39-18 14-2 25 3 33 14-14 1-22 6-26 14 10 0 21 4 29 14-14 2-23 8-28 19 9 2 16 7 21 15-26 1-46-3-61-13-13-8-18-19-20-33 3-3 7-7 13-12Z"/>
+    <ellipse cx="510" cy="654" rx="15" ry="24" fill="#070F1B" opacity="0.78"/>
+  </g>
+
+  <g id="stars" fill="#F6E6B8" opacity="0.84">
+    <path d="M218 237l10 23 24 9-24 9-10 24-9-24-24-9 24-9 9-23Z"/>
+    <path d="M813 241l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <path d="M212 682l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <circle cx="333" cy="178" r="7"/>
+    <circle cx="734" cy="720" r="6"/>
+    <circle cx="850" cy="604" r="5"/>
+    <circle cx="159" cy="535" r="5"/>
+  </g>
+</svg>

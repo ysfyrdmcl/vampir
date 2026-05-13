@@ -1,10 +1,8 @@
 import type { BotSpeechEvent } from "@vampir-koylu/shared";
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "../theme/colors";
-import { spacing } from "../theme/spacing";
-import { typography } from "../theme/typography";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { CinematicMinorRibbon, type CinematicOverlayTone } from "./CinematicInfoOverlay";
 
 export type BotSpeechDisplayTone =
   | "neutral"
@@ -31,44 +29,18 @@ export function resolveBotSpeechDisplayTone(event: BotSpeechEvent): BotSpeechDis
   return "neutral";
 }
 
-function toneCardStyle(displayTone: BotSpeechDisplayTone) {
+function ribbonTone(displayTone: BotSpeechDisplayTone): CinematicOverlayTone {
   switch (displayTone) {
     case "accusing":
-      return {
-        borderColor: "rgba(229,57,53,0.45)",
-        backgroundColor: "rgba(28,10,10,0.92)",
-        shadowColor: "#c62828"
-      };
+      return "blood";
     case "defensive":
-      return {
-        borderColor: "rgba(233,195,73,0.42)",
-        backgroundColor: "rgba(24,20,10,0.92)",
-        shadowColor: colors.secondary
-      };
-    case "suspicious":
-      return {
-        borderColor: "rgba(170,137,132,0.5)",
-        backgroundColor: "rgba(16,14,18,0.94)",
-        shadowColor: "#6d5a7a"
-      };
-    case "deceptive":
-      return {
-        borderColor: "rgba(142,36,170,0.38)",
-        backgroundColor: "rgba(18,10,22,0.93)",
-        shadowColor: "#8e24aa"
-      };
     case "confident":
-      return {
-        borderColor: "rgba(233,195,73,0.5)",
-        backgroundColor: "rgba(22,18,8,0.93)",
-        shadowColor: colors.secondaryDim
-      };
+      return "gold";
+    case "suspicious":
+    case "deceptive":
+      return "night";
     default:
-      return {
-        borderColor: "rgba(170,137,132,0.28)",
-        backgroundColor: "rgba(12,12,14,0.94)",
-        shadowColor: "#000"
-      };
+      return "neutral";
   }
 }
 
@@ -99,29 +71,21 @@ export interface BotSpeechBubbleProps {
 
 export function BotSpeechBubble({ event, onPress, animatedStyle }: BotSpeechBubbleProps) {
   const displayTone = useMemo(() => resolveBotSpeechDisplayTone(event), [event]);
-  const accent = toneCardStyle(displayTone);
+  const tone = ribbonTone(displayTone);
   const inner = (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="Köy söylentisini kapat ve sıradakini göster"
-      style={({ pressed }) => [
-        styles.card,
-        {
-          borderColor: accent.borderColor,
-          backgroundColor: accent.backgroundColor,
-          shadowColor: accent.shadowColor,
-          shadowOpacity: displayTone === "deceptive" ? 0.35 : displayTone === "confident" ? 0.28 : 0.2,
-          shadowRadius: displayTone === "deceptive" ? 14 : 10,
-          shadowOffset: { width: 0, height: 0 },
-          opacity: pressed ? 0.92 : 1
-        }
-      ]}
+      style={({ pressed }) => [styles.pressable, { opacity: pressed ? 0.9 : 1 }]}
     >
-      <Text style={styles.speakerLine} numberOfLines={1}>
-        Bot · {event.speakerName}
-      </Text>
-      <Text style={styles.messageLine}>{event.message}</Text>
+      <CinematicMinorRibbon
+        title={event.speakerName}
+        subtitle="Söylenti"
+        body={event.message}
+        tone={tone}
+        chips={event.intent ? [event.intent.replace(/_/g, " ")] : undefined}
+      />
     </Pressable>
   );
 
@@ -145,27 +109,7 @@ export function BotSpeechBubble({ event, onPress, animatedStyle }: BotSpeechBubb
 }
 
 const styles = StyleSheet.create({
-  card: {
-    width: "100%",
-    maxWidth: "100%",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    elevation: 6
-  },
-  speakerLine: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 11,
-    letterSpacing: 1.1,
-    marginBottom: 6
-  },
-  messageLine: {
-    flexShrink: 1,
-    color: colors.text,
-    fontFamily: typography.serifSemi,
-    fontSize: 15,
-    lineHeight: 21
+  pressable: {
+    width: "100%"
   }
 });

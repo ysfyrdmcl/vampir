@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="dropCrimson" x1="170" y1="82" x2="344" y2="438" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D84A5F"/>
+      <stop offset="42%" stop-color="#8E1428"/>
+      <stop offset="100%" stop-color="#3A0610"/>
+    </linearGradient>
+    <linearGradient id="dropShadow" x1="214" y1="142" x2="328" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5E0817" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#080107" stop-opacity="0.68"/>
+    </linearGradient>
+    <radialGradient id="warmHighlight" cx="36%" cy="24%" r="44%">
+      <stop offset="0%" stop-color="#FFE1B0" stop-opacity="0.86"/>
+      <stop offset="62%" stop-color="#F1A06B" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#F1A06B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldEdge" x1="174" y1="112" x2="312" y2="428" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8B765" stop-opacity="0.50"/>
+      <stop offset="55%" stop-color="#A56A30" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#F0CA7A" stop-opacity="0.24"/>
+    </linearGradient>
+  </defs>
+
+  <g id="drop-ground-shadow" opacity="0.35">
+    <ellipse cx="256" cy="444" rx="94" ry="26" fill="#060107"/>
+  </g>
+
+  <g id="blood-drop">
+    <path fill="url(#dropCrimson)" d="M256 52c-44 72-95 139-120 207-27 73-10 142 39 180 45 35 117 35 162 0 49-38 66-107 39-180-25-68-76-135-120-207Z"/>
+    <path fill="url(#dropShadow)" d="M296 140c32 49 65 101 82 149 25 69 4 132-47 165-36 23-89 26-130 8 65 2 121-37 139-99 16-56-2-119-44-223Z" opacity="0.82"/>
+    <path fill="url(#warmHighlight)" d="M231 108c-33 52-70 104-89 158-18 51-9 101 22 134 23 25 53 36 83 34-54-23-81-70-74-126 7-59 42-118 84-185-8-8-16-13-26-15Z" opacity="0.72"/>
+    <path fill="none" stroke="url(#goldEdge)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" d="M256 74c-42 68-88 130-110 193-22 63-10 121 32 154" opacity="0.78"/>
+    <path fill="#FFF0C8" opacity="0.54" d="M206 220c-15 31-21 61-15 89 4 19 13 35 25 47-29-14-46-42-48-74-1-28 10-54 38-62Z"/>
+    <path fill="#FF9A78" opacity="0.34" d="M296 360c-11 18-26 31-45 38 33 0 59-14 76-40 13-20 18-43 14-69-9 30-24 54-45 71Z"/>
+  </g>
+
+  <g id="tiny-crimson-sparks" opacity="0.55">
+    <path fill="#B3263E" d="M162 172l10 22 22 8-22 9-10 22-9-22-22-9 22-8 9-22Z"/>
+    <path fill="#7D1022" d="M366 218l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <circle cx="346" cy="156" r="6" fill="#CF3A50"/>
+    <circle cx="148" cy="330" r="5" fill="#8E1428"/>
+  </g>
+</svg>

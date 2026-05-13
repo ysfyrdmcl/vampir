@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="leftCrimson" x1="0" y1="0" x2="520" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8E1428" stop-opacity="0.82"/>
+      <stop offset="48%" stop-color="#4A0712" stop-opacity="0.44"/>
+      <stop offset="100%" stop-color="#100107" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rightCrimson" x1="1600" y1="0" x2="1080" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8E1428" stop-opacity="0.78"/>
+      <stop offset="48%" stop-color="#4A0712" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#100107" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="topCrimson" x1="0" y1="0" x2="1600" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2A030B" stop-opacity="0.64"/>
+      <stop offset="24%" stop-color="#A51E35" stop-opacity="0.46"/>
+      <stop offset="54%" stop-color="#61101D" stop-opacity="0.22"/>
+      <stop offset="82%" stop-color="#A51E35" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#2A030B" stop-opacity="0.62"/>
+    </linearGradient>
+    <linearGradient id="bottomCrimson" x1="0" y1="1000" x2="1600" y2="670" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#160107" stop-opacity="0.76"/>
+      <stop offset="28%" stop-color="#7E1022" stop-opacity="0.42"/>
+      <stop offset="56%" stop-color="#B32642" stop-opacity="0.22"/>
+      <stop offset="82%" stop-color="#7E1022" stop-opacity="0.44"/>
+      <stop offset="100%" stop-color="#160107" stop-opacity="0.76"/>
+    </linearGradient>
+    <radialGradient id="edgeGlow" cx="50%" cy="50%" r="64%">
+      <stop offset="0%" stop-color="#B32642" stop-opacity="0"/>
+      <stop offset="58%" stop-color="#B32642" stop-opacity="0.04"/>
+      <stop offset="82%" stop-color="#7E1022" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#22020A" stop-opacity="0.72"/>
+    </radialGradient>
+    <linearGradient id="goldCrack" x1="0" y1="210" x2="1600" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F1C56D" stop-opacity="0.42"/>
+      <stop offset="45%" stop-color="#A86A2B" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#F1C56D" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <g id="transparent-center-vignette">
+    <rect x="0" y="0" width="1600" height="1000" fill="url(#edgeGlow)"/>
+  </g>
+
+  <g id="left-edge-shape">
+    <path fill="url(#leftCrimson)" d="M0 0h344c-76 82-111 165-105 249 5 75 50 135 51 208 1 75-46 135-43 212 4 101 70 187 143 331H0V0Z"/>
+    <path fill="#B32642" opacity="0.16" d="M0 72c120 38 192 102 216 190 20 75-12 146-4 218 10 86 68 159 70 256 1 67-19 128-60 184H0V72Z"/>
+    <path fill="#1A0208" opacity="0.38" d="M0 0h146c-36 136-41 250-14 342 25 83 22 160-8 230-33 77-35 173 11 288H0V0Z"/>
+  </g>
+
+  <g id="right-edge-shape">
+    <path fill="url(#rightCrimson)" d="M1600 0h-344c76 82 111 165 105 249-5 75-50 135-51 208-1 75 46 135 43 212-4 101-70 187-143 331h390V0Z"/>
+    <path fill="#B32642" opacity="0.14" d="M1600 72c-120 38-192 102-216 190-20 75 12 146 4 218-10 86-68 159-70 256-1 67 19 128 60 184h222V72Z"/>
+    <path fill="#1A0208" opacity="0.38" d="M1600 0h-146c36 136 41 250 14 342-25 83-22 160 8 230 33 77 35 173-11 288h135V0Z"/>
+  </g>
+
+  <g id="top-bottom-edge-shapes">
+    <path fill="url(#topCrimson)" d="M0 0h1600v205c-139-37-257-46-356-27-105 20-194 44-306 20-95-21-175-64-287-48-101 15-181 62-292 53-96-8-207-42-359 7V0Z"/>
+    <path fill="url(#bottomCrimson)" d="M0 1000h1600V785c-132 42-252 52-360 31-105-21-198-55-313-33-93 17-176 59-287 47-110-12-204-56-323-39-90 13-187 47-317 15v194Z"/>
+  </g>
+
+  <g id="organic-cracks" fill="none" stroke="url(#goldCrack)" stroke-linecap="round" stroke-linejoin="round" opacity="0.64">
+    <path stroke-width="9" d="M118 168c58 42 91 96 98 163"/>
+    <path stroke-width="6" d="M156 225c-28 9-55 9-82 0" opacity="0.62"/>
+    <path stroke-width="8" d="M1397 188c-56 45-86 100-91 166"/>
+    <path stroke-width="6" d="M1360 244c28 8 55 7 81-3" opacity="0.62"/>
+    <path stroke-width="7" d="M246 775c-48-35-79-77-93-127"/>
+    <path stroke-width="7" d="M1354 775c48-35 79-77 93-127"/>
+    <path stroke-width="5" d="M508 95c74 24 145 24 214 0" opacity="0.35"/>
+    <path stroke-width="5" d="M880 904c86-25 169-24 248 4" opacity="0.35"/>
+  </g>
+
+  <g id="crimson-specks" fill="#B32642" opacity="0.48">
+    <circle cx="96" cy="432" r="9"/>
+    <circle cx="174" cy="596" r="6"/>
+    <circle cx="1488" cy="408" r="8"/>
+    <circle cx="1416" cy="603" r="6"/>
+    <circle cx="376" cy="102" r="5"/>
+    <circle cx="1232" cy="112" r="5"/>
+    <circle cx="438" cy="890" r="6"/>
+    <circle cx="1180" cy="870" r="5"/>
+  </g>
+</svg>

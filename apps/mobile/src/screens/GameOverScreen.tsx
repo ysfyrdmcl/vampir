@@ -2,7 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { GameOverTransition } from "../animations";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { DeadSealOverlay } from "../components/DeadSealOverlay";
@@ -42,6 +43,17 @@ export function GameOverScreen({ navigation }: Props) {
     ? "Karanlık çöktü ve avcılar artık avlanan oldu."
     : "Köy dayanışma ile geceyi atlattı.";
 
+  useEffect(() => {
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.log("[SVG_TRANSITION]", {
+        phase: "GameOver",
+        resultKind: null,
+        transitionKind: winnerReady ? "game-over" : "neutral",
+        winner
+      });
+    }
+  }, [winner, winnerReady]);
+
   const exitToHome = () => {
     emitLeaveRoom();
     useGameStore.getState().setErrorCode(null);
@@ -64,6 +76,7 @@ export function GameOverScreen({ navigation }: Props) {
         <Text style={styles.title}>Oyun Bitti</Text>
 
         <View style={[styles.winnerCard, isVampireWin ? styles.winnerCardVampire : styles.winnerCardVillager]}>
+          <GameOverTransition key={winner} winner={winner} />
           <View style={[styles.winnerIconWrap, isVampireWin ? styles.winnerIconVampire : styles.winnerIconVillager]}>
             <Ionicons name={winnerIcon} size={34} color={isVampireWin ? colors.primaryBright : colors.secondary} />
           </View>
@@ -211,9 +224,13 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   winnerCard: {
+    position: "relative",
+    overflow: "hidden",
     borderWidth: 1,
     borderRadius: 16,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: 156,
     alignItems: "center",
     gap: 10
   },

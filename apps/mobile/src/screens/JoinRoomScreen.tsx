@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
@@ -73,85 +73,85 @@ export function JoinRoomScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenShell scene="join" headerTitle="ODAYA KATIL">
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
-          <View style={styles.introIcon}>
-            <Ionicons name="people-outline" size={26} color={colors.secondary} />
-          </View>
-          <Text style={styles.kicker}>DAVET ODASI</Text>
-          <Text style={styles.title}>Karanlık meclise davet edildin.</Text>
-          <Text style={styles.introText}>Oda kodunu gir, lakabını doğrula ve aynı masadaki oyuna katıl.</Text>
-          <View style={styles.introChips}>
-            <LiquidGlassChip iconName="clipboard-outline" label="Yapıştır" onPress={pasteRoomCode} style={styles.introChip} textStyle={styles.introChipText} />
-            {lastRoomCode ? (
-              <LiquidGlassChip iconName="time-outline" label={`Son oda: ${lastRoomCode}`} onPress={() => normalizeRoomCode(lastRoomCode)} style={styles.introChip} textStyle={styles.introChipText} />
-            ) : null}
-          </View>
-        </LiquidGlassSurface>
+    <ScreenShell
+      scene="join"
+      headerTitle="ODAYA KATIL"
+      keyboardAware
+      keyboardExtraScrollPadding={spacing.xxl}
+      keyboardAwareContentContainerStyle={styles.content}
+    >
+      <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
+        <View style={styles.introIcon}>
+          <Ionicons name="people-outline" size={26} color={colors.secondary} />
+        </View>
+        <Text style={styles.kicker}>DAVET ODASI</Text>
+        <Text style={styles.title}>Karanlık meclise davet edildin.</Text>
+        <Text style={styles.introText}>Oda kodunu gir, lakabını doğrula ve aynı masadaki oyuna katıl.</Text>
+        <View style={styles.introChips}>
+          <LiquidGlassChip iconName="clipboard-outline" label="Yapıştır" onPress={pasteRoomCode} style={styles.introChip} textStyle={styles.introChipText} />
+          {lastRoomCode ? (
+            <LiquidGlassChip iconName="time-outline" label={`Son oda: ${lastRoomCode}`} onPress={() => normalizeRoomCode(lastRoomCode)} style={styles.introChip} textStyle={styles.introChipText} />
+          ) : null}
+        </View>
+      </LiquidGlassSurface>
 
-        <LiquidGlassSurface variant="panel" radius={uiStandard.screen.cardRadius} style={styles.card} contentStyle={styles.cardContent}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>ODA KODU</Text>
-          </View>
-          <View style={styles.codeEntry}>
-            <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
-              {roomCodeSlots.map((char, index) => (
-                <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null, char !== "•" ? styles.slotFilled : null]}>
-                  <Text style={[styles.slotChar, char === "•" ? styles.slotPlaceholder : null]}>{char}</Text>
-                </View>
-              ))}
-            </Pressable>
-            <TextInput
-              ref={codeInputRef}
-              style={styles.hiddenCodeInput}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              keyboardType="ascii-capable"
-              maxLength={6}
-              value={roomCode}
-              onChangeText={normalizeRoomCode}
-              textContentType="oneTimeCode"
-              caretHidden
-            />
-          </View>
-
-          <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
+      <LiquidGlassSurface variant="panel" radius={uiStandard.screen.cardRadius} style={styles.card} contentStyle={styles.cardContent}>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>ODA KODU</Text>
+        </View>
+        <View style={styles.codeEntry}>
+          <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
+            {roomCodeSlots.map((char, index) => (
+              <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null, char !== "•" ? styles.slotFilled : null]}>
+                <Text style={[styles.slotChar, char === "•" ? styles.slotPlaceholder : null]}>{char}</Text>
+              </View>
+            ))}
+          </Pressable>
           <TextInput
-            style={styles.nameInput}
-            placeholder="Lakabını yaz"
-            placeholderTextColor="rgba(203,194,188,0.44)"
-            value={nickname}
-            onChangeText={setNickname}
-            returnKeyType="join"
-            onSubmitEditing={joinRoom}
+            ref={codeInputRef}
+            style={styles.hiddenCodeInput}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            keyboardType="ascii-capable"
+            maxLength={6}
+            value={roomCode}
+            onChangeText={normalizeRoomCode}
+            textContentType="oneTimeCode"
+            caretHidden
           />
-        </LiquidGlassSurface>
+        </View>
 
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} disabled={!canJoin} />
-        {!canJoin ? <Text style={styles.disabledHint}>{joinDisabledReason}</Text> : null}
-        <PrimaryButton
-          label="Menüye Dön"
-          iconName="arrow-back-outline"
-          variant="ghost"
-          compact
-          onPress={goBackToMenu}
-          style={styles.backButton}
+        <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
+        <TextInput
+          style={styles.nameInput}
+          placeholder="Lakabını yaz"
+          placeholderTextColor="rgba(203,194,188,0.44)"
+          value={nickname}
+          onChangeText={setNickname}
+          returnKeyType="join"
+          onSubmitEditing={joinRoom}
         />
-      </ScrollView>
+      </LiquidGlassSurface>
+
+      {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+      <PrimaryButton label="Katıl" iconName="log-in-outline" onPress={joinRoom} disabled={!canJoin} />
+      {!canJoin ? <Text style={styles.disabledHint}>{joinDisabledReason}</Text> : null}
+      <PrimaryButton
+        label="Menüye Dön"
+        iconName="arrow-back-outline"
+        variant="ghost"
+        compact
+        onPress={goBackToMenu}
+        style={styles.backButton}
+      />
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1
-  },
   content: {
     flexGrow: 1,
     gap: spacing.md,
-    paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
   introCard: {

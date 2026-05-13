@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900">
+  <defs>
+    <radialGradient id="dawnSun" cx="50%" cy="46%" r="60%">
+      <stop offset="0%" stop-color="#FFF8D8"/>
+      <stop offset="34%" stop-color="#FFD98A"/>
+      <stop offset="68%" stop-color="#D8903D"/>
+      <stop offset="100%" stop-color="#53331F"/>
+    </radialGradient>
+    <radialGradient id="dawnAura" cx="50%" cy="50%" r="64%">
+      <stop offset="0%" stop-color="#FFF0B7" stop-opacity="0.58"/>
+      <stop offset="52%" stop-color="#DFA24D" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#07111F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldRay" x1="338" y1="90" x2="1058" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF4C8"/>
+      <stop offset="44%" stop-color="#D99A42"/>
+      <stop offset="100%" stop-color="#7E4B1E"/>
+    </linearGradient>
+    <linearGradient id="villageWarm" x1="134" y1="610" x2="1268" y2="850" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1B1A22"/>
+      <stop offset="42%" stop-color="#0A0D16"/>
+      <stop offset="100%" stop-color="#24130C"/>
+    </linearGradient>
+    <linearGradient id="mistDawn" x1="0" y1="646" x2="1400" y2="846" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E7F1FF" stop-opacity="0"/>
+      <stop offset="22%" stop-color="#E7F1FF" stop-opacity="0.30"/>
+      <stop offset="54%" stop-color="#FFF1C5" stop-opacity="0.40"/>
+      <stop offset="82%" stop-color="#C7D8EF" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#E7F1FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="brokenSeal" x1="522" y1="490" x2="878" y2="768" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B0711" stop-opacity="0.86"/>
+      <stop offset="54%" stop-color="#150309" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+
+  <g id="sun-layer">
+    <circle cx="700" cy="365" r="342" fill="url(#dawnAura)"/>
+    <path fill="url(#goldRay)" opacity="0.82" d="M700 53l30 186h-60l30-186Zm0 624l-30-166h60l-30 166ZM388 365l170-30v60l-170-30Zm624 0l-170 30v-60l170 30ZM481 146l128 109-43 42-85-151Zm438 0l-85 151-43-42 128-109ZM481 584l85-151 43 42-128 109Zm438 0L791 475l43-42 85 151Z"/>
+    <circle cx="700" cy="365" r="220" fill="url(#dawnSun)"/>
+    <path fill="#FFF7D5" opacity="0.32" d="M583 211c-47 37-77 95-77 160 0 48 17 92 46 127-45-36-74-91-74-153 0-74 42-139 104-171-2 13-1 26 1 37Z"/>
+    <path fill="#7D3320" opacity="0.18" d="M842 212c45 40 73 99 73 164 0 122-99 221-221 221-68 0-129-31-169-79 43 26 95 38 150 32 124-14 210-123 197-247-4-33-14-64-30-91Z"/>
+    <circle cx="628" cy="323" r="32" fill="#A85F2B" opacity="0.17"/>
+    <circle cx="765" cy="281" r="46" fill="#8E4823" opacity="0.15"/>
+  </g>
+
+  <g id="hopeful-gothic-ornament" fill="none" stroke="url(#goldRay)" stroke-linecap="round" stroke-linejoin="round" opacity="0.70">
+    <path stroke-width="15" d="M342 221c92-101 212-151 358-151s266 50 358 151"/>
+    <path stroke-width="10" d="M287 438c-20-99 1-190 63-272"/>
+    <path stroke-width="10" d="M1113 438c20-99-1-190-63-272"/>
+    <path stroke-width="10" d="M330 759c88 52 211 79 370 79s282-27 370-79"/>
+    <path stroke-width="7" d="M483 789c47-25 119-38 217-38s170 13 217 38" opacity="0.48"/>
+  </g>
+
+  <g id="village-layer">
+    <path fill="url(#villageWarm)" d="M112 642h1176v188H112z"/>
+    <path fill="#070A12" d="M146 642l83-82 84 82H146Zm164 0l108-124 113 124H310Zm246 0l127-151 134 151H556Zm280 0l91-100 97 100H836Zm169 0l66-72 79 72h-145Z"/>
+    <path fill="#050811" d="M384 548h68v282h-68zm334-93h78v375h-78zm229 120h59v255h-59zm-720 44h50v211h-50z"/>
+    <path fill="#080B13" d="M357 557l61-99 66 99H357Zm333-67l65-132 70 132H690Zm232 95l51-87 56 87H922Zm-711 51l41-67 44 67H211Z"/>
+    <rect x="411" y="661" width="24" height="42" rx="4" fill="#FFD98A" opacity="0.76"/>
+    <rect x="736" y="600" width="25" height="48" rx="4" fill="#FFE3A2" opacity="0.70"/>
+    <rect x="960" y="669" width="20" height="38" rx="4" fill="#FFD98A" opacity="0.58"/>
+    <rect x="242" y="681" width="18" height="34" rx="3" fill="#FFD98A" opacity="0.55"/>
+  </g>
+
+  <g id="broken-dark-seal" opacity="0.72">
+    <path fill="url(#brokenSeal)" d="M603 548c-29 39-58 68-87 86 45 0 82 11 111 34 14-42 40-78 78-108-39 1-73-3-102-12Z"/>
+    <path fill="url(#brokenSeal)" d="M774 534c29 34 65 59 109 75-43 16-78 41-106 75-18-38-46-72-84-102 35-10 62-26 81-48Z"/>
+    <path fill="none" stroke="#E7BF68" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.62" d="M609 556c38 22 75 29 111 20m56-37c-20 37-45 65-76 84"/>
+  </g>
+
+  <g id="clearing-mist">
+    <path fill="url(#mistDawn)" opacity="0.82" d="M0 702c122-36 236-43 342-22 113 22 205 57 332 39 107-15 177-49 285-40 113 10 211 51 441-8v229H0V702Z"/>
+    <path fill="#FFF2C8" opacity="0.24" d="M160 772c94-23 182-18 264 14 80 31 163 35 250 12-78 50-172 67-282 48-78-13-155-38-232-74Zm670 12c116-36 225-32 329 12 78 34 158 38 241 10v94H856c-34-36-43-75-26-116Z"/>
+    <path fill="#D8E8F8" opacity="0.30" d="M0 805c93-21 186-22 280-2 99 20 193 20 281 0 83-19 166-21 249-4 88 18 170 15 246-9 108-34 223-37 344-8v118H0v-95Z"/>
+  </g>
+
+  <g id="gold-sparks" fill="#F7D98E" opacity="0.88">
+    <path d="M250 206l13 29 30 12-30 11-13 31-12-31-31-11 31-12 12-29Z"/>
+    <path d="M1137 244l11 24 25 10-25 10-11 26-10-26-25-10 25-10 10-24Z"/>
+    <path d="M1091 623l9 20 21 8-21 8-9 22-8-22-21-8 21-8 8-20Z"/>
+    <path d="M314 607l8 18 19 7-19 8-8 19-8-19-18-8 18-7 8-18Z"/>
+    <circle cx="197" cy="515" r="6"/>
+    <circle cx="1202" cy="505" r="5"/>
+    <circle cx="699" cy="92" r="6"/>
+    <circle cx="520" cy="720" r="5"/>
+  </g>
+</svg>

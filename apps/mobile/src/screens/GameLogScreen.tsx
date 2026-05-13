@@ -137,7 +137,15 @@ export function GameLogScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="day" bottomNavActiveIndex={1} headerTitle="GÜNLÜK" showPauseOverlay={false}>
+    <ScreenShell
+      scene="day"
+      bottomNavActiveIndex={1}
+      headerTitle="GÜNLÜK"
+      showPauseOverlay={false}
+      keyboardAware
+      keyboardExtraScrollPadding={spacing.xl}
+      keyboardAwareContentContainerStyle={styles.content}
+    >
       <View style={styles.root}>
         {entryToast ? (
           <Animated.View pointerEvents="none" style={[styles.entryToast, { opacity: toastOpacity, transform: [{ translateY: toastY }] }]}>
@@ -145,7 +153,6 @@ export function GameLogScreen(_: Props) {
             <Text style={styles.entryToastText}>{entryToast}</Text>
           </Animated.View>
         ) : null}
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Günlük</Text>
         <GlassSegmented
           activeIndex={tab === "general" ? 0 : 1}
@@ -322,7 +329,6 @@ export function GameLogScreen(_: Props) {
             </View>
           </View>
         )) : null}
-      </ScrollView>
       </View>
     </ScreenShell>
   );
@@ -394,10 +400,10 @@ function GlassSegmented({
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1
+    flex: 1,
+    gap: 8
   },
-  scroll: { flex: 1 },
-  content: { gap: 8, paddingBottom: spacing.xl },
+  content: { gap: 8 },
   title: {
     color: colors.text,
     fontFamily: typography.serif,

@@ -9,7 +9,6 @@ import { HeroBrandArea } from "../components/HeroBrandArea";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { LiquidGlassSurface } from "../glass";
-import { MotionHealthBadge } from "../motion";
 import { useGameStore } from "../store/game-store";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -24,6 +23,13 @@ import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Welcome">;
 type IconName = ComponentProps<typeof Ionicons>["name"];
+type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
+
+function connectionDotStyle(status: ConnectionStatus) {
+  if (status === "connected") return styles.statusConnected;
+  if (status === "connecting") return styles.statusConnecting;
+  return styles.statusDisconnected;
+}
 
 export function WelcomeScreen({ navigation }: Props) {
   const connectionStatus = useGameStore((s) => s.connectionStatus);
@@ -101,10 +107,9 @@ export function WelcomeScreen({ navigation }: Props) {
             </View>
             <View style={styles.metaRow}>
               <View style={styles.statusPill}>
-                <View style={[styles.statusDot, connectionStatus === "connected" ? styles.statusConnected : styles.statusDisconnected]} />
+                <View style={[styles.statusDot, connectionDotStyle(connectionStatus)]} />
                 <Text style={styles.statusText}>{connectionText}</Text>
               </View>
-              <MotionHealthBadge />
               <Text style={styles.metaText}>v0.1.0</Text>
             </View>
           </View>
@@ -215,10 +220,25 @@ const styles = StyleSheet.create({
     borderRadius: 4
   },
   statusConnected: {
-    backgroundColor: colors.secondary
+    backgroundColor: "#58c16f",
+    shadowColor: "#58c16f",
+    shadowOpacity: 0.38,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 }
+  },
+  statusConnecting: {
+    backgroundColor: colors.secondary,
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 }
   },
   statusDisconnected: {
-    backgroundColor: colors.textDim
+    backgroundColor: colors.primaryBright,
+    shadowColor: colors.primaryBright,
+    shadowOpacity: 0.34,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 }
   },
   statusText: {
     color: colors.textDim,

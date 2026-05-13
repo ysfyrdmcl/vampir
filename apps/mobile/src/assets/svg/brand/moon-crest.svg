@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="moonGlow" cx="38%" cy="34%" r="58%">
+      <stop offset="0%" stop-color="#FFF3D0" stop-opacity="1"/>
+      <stop offset="48%" stop-color="#B9CBE8" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#46648F" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="goldEdge" x1="180" y1="144" x2="772" y2="850" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F4D38A"/>
+      <stop offset="46%" stop-color="#A9712B"/>
+      <stop offset="100%" stop-color="#E7BF68"/>
+    </linearGradient>
+    <linearGradient id="crestBlue" x1="330" y1="265" x2="625" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#243C64" stop-opacity="0.94"/>
+      <stop offset="100%" stop-color="#07111F" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="windowGold" x1="420" y1="648" x2="588" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE7A6"/>
+      <stop offset="100%" stop-color="#B9782E"/>
+    </linearGradient>
+  </defs>
+
+  <g id="outer-gold-rim" opacity="0.96">
+    <path fill="url(#goldEdge)" d="M523 101c-92 10-178 55-244 129-83 93-126 220-116 346 14 172 126 309 269 364 52 20 111 30 176 27-98-40-178-118-219-218-44-107-43-228 1-337 43-106 126-196 241-248-34-42-69-63-108-63Z"/>
+  </g>
+
+  <g id="crescent-moon">
+    <path fill="url(#moonGlow)" d="M521 136c-83 11-158 53-216 120-73 85-109 198-99 312 14 157 116 282 247 332 39 15 82 23 129 23 16 0 32-1 49-3-115-42-206-131-250-247-36-96-31-203 15-300 45-95 128-173 236-215-34-17-72-25-111-22Z"/>
+    <path fill="#0B1424" opacity="0.82" d="M620 158c-102 43-181 119-223 213-45 101-45 212-4 311 43 103 126 184 235 225 20 7 41 12 63 16-74 34-158 37-236 9-143-51-257-185-276-358-13-122 23-245 103-339 67-78 156-125 254-134 31-3 62-1 84 57Z"/>
+    <path fill="#D9E7FA" opacity="0.86" d="M426 223c-48 34-90 84-116 143-46 104-41 223 14 325 28 52 69 97 118 130-44-44-73-93-91-150-29-95-17-196 32-281 32-56 74-94 126-128-24-20-49-33-83-39Z"/>
+  </g>
+
+  <g id="inner-crest" opacity="0.96">
+    <path fill="url(#goldEdge)" d="M485 309c14 0 111 50 144 71 10 6 15 16 14 28-12 173-72 300-158 369-7 6-18 6-25 0-87-69-146-196-158-369-1-12 4-22 14-28 36-23 152-71 169-71Z"/>
+    <path fill="url(#crestBlue)" d="M485 349c13 0 89 38 117 55 7 4 10 10 10 18-12 140-57 247-127 308-7 6-14 6-21 0-71-61-116-168-128-308 0-8 3-14 10-18 29-18 126-55 139-55Z"/>
+    <path fill="#FFF2C8" opacity="0.34" d="M388 415c3 71 18 135 43 188 15 32 34 62 58 87-17 19-18 19-26 12-58-54-95-149-108-273 0-6 3-10 8-13 7-4 16-8 25-12Z"/>
+  </g>
+
+  <g id="village-silhouette">
+    <path fill="#050A13" d="M295 704h374v86H295z"/>
+    <path fill="#070E19" d="M313 704l54-55 52 55h-106Zm109 0 68-78 71 78H422Zm147 0 45-47 50 47h-95Z"/>
+    <path fill="#070E19" d="M383 638h52v152h-52zM526 604h45v186h-45zM596 668h35v122h-35z"/>
+    <path fill="#050A13" d="M360 662l49-72 51 72h-100Zm151-34 39-83 41 83h-80Zm74 54 29-50 31 50h-60Z"/>
+    <rect x="404" y="697" width="18" height="31" rx="3" fill="url(#windowGold)" opacity="0.86"/>
+    <rect x="474" y="719" width="22" height="38" rx="4" fill="url(#windowGold)" opacity="0.78"/>
+    <rect x="540" y="682" width="18" height="33" rx="3" fill="url(#windowGold)" opacity="0.78"/>
+    <rect x="611" y="715" width="14" height="27" rx="3" fill="url(#windowGold)" opacity="0.62"/>
+  </g>
+
+  <g id="gothic-ornament" fill="none" stroke="url(#goldEdge)" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">
+    <path stroke-width="18" d="M251 781c-42-18-68-47-84-86"/>
+    <path stroke-width="18" d="M705 781c43-18 70-47 86-86"/>
+    <path stroke-width="11" d="M210 719c21 11 46 14 70 7"/>
+    <path stroke-width="11" d="M748 719c-22 11-47 14-71 7"/>
+    <path stroke-width="10" d="M195 648c-12-27-16-55-10-84"/>
+    <path stroke-width="10" d="M768 648c12-27 16-55 10-84"/>
+  </g>
+
+  <g id="moon-stars" fill="#F6E8BC" opacity="0.82">
+    <path d="M240 366l11 28 29 10-29 11-11 29-11-29-29-11 29-10 11-28Z"/>
+    <path d="M695 306l8 20 21 8-21 8-8 21-8-21-21-8 21-8 8-20Z"/>
+    <circle cx="299" cy="269" r="8"/>
+    <circle cx="742" cy="475" r="7"/>
+    <circle cx="664" cy="213" r="6"/>
+  </g>
+
+  <g id="base-mist" opacity="0.45">
+    <path fill="#C7D7F2" d="M247 821c88-22 174-23 257-5 82 18 157 11 226-15-53 52-131 80-226 80-102 0-188-22-257-60Z"/>
+    <path fill="#FFF4D5" opacity="0.38" d="M326 845c55-10 104-8 151 3 53 12 111 10 176-6-38 25-88 39-150 39-70 0-130-12-177-36Z"/>
+  </g>
+</svg>

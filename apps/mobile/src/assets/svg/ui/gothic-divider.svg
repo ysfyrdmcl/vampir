@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 160">
+  <defs>
+    <linearGradient id="goldLine" x1="0" y1="78" x2="1200" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8BF68" stop-opacity="0"/>
+      <stop offset="16%" stop-color="#A86A2B" stop-opacity="0.72"/>
+      <stop offset="50%" stop-color="#FFF0B7" stop-opacity="0.96"/>
+      <stop offset="84%" stop-color="#A86A2B" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#E8BF68" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="crimsonInset" x1="240" y1="32" x2="960" y2="126" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8F1428" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#B32642" stop-opacity="0.72"/>
+      <stop offset="55%" stop-color="#B32642" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#8F1428" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FFF1BA" stop-opacity="0.50"/>
+      <stop offset="46%" stop-color="#B32642" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="soft-center-glow">
+    <ellipse cx="600" cy="80" rx="245" ry="70" fill="url(#centerGlow)"/>
+  </g>
+
+  <g id="main-lines" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M74 80h1052" stroke="url(#goldLine)" stroke-width="10"/>
+    <path d="M188 96h824" stroke="url(#crimsonInset)" stroke-width="5" opacity="0.72"/>
+    <path d="M188 64h824" stroke="url(#crimsonInset)" stroke-width="5" opacity="0.52"/>
+  </g>
+
+  <g id="center-crest">
+    <path fill="#080D18" stroke="url(#goldLine)" stroke-width="8" d="M600 22c18 22 50 39 90 46-6 42-28 76-90 106-62-30-84-64-90-106 40-7 72-24 90-46Z"/>
+    <path fill="url(#crimsonInset)" d="M600 44c13 14 34 25 60 31-8 28-26 50-60 68-34-18-52-40-60-68 26-6 47-17 60-31Z"/>
+    <path fill="#FFF0B7" opacity="0.92" d="M600 58l10 22 24 9-24 9-10 24-9-24-24-9 24-9 9-22Z"/>
+  </g>
+
+  <g id="side-ornaments" fill="none" stroke="url(#goldLine)" stroke-linecap="round" stroke-linejoin="round" opacity="0.82">
+    <path stroke-width="7" d="M416 80c-34-28-70-36-108-24 28 9 48 25 60 48-34-9-67-2-99 22"/>
+    <path stroke-width="7" d="M784 80c34-28 70-36 108-24-28 9-48 25-60 48 34-9 67-2 99 22"/>
+    <path stroke-width="5" d="M476 80c-28-18-52-19-72-4"/>
+    <path stroke-width="5" d="M724 80c28-18 52-19 72-4"/>
+  </g>
+
+  <g id="end-caps" fill="#F4D38A" opacity="0.82">
+    <path d="M142 80l9 20 21 8-21 8-9 21-8-21-21-8 21-8 8-20Z"/>
+    <path d="M1058 80l9 20 21 8-21 8-9 21-8-21-21-8 21-8 8-20Z"/>
+    <circle cx="236" cy="80" r="5"/>
+    <circle cx="964" cy="80" r="5"/>
+  </g>
+</svg>

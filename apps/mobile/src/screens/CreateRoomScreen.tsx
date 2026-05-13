@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenShell } from "../components/ScreenShell";
@@ -52,66 +52,66 @@ export function CreateRoomScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenShell scene="create" headerTitle="ODA KUR">
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
-          <View style={styles.introIcon}>
-            <Ionicons name="git-network-outline" size={26} color={colors.secondary} />
-          </View>
-          <Text style={styles.kicker}>HOST ODASI</Text>
-          <Text style={styles.title}>Karanlık meclisi sen başlat.</Text>
-          <Text style={styles.introText}>Oyuncu adını seç, oda kodunu oluştur ve masadaki herkesi aynı lobiye al.</Text>
-          <View style={styles.introChips}>
-            <LiquidGlassChip iconName="people-outline" label="4+ oyuncu" style={styles.introChip} textStyle={styles.introChipText} />
-            <LiquidGlassChip iconName="shield-outline" label="Host kontrolü" style={styles.introChip} textStyle={styles.introChipText} />
-          </View>
-        </LiquidGlassSurface>
-
-        <View style={styles.formCard}>
-          <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
-          <TextInput
-            style={[styles.input, isInputFocused ? styles.inputFocused : null]}
-            placeholder="Lakabını yaz"
-            placeholderTextColor="rgba(55,47,35,0.58)"
-            value={nickname}
-            onChangeText={setNickname}
-            autoCapitalize="words"
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-          />
+    <ScreenShell
+      scene="create"
+      headerTitle="ODA KUR"
+      keyboardAware
+      keyboardExtraScrollPadding={spacing.xxl}
+      keyboardAwareContentContainerStyle={styles.content}
+    >
+      <LiquidGlassSurface variant="hero" glow radius={uiStandard.screen.cardRadius} style={styles.introCard} contentStyle={styles.introCardContent}>
+        <View style={styles.introIcon}>
+          <Ionicons name="git-network-outline" size={26} color={colors.secondary} />
         </View>
+        <Text style={styles.kicker}>HOST ODASI</Text>
+        <Text style={styles.title}>Karanlık meclisi sen başlat.</Text>
+        <Text style={styles.introText}>Oyuncu adını seç, oda kodunu oluştur ve masadaki herkesi aynı lobiye al.</Text>
+        <View style={styles.introChips}>
+          <LiquidGlassChip iconName="people-outline" label="4+ oyuncu" style={styles.introChip} textStyle={styles.introChipText} />
+          <LiquidGlassChip iconName="shield-outline" label="Host kontrolü" style={styles.introChip} textStyle={styles.introChipText} />
+        </View>
+      </LiquidGlassSurface>
 
-        {roomCode ? (
-          <View style={styles.codeCard}>
-            <Text style={styles.codeLabel}>ODA KODU</Text>
-            <Text style={styles.code}>{roomCode}</Text>
-          </View>
-        ) : null}
-
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        <PrimaryButton label="Odayı Oluştur" iconName="shield-checkmark-outline" onPress={createRoom} disabled={Boolean(createDisabledReason)} />
-        {createDisabledReason ? <Text style={styles.disabledHint}>{createDisabledReason}</Text> : null}
-        <PrimaryButton
-          label="Menüye Dön"
-          iconName="arrow-back-outline"
-          variant="ghost"
-          compact
-          onPress={goBackToMenu}
-          style={styles.backButton}
+      <View style={styles.formCard}>
+        <Text style={styles.fieldLabel}>OYUNCU ADIN</Text>
+        <TextInput
+          style={[styles.input, isInputFocused ? styles.inputFocused : null]}
+          placeholder="Lakabını yaz"
+          placeholderTextColor="rgba(55,47,35,0.58)"
+          value={nickname}
+          onChangeText={setNickname}
+          autoCapitalize="words"
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
         />
-      </ScrollView>
+      </View>
+
+      {roomCode ? (
+        <View style={styles.codeCard}>
+          <Text style={styles.codeLabel}>ODA KODU</Text>
+          <Text style={styles.code}>{roomCode}</Text>
+        </View>
+      ) : null}
+
+      {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+      <PrimaryButton label="Odayı Oluştur" iconName="shield-checkmark-outline" onPress={createRoom} disabled={Boolean(createDisabledReason)} />
+      {createDisabledReason ? <Text style={styles.disabledHint}>{createDisabledReason}</Text> : null}
+      <PrimaryButton
+        label="Menüye Dön"
+        iconName="arrow-back-outline"
+        variant="ghost"
+        compact
+        onPress={goBackToMenu}
+        style={styles.backButton}
+      />
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1
-  },
   content: {
     flexGrow: 1,
     gap: spacing.md,
-    paddingBottom: spacing.xxl,
     paddingTop: spacing.sm
   },
   introCard: {

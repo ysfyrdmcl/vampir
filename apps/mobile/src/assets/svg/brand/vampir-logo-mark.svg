@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="outerGold" x1="180" y1="88" x2="846" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF0B7"/>
+      <stop offset="38%" stop-color="#C98A35"/>
+      <stop offset="68%" stop-color="#714016"/>
+      <stop offset="100%" stop-color="#E8BF68"/>
+    </linearGradient>
+    <linearGradient id="innerObsidian" x1="272" y1="168" x2="748" y2="858" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#20283A"/>
+      <stop offset="48%" stop-color="#080D18"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+    <linearGradient id="crimsonInset" x1="318" y1="236" x2="704" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B32642"/>
+      <stop offset="52%" stop-color="#66101D"/>
+      <stop offset="100%" stop-color="#210309"/>
+    </linearGradient>
+    <radialGradient id="moonFill" cx="42%" cy="34%" r="60%">
+      <stop offset="0%" stop-color="#FFF8D8"/>
+      <stop offset="44%" stop-color="#D7E7F8"/>
+      <stop offset="100%" stop-color="#526C93"/>
+    </radialGradient>
+    <linearGradient id="roofGold" x1="316" y1="532" x2="706" y2="752" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF0B7"/>
+      <stop offset="52%" stop-color="#C98A35"/>
+      <stop offset="100%" stop-color="#7B471A"/>
+    </linearGradient>
+    <linearGradient id="batDark" x1="348" y1="332" x2="686" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#02040A"/>
+      <stop offset="48%" stop-color="#121A2C"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </linearGradient>
+    <radialGradient id="logoGlow" cx="50%" cy="47%" r="62%">
+      <stop offset="0%" stop-color="#B32642" stop-opacity="0.30"/>
+      <stop offset="58%" stop-color="#1E3555" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#02040A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="ambient-glow">
+    <circle cx="512" cy="510" r="430" fill="url(#logoGlow)"/>
+    <ellipse cx="512" cy="884" rx="270" ry="50" fill="#02040A" opacity="0.34"/>
+  </g>
+
+  <g id="crest-mark">
+    <path fill="url(#outerGold)" d="M512 72c55 63 160 112 289 131 21 3 36 21 35 42-13 328-112 578-295 713-17 13-41 13-58 0C300 823 201 573 188 245c-1-21 14-39 35-42 129-19 234-68 289-131Z"/>
+    <path fill="#070C17" d="M512 136c48 42 132 77 231 97 16 3 27 17 26 33-15 260-91 462-257 584-166-122-242-324-257-584-1-16 10-30 26-33 99-20 183-55 231-97Z"/>
+    <path fill="url(#innerObsidian)" d="M512 184c43 32 111 61 194 80 13 3 22 14 21 27-18 218-82 391-215 497-133-106-197-279-215-497-1-13 8-24 21-27 83-19 151-48 194-80Z"/>
+    <path fill="url(#crimsonInset)" d="M512 248c35 23 90 44 156 59 10 2 17 11 16 21-20 166-70 297-172 383-102-86-152-217-172-383-1-10 6-19 16-21 66-15 121-36 156-59Z"/>
+  </g>
+
+  <g id="moon-and-bat-emblem">
+    <path fill="url(#moonFill)" d="M565 286c-58 21-100 72-107 133-9 77 38 149 109 173-29 22-65 34-104 34-91 0-165-74-165-165s74-165 165-165c37 0 72 12 102 33Z"/>
+    <path fill="#751222" opacity="0.72" d="M568 286c-53 24-90 74-96 134-8 74 35 139 99 168-20 15-45 25-72 28 36-42 53-96 48-154-5-60-32-110-76-147 34-11 66-20 97-29Z"/>
+
+    <path fill="url(#batDark)" d="M472 408c-30-26-60-42-91-47-32-5-57 8-77 33 34 2 53 15 64 36-26-1-51 10-72 34 33 5 55 20 68 46-22 6-39 18-52 39 62 2 111-8 146-31 29-19 42-45 45-79-5-9-15-19-31-31Z"/>
+    <path fill="url(#batDark)" d="M552 408c30-26 60-42 91-47 32-5 57 8 77 33-34 2-53 15-64 36 26-1 51 10 72 34-33 5-55 20-68 46 22 6 39 18 52 39-62 2-111-8-146-31-29-19-42-45-45-79 5-9 15-19 31-31Z"/>
+    <ellipse cx="512" cy="447" rx="38" ry="60" fill="#060B14"/>
+    <path fill="#060B14" d="M488 398l-14-48 40 32-26 16Zm48 0 14-48-40 32 26 16Z"/>
+  </g>
+
+  <g id="village-symbol">
+    <path fill="#050811" d="M337 636h350v104H337z"/>
+    <path fill="#080B13" d="M354 636l58-59 59 59H354Zm110 0l67-79 70 79H464Zm143 0l45-49 50 49H607Z"/>
+    <path fill="#03050B" d="M401 596h42v144h-42zm110-64h47v208h-47zm107 76h36v132h-36z"/>
+    <path fill="url(#roofGold)" opacity="0.72" d="M412 658h18v30h-18zm114-37h19v34h-19zm103 52h15v26h-15z"/>
+    <path fill="none" stroke="url(#roofGold)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.64" d="M352 638l60-61 59 61m-7 0l67-79 70 79m6 0l45-49 50 49"/>
+  </g>
+
+  <g id="logo-ornaments" fill="none" stroke="url(#outerGold)" stroke-linecap="round" stroke-linejoin="round" opacity="0.72">
+    <path stroke-width="14" d="M270 762c61 66 142 107 242 123 100-16 181-57 242-123"/>
+    <path stroke-width="9" d="M360 816c43-27 94-41 152-41s109 14 152 41" opacity="0.50"/>
+    <path stroke-width="8" d="M282 292c50-7 95-23 135-49" opacity="0.44"/>
+    <path stroke-width="8" d="M742 292c-50-7-95-23-135-49" opacity="0.44"/>
+    <path stroke-width="8" d="M236 481c19 18 43 29 71 33" opacity="0.42"/>
+    <path stroke-width="8" d="M788 481c-19 18-43 29-71 33" opacity="0.42"/>
+  </g>
+
+  <g id="small-premium-sparks" fill="#F4D38A" opacity="0.84">
+    <path d="M512 156l12 27 28 11-28 11-12 28-11-28-28-11 28-11 11-27Z"/>
+    <path d="M286 688l9 20 21 8-21 8-9 21-8-21-21-8 21-8 8-20Z"/>
+    <path d="M738 688l9 20 21 8-21 8-9 21-8-21-21-8 21-8 8-20Z"/>
+    <circle cx="350" cy="258" r="7"/>
+    <circle cx="674" cy="258" r="7"/>
+  </g>
+</svg>

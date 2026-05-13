@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="sparkCore" cx="50%" cy="50%" r="52%">
+      <stop offset="0%" stop-color="#FFFBE1"/>
+      <stop offset="42%" stop-color="#F7D98E"/>
+      <stop offset="72%" stop-color="#C88A34"/>
+      <stop offset="100%" stop-color="#6F3B17"/>
+    </radialGradient>
+    <linearGradient id="goldRay" x1="48" y1="28" x2="206" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF3B8"/>
+      <stop offset="46%" stop-color="#D99A42"/>
+      <stop offset="100%" stop-color="#8A4E1E"/>
+    </linearGradient>
+    <radialGradient id="softGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FFF4C8" stop-opacity="0.58"/>
+      <stop offset="58%" stop-color="#D99A42" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#050107" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="spark-glow">
+    <circle cx="128" cy="128" r="94" fill="url(#softGlow)"/>
+  </g>
+
+  <g id="main-spark">
+    <path fill="url(#goldRay)" d="M128 14l29 79 85 35-85 35-29 79-29-79-85-35 85-35 29-79Z"/>
+    <path fill="#FFFBE1" opacity="0.66" d="M128 48l19 55 59 25-59 25-19 55-19-55-59-25 59-25 19-55Z"/>
+    <path fill="url(#sparkCore)" d="M128 82l13 34 35 12-35 13-13 35-13-35-35-13 35-12 13-34Z"/>
+  </g>
+
+  <g id="side-glints" fill="#F7D98E" opacity="0.84">
+    <path d="M45 58l7 16 17 7-17 7-7 17-7-17-16-7 16-7 7-16Z"/>
+    <path d="M211 62l6 14 15 6-15 6-6 15-6-15-14-6 14-6 6-14Z"/>
+    <path d="M205 184l7 15 16 7-16 7-7 16-7-16-15-7 15-7 7-15Z"/>
+    <circle cx="48" cy="190" r="5"/>
+    <circle cx="215" cy="128" r="4"/>
+    <circle cx="128" cy="36" r="4"/>
+  </g>
+</svg>

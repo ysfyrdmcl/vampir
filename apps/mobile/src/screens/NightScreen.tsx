@@ -4,6 +4,7 @@ import type { ActionType, GamePhase } from "@vampir-koylu/shared";
 import { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
+import { CinematicMinorRibbon } from "../components/CinematicInfoOverlay";
 import { PhaseBanner } from "../components/PhaseBanner";
 import { PrivateInfoCard } from "../components/PrivateInfoCard";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -281,14 +282,15 @@ export function NightScreen(_: Props) {
           ) : null}
 
           {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
-            <View style={styles.resultCard}>
-              <Text style={styles.resultTitle}>Vampir Oyları</Text>
-              {vampireVotePreview.votes.map((row) => (
-                <Text key={row.voterPlayerId} style={styles.resultText}>
-                  {row.voterName}{row.isBot ? " (bot)" : ""} → {row.targetName ?? "Henüz seçmedi"}
-                </Text>
-              ))}
-            </View>
+            <CinematicMinorRibbon
+              title="Vampir Oyları"
+              subtitle="Gece Bilgisi"
+              tone="night"
+              body={vampireVotePreview.votes
+                .map((row) => `${row.voterName}${row.isBot ? " (bot)" : ""}: ${row.targetName ?? "Henüz seçmedi"}`)
+                .join(" · ")}
+              chips={vampireVotePreview.targetCounts.map((target) => `${target.targetName}: ${target.count}`)}
+            />
           ) : null}
 
           {privateResultText && privateResultKind && privateResultKind !== "info" ? (
@@ -472,26 +474,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: typography.sansMedium,
     fontSize: 14
-  },
-  resultCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(170,137,132,0.35)",
-    backgroundColor: colors.parchment,
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    gap: 8
-  },
-  resultTitle: {
-    color: colors.parchmentText,
-    fontFamily: typography.sansBold,
-    letterSpacing: 2,
-    fontSize: typography.label
-  },
-  resultText: {
-    color: "#201910",
-    fontFamily: typography.serifSemi,
-    fontSize: 34 / 1.75
   },
   vampireTallyRow: {
     flexDirection: "row",
