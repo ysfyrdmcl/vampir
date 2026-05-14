@@ -7,6 +7,8 @@ import {
   type RoomStateSnapshot
 } from "@vampir-koylu/shared";
 import type { Server, Socket } from "socket.io";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { env } from "../config/env.js";
 import { GameEngine } from "../game/game-engine.js";
 import { RoomManager } from "../rooms/room-manager.js";
@@ -15,6 +17,12 @@ import { buildVampireVotePreview, vampirePreviewRecipientSocketIds } from "../ga
 import { BotActionEngine } from "../bots/bot-action-engine.js";
 import { BotMemoryStore } from "../bots/bot-memory.js";
 import { BotSpeechEngine } from "../bots/bot-speech-engine.js";
+import { createBotLLMClient } from "../bots/bot-llm-client.js";
+import { BotBrainController } from "../bots/bot-brain-controller.js";
+import { BotShortTermMemoryStore } from "../bots/bot-short-term-memory.js";
+import { BotLongTermMemory } from "../bots/bot-long-term-memory.js";
+import { BotTargetAdvisor } from "../bots/bot-target-advisor.js";
+import { BotEmbeddingStore } from "../bots/bot-embedding-store.js";
 
 interface RuntimeLogger {
   info(payload: object, message?: string): void;
@@ -27,6 +35,7 @@ const noopLogger: RuntimeLogger = {
   warn: () => undefined,
   error: () => undefined
 };
+const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 import {
   actionSubmitSchema,
   createRoomSchema,
@@ -50,18 +59,39 @@ export class SocketRuntime {
   private readonly roomManager = new RoomManager();
   private readonly gameEngine = new GameEngine();
   private readonly botMemoryStore = new BotMemoryStore();
+  private readonly botShortTermMemoryStore: BotShortTermMemoryStore;
+  private readonly botLongTermMemory?: BotLongTermMemory;
   private readonly botActionEngine: BotActionEngine;
   private readonly botSpeechEngine: BotSpeechEngine;
   private readonly log: RuntimeLogger;
 
   constructor(private readonly io: Server, logger: RuntimeLogger = noopLogger) {
     this.log = logger;
+    const botLLMClient = createBotLLMClient();
+    this.botShortTermMemoryStore = new BotShortTermMemoryStore({ log: logger });
+    if (env.BOT_AI_ENABLED && env.BOT_EMBEDDING_ENABLED) {
+      this.botLongTermMemory = new BotLongTermMemory({
+        llm: botLLMClient,
+        log: logger,
+        store: new BotEmbeddingStore(200, logger, {
+          filePath: resolve(serverRoot, "logs/bot-memory-embeddings.json")
+        })
+      });
+    }
+    const botBrain = env.BOT_AI_ENABLED && env.BOT_LLM_ENABLED
+      ? new BotBrainController({
+          llm: botLLMClient,
+          shortTermMemory: this.botShortTermMemoryStore,
+          longTermMemory: this.botLongTermMemory
+        })
+      : undefined;
     this.botActionEngine = new BotActionEngine({
       getRoom: (roomCode) => this.roomManager.getRoom(roomCode),
       submitGameAction: (room, actorPlayerId, submission) => {
         this.submitGameAction(room, actorPlayerId, submission);
       },
       getBotMemory: (roomCode, botPlayerId) => this.botMemoryStore.get(roomCode, botPlayerId),
+      targetAdvisor: env.BOT_AI_ENABLED && env.BOT_LLM_TARGET_RANKING_ENABLED ? new BotTargetAdvisor({ llm: botLLMClient }) : undefined,
       log: logger
     });
     this.botSpeechEngine = new BotSpeechEngine({
@@ -73,6 +103,7 @@ export class SocketRuntime {
       onSpeechCommitted: (roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint) => {
         this.botMemoryStore.onBotSpeech(roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint);
       },
+      brain: botBrain,
       log: logger
     });
   }
@@ -122,6 +153,8 @@ export class SocketRuntime {
           this.botActionEngine.disposeRoom(code);
           this.botSpeechEngine.disposeRoom(code);
           this.botMemoryStore.clearRoom(code);
+          this.botShortTermMemoryStore.clearRoom(code);
+          this.botLongTermMemory?.clearRoom(code);
         }
         this.log.info({ rooms: removed }, "rooms cleaned up");
       }
@@ -268,6 +301,8 @@ export class SocketRuntime {
     this.botMemoryStore.resetForNewGame(room.roomCode);
     this.botActionEngine.disposeRoom(room.roomCode);
     this.botSpeechEngine.disposeRoom(room.roomCode);
+    this.botShortTermMemoryStore.clearRoom(room.roomCode);
+    this.botLongTermMemory?.clearRoom(room.roomCode);
     this.log.info({ roomCode: room.roomCode }, "room reset to lobby after game over");
     this.broadcastRoomState(room);
     this.broadcastGamePhase(room);
@@ -386,6 +421,8 @@ export class SocketRuntime {
     const payload = roomBotRemoveSchema.parse(raw);
     const room = this.roomManager.removeBot(payload.roomCode, payload.identity.deviceId, payload.botPlayerId);
     this.botMemoryStore.removeBot(payload.roomCode, payload.botPlayerId);
+    this.botShortTermMemoryStore.removeBot(payload.roomCode, payload.botPlayerId);
+    this.botLongTermMemory?.removeBot(payload.roomCode, payload.botPlayerId);
     this.broadcastRoomState(room);
   }
 

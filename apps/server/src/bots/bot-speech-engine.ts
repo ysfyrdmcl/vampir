@@ -9,6 +9,7 @@ import type {
 } from "@vampir-koylu/shared";
 import type { PlayerState, RoomState } from "../game/game-types.js";
 import type { BotMemory } from "./bot-memory.js";
+import type { BotBrainController } from "./bot-brain-controller.js";
 import { pickBotTargetOrder } from "./bot-targeting.js";
 import { NO_LYNCH_TARGET } from "./bot-types.js";
 import {
@@ -409,6 +410,7 @@ export class BotSpeechEngine {
         templateId?: string,
         fingerprint?: string
       ) => void;
+      brain?: BotBrainController;
       log?: Logger;
     }
   ) {}
@@ -510,19 +512,13 @@ export class BotSpeechEngine {
       const built = composeBotSpeech(ctx, st);
       if (!built) continue;
 
-      const { templateId, fingerprint, ...event } = built;
-      st.usedTemplateIds.add(templateId);
-      st.usedFingerprints.add(fingerprint);
       st.usedSpeakerPlayerIds.add(speaker.playerId);
-      st.usedIntentTargetPairs.add(intentTargetPair(event.intent, bots.find((p) => p.playerId === event.targetPlayerId)));
       st.totalEmitted += 1;
-      this.rememberRoomSpeech(roomCode, templateId, fingerprint);
-      this.deps.emit(roomCode, event);
-      this.deps.onSpeechCommitted(roomCode, speaker.playerId, event.intent, event.targetPlayerId, templateId, fingerprint);
-      this.getLog().info(
-        { roomCode, speakerPlayerId: speaker.playerId, intent: event.intent, phase: room.game.phase, templateId },
-        "bot.speech.emit"
-      );
+      if (this.deps.brain) {
+        void this.emitBrainOrFallback(room, speaker, memory, built, st);
+      } else {
+        this.emitBuiltSpeech(room, speaker, built, st);
+      }
       return;
     }
 
@@ -542,5 +538,77 @@ export class BotSpeechEngine {
     recent.templateIds = [templateId, ...recent.templateIds.filter((id) => id !== templateId)].slice(0, 12);
     recent.fingerprints = [fingerprint, ...recent.fingerprints.filter((fp) => fp !== fingerprint)].slice(0, 12);
     this.recentByRoom.set(roomCode, recent);
+  }
+
+  private async emitBrainOrFallback(
+    room: RoomState,
+    speaker: PlayerState,
+    memory: BotMemory,
+    built: BuiltSpeech,
+    st: BotSpeechPhaseState
+  ): Promise<void> {
+    const brain = this.deps.brain;
+    if (!brain) {
+      this.emitBuiltSpeech(room, speaker, built, st);
+      return;
+    }
+
+    const generated = await brain.generateSpeech({
+      room,
+      speaker,
+      memory,
+      intent: built.intent,
+      tone: built.tone,
+      targetPlayerId: built.targetPlayerId
+    });
+
+    if (generated.ok && !st.usedFingerprints.has(generated.fingerprint) && !memory.recentSpeechFingerprints.includes(generated.fingerprint)) {
+      const templateId = `llm:${generated.event.intent}`;
+      st.usedTemplateIds.add(templateId);
+      st.usedFingerprints.add(generated.fingerprint);
+      st.usedIntentTargetPairs.add(intentTargetPair(generated.event.intent, room.players.find((p) => p.playerId === generated.event.targetPlayerId)));
+      this.rememberRoomSpeech(room.roomCode, templateId, generated.fingerprint);
+      this.deps.emit(room.roomCode, generated.event);
+      this.deps.onSpeechCommitted(
+        room.roomCode,
+        speaker.playerId,
+        generated.event.intent,
+        generated.event.targetPlayerId,
+        templateId,
+        generated.fingerprint
+      );
+      this.getLog().info(
+        { roomCode: room.roomCode, speakerPlayerId: speaker.playerId, intent: generated.event.intent, phase: room.game.phase, templateId },
+        "bot.speech.llm.emit"
+      );
+      return;
+    }
+
+    this.getLog().info(
+      {
+        roomCode: room.roomCode,
+        speakerPlayerId: speaker.playerId,
+        phase: room.game.phase,
+        fallbackTemplateId: built.templateId,
+        reason: generated.ok ? "duplicate_or_recent_fingerprint" : generated.reason,
+        error: generated.ok ? undefined : generated.error
+      },
+      "bot.speech.llm.fallback"
+    );
+    this.emitBuiltSpeech(room, speaker, built, st);
+  }
+
+  private emitBuiltSpeech(room: RoomState, speaker: PlayerState, built: BuiltSpeech, st: BotSpeechPhaseState): void {
+    const { templateId, fingerprint, ...event } = built;
+    st.usedTemplateIds.add(templateId);
+    st.usedFingerprints.add(fingerprint);
+    st.usedIntentTargetPairs.add(intentTargetPair(event.intent, room.players.find((p) => p.playerId === event.targetPlayerId)));
+    this.rememberRoomSpeech(room.roomCode, templateId, fingerprint);
+    this.deps.emit(room.roomCode, event);
+    this.deps.onSpeechCommitted(room.roomCode, speaker.playerId, event.intent, event.targetPlayerId, templateId, fingerprint);
+    this.getLog().info(
+      { roomCode: room.roomCode, speakerPlayerId: speaker.playerId, intent: event.intent, phase: room.game.phase, templateId },
+      "bot.speech.emit"
+    );
   }
 }

@@ -2,6 +2,7 @@ import type { ActionSubmission, GamePhase } from "@vampir-koylu/shared";
 import { env } from "../config/env.js";
 import type { RoomState } from "../game/game-types.js";
 import type { BotMemory } from "./bot-memory.js";
+import type { BotTargetAdvisor } from "./bot-target-advisor.js";
 import { actionTypeForBotPhase } from "./bot-types.js";
 import { legalTargetsForBot, pickBotTargetOrder } from "./bot-targeting.js";
 
@@ -30,6 +31,7 @@ export class BotActionEngine {
       getRoom: (roomCode: string) => RoomState | null;
       submitGameAction: (room: RoomState, actorPlayerId: string, submission: ActionSubmission) => void;
       getBotMemory: (roomCode: string, botPlayerId: string) => BotMemory;
+      targetAdvisor?: BotTargetAdvisor;
       log?: BotActionEngineLogger;
     }
   ) {}
@@ -80,7 +82,7 @@ export class BotActionEngine {
     for (const actorPlayerId of botsToSchedule) {
       if (this.botAlreadySubmitted(room, actorPlayerId, actionType, round)) continue;
       const delayMs = botActionDelayMs();
-      setTimeout(() => this.runScheduledAction(roomCode, gen, phase, round, actorPlayerId, actionType), delayMs);
+      setTimeout(() => void this.runScheduledAction(roomCode, gen, phase, round, actorPlayerId, actionType), delayMs);
     }
   }
 
@@ -123,14 +125,14 @@ export class BotActionEngine {
     );
   }
 
-  private runScheduledAction(
+  private async runScheduledAction(
     roomCode: string,
     gen: number,
     expectedPhase: GamePhase,
     expectedRound: number,
     actorPlayerId: string,
     actionType: ActionSubmission["actionType"]
-  ): void {
+  ): Promise<void> {
     if ((this.scheduleGen.get(roomCode) ?? 0) !== gen) return;
     const room = this.deps.getRoom(roomCode);
     if (!room || room.status !== "InGame" || room.game.isPaused) return;
@@ -148,7 +150,8 @@ export class BotActionEngine {
       return;
     }
 
-    const order = pickBotTargetOrder(room, expectedPhase, actorPlayerId, actor.botIntelligence, memory);
+    const fallbackOrder = pickBotTargetOrder(room, expectedPhase, actorPlayerId, actor.botIntelligence, memory);
+    const order = await this.pickTargetOrder(room, expectedPhase, actorPlayerId, actionType, targets, fallbackOrder, memory);
     const first = order[0] ?? targets[0];
     const tried = this.trySubmit(room, actorPlayerId, actionType, first);
     if (tried) {
@@ -168,6 +171,29 @@ export class BotActionEngine {
     }
     this.getLogger().warn({ roomCode, actorPlayerId, actionType, targetPlayerId: second }, "bot.action.invalid_target");
     this.getLogger().info({ roomCode, actorPlayerId, actionType }, "bot.action.skipped");
+  }
+
+  private async pickTargetOrder(
+    room: RoomState,
+    phase: GamePhase,
+    actorPlayerId: string,
+    actionType: ActionSubmission["actionType"],
+    legalTargets: string[],
+    fallbackOrder: string[],
+    memory: BotMemory
+  ): Promise<string[]> {
+    const actor = room.players.find((p) => p.playerId === actorPlayerId);
+    if (!actor || !this.deps.targetAdvisor) return fallbackOrder;
+    const advised = await this.deps.targetAdvisor.rankTargets({
+      room,
+      actor,
+      memory,
+      phase,
+      actionType,
+      legalTargets,
+      fallbackOrder
+    });
+    return advised.ok ? advised.order : fallbackOrder;
   }
 
   private trySubmit(

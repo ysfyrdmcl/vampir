@@ -8,6 +8,7 @@ import {
   composeBotSpeech,
   selectSpeechTargetForIntent
 } from "../src/bots/bot-speech-engine.js";
+import type { BotBrainController } from "../src/bots/bot-brain-controller.js";
 import { speechTemplates } from "../src/bots/bot-speech-templates.js";
 import type { PlayerState, RoomState } from "../src/game/game-types.js";
 
@@ -199,7 +200,7 @@ describe("bot speech phase coordinator", () => {
     vi.restoreAllMocks();
   });
 
-  function makeEngine(r: RoomState) {
+  function makeEngine(r: RoomState, brain?: BotBrainController) {
     const memory = new BotMemoryStore();
     const emitted: unknown[] = [];
     const committed: { botPlayerId: string; templateId?: string; fingerprint?: string }[] = [];
@@ -212,6 +213,7 @@ describe("bot speech phase coordinator", () => {
         committed.push({ botPlayerId, templateId, fingerprint });
         memory.onBotSpeech(roomCode, botPlayerId, intent, targetPlayerId, templateId, fingerprint);
       },
+      brain,
       log: { info: (payload, message) => logs.push({ payload, message }) }
     });
     return { engine, memory, emitted, committed, logs };
@@ -332,5 +334,55 @@ describe("bot speech phase coordinator", () => {
     vi.runAllTimers();
 
     expect(emitted).toHaveLength(0);
+  });
+
+  it("uses brain-generated speech when available", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const r = room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]);
+    const brain = {
+      generateSpeech: vi.fn().mockResolvedValue({
+        ok: true,
+        event: {
+          roomCode: r.roomCode,
+          phaseId: "DayDiscussion:1",
+          speakerPlayerId: "b1",
+          speakerName: "Bot",
+          message: "LLM mesajı kısa kaldı.",
+          tone: "calm",
+          intent: "analysis",
+          durationMs: 5200,
+          createdAt: 1
+        },
+        fingerprint: "llm mesajı kısa kaldı."
+      })
+    } as unknown as BotBrainController;
+    const { engine, emitted, committed } = makeEngine(r, brain);
+
+    engine.onPhaseAdvanced(r);
+    await vi.runAllTimersAsync();
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({ message: "LLM mesajı kısa kaldı.", intent: "analysis" });
+    expect(committed[0]?.templateId).toBe("llm:analysis");
+  });
+
+  it("falls back to template speech when brain generation fails", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
+    const r = room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]);
+    const brain = {
+      generateSpeech: vi.fn().mockResolvedValue({ ok: false, reason: "llm_failed", error: "disabled" })
+    } as unknown as BotBrainController;
+    const { engine, emitted, committed } = makeEngine(r, brain);
+
+    engine.onPhaseAdvanced(r);
+    await vi.runAllTimersAsync();
+
+    expect(emitted).toHaveLength(1);
+    expect((emitted[0] as { message?: string }).message).not.toBe("LLM mesajı kısa kaldı.");
+    expect(committed[0]?.templateId).not.toMatch(/^llm:/);
   });
 });

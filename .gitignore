@@ -14,3 +14,6 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+
+apps/server/logs/bot-memory-embeddings.json
+apps/server/logs/bot-memory-embeddings.json.tmp
