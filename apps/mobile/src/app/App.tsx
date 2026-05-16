@@ -15,6 +15,7 @@ import { StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps 
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BootSplash } from "../components/BootSplash";
 import { PhaseTransitionOverlay } from "../components/PhaseTransitionOverlay";
+import { PrivateInfoNudge } from "../components/PrivateInfoNudge";
 import { logGameEvent } from "../logging/game-logger";
 import { connectSocket, emitJoinRoom, initSocketRuntime } from "../socket/runtime";
 import { loadDeviceId, loadLastRoomCode, loadNickname, loadSessionToken, saveDeviceId } from "../storage/session-storage";
@@ -153,6 +154,7 @@ export default function App() {
       <View style={styles.appRoot}>
         <RootNavigator />
         <PhaseTransitionOverlay phase={gameState?.phase ?? null} />
+        <PrivateInfoNudge />
       </View>
     </SafeAreaProvider>
   );

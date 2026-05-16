@@ -40,7 +40,7 @@ type TimelineGroup = { key: string; title: string; meta: string; entries: LogFee
 
 const EMPTY_PLAYERS: RoomPlayerView[] = [];
 
-export function GameLogScreen(_: Props) {
+export function GameLogScreen({ route }: Props) {
   const entries = useLogFeedStore((s) => s.entries);
   const markAllRead = useLogFeedStore((s) => s.markAllRead);
   const role = useGameStore((s) => s.privateRole);
@@ -79,6 +79,13 @@ export function GameLogScreen(_: Props) {
     }),
     [notePlayers, playerNotes]
   );
+
+  useEffect(() => {
+    if (route.params?.tab === "personal") {
+      setTab("personal");
+      setPersonalView(route.params.personalView ?? "logs");
+    }
+  }, [route.params?.personalView, route.params?.tab]);
 
   useEffect(() => {
     let mounted = true;
@@ -964,6 +971,11 @@ function localizePayloadNames(payload: Record<string, unknown> | undefined, play
   }
   if (Array.isArray(copy.tiedTopCandidates)) {
     copy.tiedTopCandidates = copy.tiedTopCandidates.map((id) =>
+      typeof id === "string" ? (playerNameById.get(id) ?? id) : id
+    );
+  }
+  if (Array.isArray(copy.revoteCandidateIds)) {
+    copy.revoteCandidateIds = copy.revoteCandidateIds.map((id) =>
       typeof id === "string" ? (playerNameById.get(id) ?? id) : id
     );
   }

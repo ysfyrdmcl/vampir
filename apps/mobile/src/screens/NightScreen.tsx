@@ -119,7 +119,7 @@ function phaseVisualAccent(phase: GamePhase): "none" | "candle" | "blood-candle"
 
 function actionSummaryText(phase: GamePhase, canAct: boolean, meAlive: boolean): { label: string; value: string; icon: keyof typeof Ionicons.glyphMap } {
   if (!meAlive) {
-    return { label: "Durum", value: "Elendin; fazı izliyorsun.", icon: "skull-outline" };
+    return { label: "Durum", value: "Elendin, bu fazı izliyorsun.", icon: "skull-outline" };
   }
   if (!canAct) {
     return { label: "Sıradaki karar", value: "Bu fazda aksiyon sende değil.", icon: "time-outline" };
@@ -155,6 +155,7 @@ export function NightScreen(_: Props) {
   const setSelectedTargetPlayerId = useGameStore((s) => s.setSelectedTargetPlayerId);
   const privateResultText = useGameStore((s) => s.privateResultText);
   const privateResultKind = useGameStore((s) => s.privateResultKind);
+  const activeResultEvent = useGameStore((s) => s.activeResultEvent);
   const vampireVotePreview = useGameStore((s) => s.vampireVotePreview);
   const detectiveInspectedPlayerIds = useGameStore((s) => s.detectiveInspectedPlayerIds);
   const knownVampirePlayerIds = useGameStore((s) => s.knownVampirePlayerIds);
@@ -207,10 +208,15 @@ export function NightScreen(_: Props) {
   const players = roomState?.players ?? [];
   const mePlayer = players.find((p) => p.playerId === playerId);
   const meAlive = mePlayer?.isAlive ?? true;
+  const ownEliminationResultActive = Boolean(playerId && activeResultEvent?.playerIds?.includes(playerId));
   const canAct = !!actionConfig && role === actionConfig.role && (meAlive || actionConfig.actionType === "hunter-shot");
-  const currentActionSummary = actionSummaryText(phase ?? "NightStart", canAct, meAlive);
+  const currentActionSummary = ownEliminationResultActive
+    ? { label: "Sonuç", value: "Sonuç açıklanıyor.", icon: "hourglass-outline" as const }
+    : actionSummaryText(phase ?? "NightStart", canAct, meAlive);
   const actionDetailText = canAct
     ? "Hedefini seçip alttan kilitle."
+    : ownEliminationResultActive
+      ? "Sonuç gösterildikten sonra izleyici durumuna geçeceksin."
     : meAlive
       ? "Hedef kartları yalnızca bilgi için gösteriliyor."
       : "Oyunu izleyebilirsin.";
@@ -237,7 +243,7 @@ export function NightScreen(_: Props) {
         : alreadyInspectedByDetective
           ? "Daha önce sorgulandı"
           : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
-            ? "Kendini secemezsin"
+            ? "Kendini seçemezsin"
             : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
               ? "Vampir baska vampiri hedefleyemez"
               : null;
@@ -359,7 +365,7 @@ export function NightScreen(_: Props) {
               />
             ) : null}
 
-            {privateResultText && privateResultKind && privateResultKind !== "info" ? (
+            {privateResultText && privateResultKind && privateResultKind !== "info" && privateResultKind !== "lover" ? (
               <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
             ) : null}
             {errorText ? <Text style={styles.error}>{errorText}</Text> : null}

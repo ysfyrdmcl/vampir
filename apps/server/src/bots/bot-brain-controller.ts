@@ -8,6 +8,7 @@ import { buildBotWorldAwareness, renderBotWorldAwarenessPrompt } from "./bot-wor
 import type { BotShortTermMemoryStore } from "./bot-short-term-memory.js";
 import type { BotLongTermMemory } from "./bot-long-term-memory.js";
 import { activeSpeechRoleIds, messageReferencesInactiveRole } from "./bot-role-awareness.js";
+import { messageViolatesSpeechEvidence, type BotSpeechEvidence } from "./bot-speech-evidence.js";
 
 export type BotBrainSpeechRequest = {
   room: RoomState;
@@ -16,6 +17,7 @@ export type BotBrainSpeechRequest = {
   intent: BotSpeechIntent;
   tone: BotSpeechTone;
   targetPlayerId?: string;
+  evidence?: BotSpeechEvidence;
 };
 
 export type BotBrainSpeechResult =
@@ -85,6 +87,7 @@ export class BotBrainController {
             "En fazla iki cumle yaz.",
             "Gizli rol bilgisini dogrudan ifsa etme.",
             "Aktif roller disindaki rollere, Sherlock/dedektif/sorgu gibi role-specific imalara veya aktif olmayan koruma/baskan/avci/asik referanslarina deginme.",
+            "Hedef hakkinda cok konusuyor, tutarsiz, oy degistirdi, sessiz kaldi gibi iddialari sadece verilen kanit izin veriyorsa kullan.",
             "Sadece JSON dondur: {\"message\":\"...\",\"tone\":\"calm|sharp|neutral|playful\",\"intent\":\"...\",\"targetPlayerId\":\"...\"}."
           ].join(" ")
         },
@@ -106,7 +109,8 @@ export class BotBrainController {
             "[GOREV]",
             `Intent: ${request.intent}`,
             `Tone: ${request.tone}`,
-            `Target player id: ${request.targetPlayerId ?? "yok"}`
+            `Target player id: ${request.targetPlayerId ?? "yok"}`,
+            `Kanit: ${renderSpeechEvidencePrompt(request.evidence)}`
           ].join("\n")
         }
       ]
@@ -120,7 +124,7 @@ export class BotBrainController {
     if (!parsed) return { ok: false, reason: "invalid_response", error: "Invalid JSON response" };
 
     const activeRoles = activeSpeechRoleIds(request.room);
-    const guarded = guardSpeechMessage(parsed.message, activeRoles);
+    const guarded = guardSpeechMessage(parsed.message, activeRoles, request.evidence);
     if (!guarded) return { ok: false, reason: "invalid_response", error: "Unsafe or empty message" };
 
     const tone = typeof parsed.tone === "string" && VALID_TONES.has(parsed.tone as BotSpeechTone) ? parsed.tone as BotSpeechTone : request.tone;
@@ -128,6 +132,9 @@ export class BotBrainController {
       typeof parsed.intent === "string" && VALID_INTENTS.has(parsed.intent as BotSpeechIntent) ? parsed.intent as BotSpeechIntent : request.intent;
     const targetPlayerId =
       typeof parsed.targetPlayerId === "string" && parsed.targetPlayerId.trim() ? parsed.targetPlayerId.trim() : request.targetPlayerId;
+    const targetName = targetPlayerId
+      ? request.room.players.find((player) => player.playerId === targetPlayerId)?.nickname
+      : undefined;
 
     return {
       ok: true,
@@ -140,6 +147,7 @@ export class BotBrainController {
         tone,
         intent,
         targetPlayerId,
+        targetName,
         durationMs: BOT_SPEECH_POPUP_MS,
         createdAt: Date.now()
       },
@@ -157,7 +165,7 @@ function parseSpeechJson(text: string): BotLLMSpeechJson | null {
   }
 }
 
-function guardSpeechMessage(value: unknown, activeRoles: ReturnType<typeof activeSpeechRoleIds>): string | null {
+function guardSpeechMessage(value: unknown, activeRoles: ReturnType<typeof activeSpeechRoleIds>, evidence?: BotSpeechEvidence): string | null {
   if (typeof value !== "string") return null;
   const compact = value.replace(/\s+/g, " ").trim();
   if (!compact) return null;
@@ -165,7 +173,17 @@ function guardSpeechMessage(value: unknown, activeRoles: ReturnType<typeof activ
   const blocked = ["openai", "api", "model", "llm", "yapay zeka", "ben bir botum", "dedektifim", "ben vampirim"];
   if (blocked.some((word) => lowered.includes(word))) return null;
   if (messageReferencesInactiveRole(compact, activeRoles)) return null;
+  if (messageViolatesSpeechEvidence(compact, evidence)) return null;
   return compact.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ").slice(0, 180).trim();
+}
+
+function renderSpeechEvidencePrompt(evidence?: BotSpeechEvidence): string {
+  if (!evidence) return "Hedef yok; hedefe ozel iddia kurma.";
+  return [
+    `targetSpeechCount=${evidence.targetSpeechCount}`,
+    `safeClaims=${evidence.safeClaims.join(",") || "yok"}`,
+    `recentMessages=${evidence.targetRecentPublicMessages.join(" | ") || "yok"}`
+  ].join("; ");
 }
 
 function speechFingerprint(message: string): string {

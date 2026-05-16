@@ -38,6 +38,7 @@ export class RoomManager {
         privateResults: [],
         lastDayVoteSummary: null,
         lastEliminationSummary: null,
+        revoteCandidateIds: [],
         gameMode: gameMode ?? "Classic",
         rolePreset: rolePreset ?? "beginner",
         rules: this.resolveRules(gameMode ?? "Classic", rules),
@@ -208,6 +209,7 @@ export class RoomManager {
     room.game.privateResults = [];
     room.game.lastDayVoteSummary = null;
     room.game.lastEliminationSummary = null;
+    room.game.revoteCandidateIds = [];
     room.game.loverLinks = {};
     room.game.detectiveInspectedTargets = {};
 

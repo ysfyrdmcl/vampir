@@ -190,6 +190,31 @@ describe("phase skip when role absent or dead", () => {
     expect(() => engine.assertManualAdvanceAllowed(room)).not.toThrow();
   });
 
+  it("rejects revote targets outside the canonical tie candidates", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager"),
+        makePlayer("d", "Vampire")
+      ],
+      phase: "DayVote",
+      rolePreset: "beginner",
+      gameMode: "Classic"
+    });
+    room.game.tieCountInRound = 1;
+    room.game.revoteCandidateIds = ["b", "c"];
+    expect(() =>
+      engine.submitAction(room, "a", {
+        roomCode: room.roomCode,
+        actionType: "day-vote",
+        targetPlayerId: "d",
+        phase: "DayVote",
+        round: 1
+      })
+    ).toThrow("TARGET_NOT_IN_REVOTE");
+  });
+
   it("VampireVote -> DoctorProtect when Doctor alive but Detective absent", () => {
     const room = makeRoom({
       players: [

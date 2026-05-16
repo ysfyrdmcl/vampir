@@ -65,6 +65,44 @@ function SuspiciousPulse({ children }: PropsWithChildren) {
   return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function HighlightedBotSpeechMessage({
+  message,
+  targetName,
+  style,
+  highlightStyle,
+  numberOfLines
+}: {
+  message: string;
+  targetName?: string;
+  style: object;
+  highlightStyle: object;
+  numberOfLines?: number;
+}) {
+  const parts = useMemo(() => {
+    const safeTarget = targetName?.trim();
+    if (!safeTarget) return [{ text: message, hit: false }];
+    const re = new RegExp(`(${escapeRegExp(safeTarget)})`, "giu");
+    return message.split(re).filter(Boolean).map((text) => ({
+      text,
+      hit: text.toLocaleLowerCase("tr-TR") === safeTarget.toLocaleLowerCase("tr-TR")
+    }));
+  }, [message, targetName]);
+
+  return (
+    <Text style={style} numberOfLines={numberOfLines}>
+      {parts.map((part, index) => (
+        <Text key={`${part.text}-${index}`} style={part.hit ? highlightStyle : undefined}>
+          {part.text}
+        </Text>
+      ))}
+    </Text>
+  );
+}
+
 export interface BotSpeechBubbleProps {
   event: BotSpeechEvent;
   onPress: () => void;
@@ -97,12 +135,20 @@ export function BotSpeechBubble({
           <Ionicons name="chatbubbles-outline" size={18} color={colors.secondary} />
         </View>
         <View style={styles.bottomCopy}>
+          <View style={styles.bottomHeader}>
+            <Text style={styles.speakerChip} numberOfLines={1}>{event.speakerName}</Text>
+            {event.targetName ? <Text style={styles.targetChip} numberOfLines={1}>Hedef: {event.targetName}</Text> : null}
+          </View>
           <Text style={styles.bottomMeta} numberOfLines={1}>
-            {event.speakerName} · {botSpeechIntentLabel(event.intent)} · {formatBotSpeechPhaseContext(event.phaseId)}
+            {botSpeechIntentLabel(event.intent)} · {formatBotSpeechPhaseContext(event.phaseId)}
           </Text>
-          <Text style={styles.bottomMessage} numberOfLines={2}>
-            {event.message}
-          </Text>
+          <HighlightedBotSpeechMessage
+            message={event.message}
+            targetName={event.targetName}
+            style={styles.bottomMessage}
+            highlightStyle={styles.messageTarget}
+            numberOfLines={2}
+          />
         </View>
         <View style={styles.bottomAction}>
           {unreadCount > 0 ? (
@@ -191,6 +237,39 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2
   },
+  bottomHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0
+  },
+  speakerChip: {
+    maxWidth: "58%",
+    color: colors.backgroundDeep,
+    backgroundColor: colors.secondary,
+    overflow: "hidden",
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    lineHeight: 13
+  },
+  targetChip: {
+    flexShrink: 1,
+    maxWidth: "42%",
+    color: colors.secondary,
+    backgroundColor: "rgba(233,195,73,0.13)",
+    overflow: "hidden",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.26)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    lineHeight: 13
+  },
   bottomMeta: {
     color: colors.textDim,
     fontFamily: typography.sansBold,
@@ -203,6 +282,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 12.5,
     lineHeight: 17
+  },
+  messageTarget: {
+    color: colors.secondary,
+    fontFamily: typography.sansBold
   },
   bottomAction: {
     flexShrink: 0,

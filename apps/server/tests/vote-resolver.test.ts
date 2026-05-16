@@ -9,9 +9,13 @@ const players: PlayerState[] = ["a", "b", "c", "d"].map((id) => ({
   sessionToken: id,
   socketId: id,
   isConnected: true,
+  isReady: true,
   isAlive: true,
   role: "Villager",
-  lastProtectedRound: null
+  lastProtectedRound: null,
+  lastProtectedTargetPlayerId: null,
+  guardUsedInGame: false,
+  isBot: false
 }));
 
 function vote(actor: string, target: string): GameActionEntry {
@@ -30,5 +34,14 @@ describe("day vote resolver", () => {
     expect(result.executedPlayerId).toBeNull();
     expect(result.tiedTopCandidates.sort()).toEqual(["b", "d"]);
   });
-});
 
+  it("ignores votes outside canonical revote candidates", () => {
+    const result = resolveDayVotes(
+      players,
+      [vote("a", "c"), vote("b", "c"), vote("c", "b"), vote("d", "b")],
+      { allowedTargetIds: ["b", "d"] }
+    );
+    expect(result.executedPlayerId).toBe("b");
+    expect(result.voteBreakdown.map((entry) => entry.playerId)).toEqual(["b"]);
+  });
+});

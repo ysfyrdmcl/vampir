@@ -57,8 +57,12 @@ export function legalTargetsForBot(
     case "DayVote": {
       if (!actor.isAlive) return [];
       const blocked = room.game.guardProtectedPlayerId;
-      const pool = aliveOthers(actorPlayerId).filter((id) => !blocked || id !== blocked);
-      if (room.game.rules.noLynchEnabled) {
+      const revoteCandidateIds = room.game.tieCountInRound > 0 ? room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? [] : [];
+      const revoteCandidateSet = new Set(revoteCandidateIds);
+      const pool = aliveOthers(actorPlayerId)
+        .filter((id) => !blocked || id !== blocked)
+        .filter((id) => revoteCandidateSet.size === 0 || revoteCandidateSet.has(id));
+      if (room.game.rules.noLynchEnabled && revoteCandidateSet.size === 0) {
         return [...pool, NO_LYNCH_TARGET];
       }
       return pool;

@@ -230,7 +230,7 @@ export function initSocketRuntime(): void {
     }
     if (payload.phase === "DayDiscussion" && payload.tieCountInRound > 0 && lastVoteTieRoundLogged !== payload.round) {
       lastVoteTieRoundLogged = payload.round;
-      const tiedTopCandidates = payload.lastDayVoteSummary?.tiedTopCandidates ?? [];
+      const tiedTopCandidates = payload.lastDayVoteSummary?.revoteCandidateIds ?? payload.lastDayVoteSummary?.tiedTopCandidates ?? [];
       logGameEvent("vote.tie", {
         round: payload.round,
         tiedTopCandidates
@@ -269,19 +269,6 @@ export function initSocketRuntime(): void {
           });
         }
       }
-    }
-    if (
-      payload.phase === "DoctorProtect" ||
-      payload.phase === "DetectiveInspect" ||
-      payload.phase === "VampireVote" ||
-      payload.phase === "GuardProtect" ||
-      payload.phase === "DayVote" ||
-      payload.phase === "MayorElection"
-    ) {
-      logPersonalEvent("game.phase.personal_turn_info", {
-        phase: payload.phase,
-        round: payload.round
-      });
     }
     if (payload.phase === "HunterLastBreath") {
       logGameEvent("role.hunter.triggered", {
@@ -324,6 +311,14 @@ export function initSocketRuntime(): void {
 
   socket.on(SOCKET_EVENTS.GAME_RESULT, (payload: GameResultEvent) => {
     store.getState().pushResultEvent(payload);
+    const currentPlayerId = store.getState().playerId;
+    if (currentPlayerId && payload.playerIds?.includes(currentPlayerId)) {
+      logPersonalEvent("personal.eliminated", {
+        round: payload.round,
+        kind: payload.kind,
+        text: payload.message
+      });
+    }
     logGameEvent("game.result", {
       id: payload.id,
       kind: payload.kind,
@@ -351,12 +346,19 @@ export function initSocketRuntime(): void {
       store.getState().setKnownVampirePlayerIds(payload.vampirePlayerIds);
     }
     if (payload.loverPartnerPlayerId) {
-      store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId);
+      const state = store.getState();
+      state.setLoverPartnerPlayerId(payload.loverPartnerPlayerId);
       const roomState = store.getState().roomState;
       const partnerName =
         roomState?.players.find((p) => p.playerId === payload.loverPartnerPlayerId)?.nickname ?? payload.loverPartnerPlayerId;
       const text = `Aşık bağı: ${partnerName}. Bu oyuncu ölürse sen de ölürsün.`;
-      store.getState().setPrivateResultText(text, "lover");
+      if (state.roomCode && state.playerId) {
+        state.showPrivateInfoNudge({
+          key: `private-info-nudge:${state.roomCode}:${state.playerId}:lover-partner:${payload.loverPartnerPlayerId}`,
+          title: "1 yeni kişisel bilgi",
+          body: "Kişisel loglarını kontrol et."
+        });
+      }
       logPersonalEvent("game.private_result.lover_link", {
         loverPartnerPlayerId: payload.loverPartnerPlayerId,
         text

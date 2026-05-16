@@ -38,6 +38,7 @@ export function VoteScreen(_: Props) {
   const setSelectedTargetPlayerId = useGameStore((s) => s.setSelectedTargetPlayerId);
   const privateResultText = useGameStore((s) => s.privateResultText);
   const privateResultKind = useGameStore((s) => s.privateResultKind);
+  const activeResultEvent = useGameStore((s) => s.activeResultEvent);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Vote"));
   const noLynchEnabled = roomState?.rules?.noLynchEnabled ?? false;
@@ -47,22 +48,27 @@ export function VoteScreen(_: Props) {
   const players = roomState?.players ?? [];
   const mePlayer = players.find((p) => p.playerId === playerId);
   const meAlive = mePlayer?.isAlive ?? true;
+  const ownEliminationResultActive = Boolean(playerId && activeResultEvent?.playerIds?.includes(playerId));
   const [confirmOpen, setConfirmOpen] = useState(false);
   const selectedName =
     selectedTargetPlayerId === "__NO_LYNCH__"
       ? "Kimseyi Gönderme"
       : players.find((player) => player.playerId === selectedTargetPlayerId)?.nickname ?? null;
-  const voteInfoText = !meAlive
-    ? "Elendin; oylamayı izliyorsun."
+  const voteInfoText = ownEliminationResultActive
+    ? "Oylama sonucu açıklanıyor."
+    : !meAlive
+    ? "Elendin, oylamayı izliyorsun."
     : selectedName
       ? `${selectedName} seçildi.`
       : "Bir hedef seç ve alttan onayla.";
-  const voteInfoDetail = !meAlive
+  const voteInfoDetail = ownEliminationResultActive
+    ? "Sonuç açıklandıktan sonra izleyici durumuna geçeceksin."
+    : !meAlive
     ? "Oy kullanamazsın, sonucu izleyebilirsin."
     : isMayorElection
       ? "Başkan tercihini süre bitmeden kilitle."
       : "Oyunu süre bitmeden kilitle.";
-  const tiedTopCandidates = gameState?.lastDayVoteSummary?.tiedTopCandidates ?? [];
+  const tiedTopCandidates = gameState?.lastDayVoteSummary?.revoteCandidateIds ?? gameState?.lastDayVoteSummary?.tiedTopCandidates ?? [];
   const hasTieRevote = !isMayorElection && gameState?.tieCountInRound ? tiedTopCandidates.length > 1 : false;
   const tieCandidateSet = useMemo(() => new Set(tiedTopCandidates), [tiedTopCandidates]);
 
@@ -78,12 +84,12 @@ export function VoteScreen(_: Props) {
       ? [
           {
             id: "__NO_LYNCH__",
-            label: "Kimseyi Gonderme",
+            label: "Kimseyi Gönderme",
             initials: "Ø",
             isAlive: true,
             isSelectable: meAlive,
             isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
-            statusText: "Bos oy",
+            statusText: "Boş oy",
             disabledReason: meAlive ? null : "Elendin"
           }
         ]
@@ -95,7 +101,7 @@ export function VoteScreen(_: Props) {
       isAlive: player.isAlive,
       isSelectable: meAlive,
       isSelected: selectedTargetPlayerId === player.playerId,
-      statusText: player.playerId === mayorPlayerId ? "Baskan adayi" : "Aday",
+      statusText: player.playerId === mayorPlayerId ? "Başkan adayı" : "Aday",
       disabledReason: meAlive ? null : "Elendin",
       badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
     }))
@@ -131,9 +137,9 @@ export function VoteScreen(_: Props) {
     >
       <View style={styles.screenRoot}>
         <PhaseBanner
-          title={isMayorElection ? "Baskan Secimi" : "Oylama"}
-          description={isMayorElection ? "Koy baskanini sec. Baskanin oyu gunduz 2 sayilir." : "Kimi koyden gondermek istiyorsun?"}
-          notice={gameState?.tieCountInRound ? "Koy ikiye bolundu. Son karar icin tekrar oy veriliyor." : undefined}
+          title={isMayorElection ? "Başkan Seçimi" : "Oylama"}
+          description={isMayorElection ? "Köy başkanını seç. Başkanın oyu gündüz 2 sayılır." : "Kimi köyden göndermek istiyorsun?"}
+          notice={gameState?.tieCountInRound ? "Köy ikiye bölündü. Son karar için tekrar oy veriliyor." : undefined}
           phaseEndsAt={gameState?.phaseEndsAt ?? null}
           infoLabel={isMayorElection ? "Sıradaki karar" : "Oylama kararı"}
           infoText={voteInfoText}
@@ -170,8 +176,8 @@ export function VoteScreen(_: Props) {
             disabledSummary={null}
           />
 
-          {privateResultText && privateResultKind === "lover" ? (
-            <PrivateInfoCard kind="lover" body={privateResultText} />
+          {privateResultText && privateResultKind && privateResultKind !== "lover" ? (
+            <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
           ) : null}
           {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         </ScrollView>
@@ -193,13 +199,13 @@ export function VoteScreen(_: Props) {
       </View>
       <ConfirmActionSheet
         visible={confirmOpen}
-        title={isMayorElection ? "Baskan Oyu Kilitlensin mi?" : "Oyunu Kilitlemek Istiyor musun?"}
+        title={isMayorElection ? "Başkan oyu kilitlensin mi?" : "Oyunu kilitlemek istiyor musun?"}
         description={
           selectedName
             ? `${selectedName} icin verdigin oy onaylanacak. Faz bitene kadar degistiremeyebilirsin.`
             : "Secim onaylanacak."
         }
-        confirmLabel={isMayorElection ? "Baskan Oyu Kilitle" : "Oyumu Kilitle"}
+        confirmLabel={isMayorElection ? "Başkan Oyunu Kilitle" : "Oyumu Kilitle"}
         variant={hasTieRevote ? "danger" : "blood"}
         onConfirm={submitVote}
         onCancel={() => setConfirmOpen(false)}

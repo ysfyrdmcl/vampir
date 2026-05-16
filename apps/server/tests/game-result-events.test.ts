@@ -94,6 +94,18 @@ describe("buildGameResultEvents", () => {
     expect(events[0]).toMatchObject({ kind: "night", playerIds: ["a"] });
   });
 
+  it("uses a stable result id for the same night death outcome", () => {
+    const r = room([player("v", "Vampire"), player("a", "Villager")], "NightResolve");
+    const before = captureResultEventBaseline(r);
+    r.players[1].isAlive = false;
+    r.game.phase = "DayStart";
+    r.game.lastEliminationSummary = { source: "Night", playerId: "a" };
+    const first = buildGameResultEvents(before, r)[0];
+    const second = buildGameResultEvents(before, r)[0];
+    expect(first.id).toBe("result:R:1:night:a:DayStart");
+    expect(second.id).toBe(first.id);
+  });
+
   it("announces mayor selection", () => {
     const r = room([player("a", "Villager"), player("b", "Villager")], "MayorElection");
     const before = captureResultEventBaseline(r);
@@ -101,6 +113,23 @@ describe("buildGameResultEvents", () => {
     r.game.mayorPlayerId = "b";
     const events = buildGameResultEvents(before, r);
     expect(events[0]).toMatchObject({ kind: "mayor", playerIds: ["b"] });
+  });
+
+  it("announces canonical revote candidates on tie", () => {
+    const r = room([player("a", "Villager"), player("b", "Villager"), player("c", "Villager")], "DayVote");
+    const before = captureResultEventBaseline(r);
+    r.game.phase = "DayDiscussion";
+    r.game.tieCountInRound = 1;
+    r.game.revoteCandidateIds = ["b", "c"];
+    r.game.lastDayVoteSummary = {
+      entries: [{ playerId: "b", votes: 2 }, { playerId: "c", votes: 2 }],
+      executedPlayerId: null,
+      tiedTopCandidates: ["b", "c"],
+      revoteCandidateIds: ["b", "c"]
+    };
+    const events = buildGameResultEvents(before, r);
+    expect(events[0]).toMatchObject({ kind: "tie", playerIds: ["b", "c"] });
+    expect(events[0].message).toContain("Yeni oylama sadece bu adaylar arasında");
   });
 
   it("announces mayor selection before guard protection when guard phase follows", () => {

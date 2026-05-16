@@ -145,6 +145,65 @@ describe("legalTargetsForBot", () => {
     expect(targets).toContain("__NO_LYNCH__");
   });
 
+  it("DayVote revote lists only canonical tie candidates", () => {
+    const room = baseRoom({
+      players: [
+        {
+          playerId: "b1",
+          nickname: "B",
+          deviceId: "bot:b1",
+          sessionToken: "t",
+          socketId: "",
+          isConnected: true,
+          isReady: true,
+          isAlive: true,
+          role: "Villager",
+          lastProtectedRound: null,
+          lastProtectedTargetPlayerId: null,
+          guardUsedInGame: false,
+          isBot: true
+        },
+        {
+          playerId: "h1",
+          nickname: "H",
+          deviceId: "d",
+          sessionToken: "t",
+          socketId: "s",
+          isConnected: true,
+          isReady: true,
+          isAlive: true,
+          role: "Villager",
+          lastProtectedRound: null,
+          lastProtectedTargetPlayerId: null,
+          guardUsedInGame: false,
+          isBot: false
+        },
+        {
+          playerId: "h2",
+          nickname: "J",
+          deviceId: "d2",
+          sessionToken: "t",
+          socketId: "s2",
+          isConnected: true,
+          isReady: true,
+          isAlive: true,
+          role: "Villager",
+          lastProtectedRound: null,
+          lastProtectedTargetPlayerId: null,
+          guardUsedInGame: false,
+          isBot: false
+        }
+      ],
+      game: {
+        phase: "DayVote",
+        tieCountInRound: 1,
+        revoteCandidateIds: ["h1"],
+        rules: resolveRuleSettings("Classic", { noLynchEnabled: true })
+      }
+    });
+    expect(legalTargetsForBot(room, "DayVote", "b1")).toEqual(["h1"]);
+  });
+
   it("MayorElection legal targets exclude the voting actor", () => {
     const room = baseRoom({
       players: [

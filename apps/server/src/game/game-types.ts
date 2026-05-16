@@ -62,8 +62,10 @@ export interface GameState {
     entries: { playerId: string; votes: number }[];
     executedPlayerId: string | null;
     tiedTopCandidates: string[];
+    revoteCandidateIds?: string[];
     noLynchWon?: boolean;
   } | null;
+  revoteCandidateIds?: string[];
   lastEliminationSummary: EliminationSummary | null;
   gameMode: GameMode;
   rolePreset: RolePresetId;

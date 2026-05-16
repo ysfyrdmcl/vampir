@@ -1,16 +1,13 @@
 import type { BotSpeechEvent } from "@vampir-koylu/shared";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import {
-  formatBotSpeechMetaLine,
-  formatBotSpeechPhaseContext,
-  formatBotSpeechRelativeTime
-} from "../utils/bot-speech-labels";
+import { botSpeechIntentLabel, formatBotSpeechPhaseContext, formatBotSpeechRelativeTime } from "../utils/bot-speech-labels";
+import { HighlightedBotSpeechMessage } from "./BotSpeechBubble";
 
 export interface BotSpeechHistorySheetProps {
   visible: boolean;
@@ -72,30 +69,37 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
           <Text style={styles.subtitle} numberOfLines={2}>
             En yeni üstte
           </Text>
-          <ScrollView
+          <FlatList
+            data={entries}
+            keyExtractor={(e) => `${e.phaseId}:${e.speakerPlayerId}:${e.createdAt}`}
             style={styles.scroll}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator
             nestedScrollEnabled
             bounces
-          >
-            {entries.length === 0 ? (
-              <Text style={styles.empty}>Henüz söylenti yok</Text>
-            ) : (
-              entries.map((e) => (
-                <View key={`${e.phaseId}:${e.speakerPlayerId}:${e.createdAt}`} style={styles.row}>
-                  <Text style={styles.rowMeta} numberOfLines={2}>
-                    {formatBotSpeechMetaLine(e.speakerName, e.intent, e.tone)}
-                  </Text>
-                  <Text style={styles.rowPhase} numberOfLines={2}>
-                    {formatBotSpeechPhaseContext(e.phaseId)} · {formatBotSpeechRelativeTime(e.createdAt)}
-                  </Text>
-                  <Text style={styles.rowMessage}>{e.message}</Text>
+            ListEmptyComponent={<Text style={styles.empty}>Henüz söylenti yok</Text>}
+            renderItem={({ item: e }) => (
+              <View style={styles.row}>
+                <View style={styles.rowHeader}>
+                  <Text style={styles.speakerName} numberOfLines={1}>{e.speakerName}</Text>
+                  {e.targetName ? <Text style={styles.targetChip} numberOfLines={1}>Hedef: {e.targetName}</Text> : null}
                 </View>
-              ))
+                <Text style={styles.rowMeta} numberOfLines={2}>
+                  {botSpeechIntentLabel(e.intent)}
+                </Text>
+                <Text style={styles.rowPhase} numberOfLines={2}>
+                  {formatBotSpeechPhaseContext(e.phaseId)} · {formatBotSpeechRelativeTime(e.createdAt)}
+                </Text>
+                <HighlightedBotSpeechMessage
+                  message={e.message}
+                  targetName={e.targetName}
+                  style={styles.rowMessage}
+                  highlightStyle={styles.messageTarget}
+                />
+              </View>
             )}
-          </ScrollView>
+          />
         </View>
       </View>
     </Modal>
@@ -185,6 +189,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm
   },
+  rowHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0
+  },
+  speakerName: {
+    maxWidth: "62%",
+    color: colors.backgroundDeep,
+    backgroundColor: colors.secondary,
+    overflow: "hidden",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontFamily: typography.sansBold,
+    fontSize: 11,
+    lineHeight: 14
+  },
+  targetChip: {
+    flexShrink: 1,
+    maxWidth: "38%",
+    color: colors.secondary,
+    backgroundColor: "rgba(233,195,73,0.13)",
+    overflow: "hidden",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.26)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontFamily: typography.sansBold,
+    fontSize: 10,
+    lineHeight: 13
+  },
   rowMeta: {
     color: colors.textDim,
     fontFamily: typography.sansBold,
@@ -207,5 +244,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 6,
     flexShrink: 1
+  },
+  messageTarget: {
+    color: colors.secondary,
+    fontFamily: typography.serifSemi
   }
 });

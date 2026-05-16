@@ -69,6 +69,8 @@ interface GameStoreState {
   gameWinner: "Vampires" | "Villagers" | null;
   activeResultEvent: GameResultEvent | null;
   resultEventQueue: GameResultEvent[];
+  privateInfoNudge: { key: string; title: string; body: string } | null;
+  seenPrivateInfoNudgeKeys: string[];
   phaseDurations: PhaseDurationSettings;
   gameMode: GameMode;
   rolePreset: RolePresetId;
@@ -109,6 +111,8 @@ interface GameStoreState {
   setGameWinner: (winner: "Vampires" | "Villagers" | null) => void;
   pushResultEvent: (event: GameResultEvent) => void;
   dismissActiveResultEvent: () => void;
+  showPrivateInfoNudge: (nudge: { key: string; title: string; body: string }) => void;
+  dismissPrivateInfoNudge: () => void;
   setSelectedTargetPlayerId: (playerId: string | null) => void;
   setPhaseDurations: (updater: Partial<PhaseDurationSettings>) => void;
   setGameMode: (mode: GameMode) => void;
@@ -136,6 +140,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
   gameWinner: null,
   activeResultEvent: null,
   resultEventQueue: [],
+  privateInfoNudge: null,
+  seenPrivateInfoNudgeKeys: [],
   phaseDurations: {
     useSystemDefaults: true,
     roleReveal: 8,
@@ -263,6 +269,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
               gameWinner: null,
               activeResultEvent: null,
               resultEventQueue: [],
+              privateInfoNudge: null,
+              seenPrivateInfoNudgeKeys: [],
               vampireVotePreview: null,
               detectiveInspectedPlayerIds: [],
               knownVampirePlayerIds: [],
@@ -320,6 +328,15 @@ export const useGameStore = create<GameStoreState>((set) => ({
       const [next, ...rest] = state.resultEventQueue;
       return { activeResultEvent: next ?? null, resultEventQueue: rest };
     }),
+  showPrivateInfoNudge: (privateInfoNudge) =>
+    set((state) => {
+      if (state.seenPrivateInfoNudgeKeys.includes(privateInfoNudge.key)) return {};
+      return {
+        privateInfoNudge,
+        seenPrivateInfoNudgeKeys: [...state.seenPrivateInfoNudgeKeys, privateInfoNudge.key]
+      };
+    }),
+  dismissPrivateInfoNudge: () => set({ privateInfoNudge: null }),
   setSelectedTargetPlayerId: (selectedTargetPlayerId) => set({ selectedTargetPlayerId }),
   setPhaseDurations: (updater) =>
     set((state) => ({
@@ -356,6 +373,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
       gameWinner: null,
       activeResultEvent: null,
       resultEventQueue: [],
+      privateInfoNudge: null,
+      seenPrivateInfoNudgeKeys: [],
       selectedTargetPlayerId: null,
       activeBotSpeech: null,
       botSpeechQueue: [],

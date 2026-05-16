@@ -159,6 +159,7 @@ export interface DayVoteSummary {
   entries: DayVoteSummaryEntry[];
   executedPlayerId: string | null;
   tiedTopCandidates: string[];
+  revoteCandidateIds?: string[];
   noLynchWon?: boolean;
 }
 
@@ -231,6 +232,7 @@ export interface BotSpeechEvent {
   tone: BotSpeechTone;
   intent: BotSpeechIntent;
   targetPlayerId?: string;
+  targetName?: string;
   durationMs: number;
   createdAt: number;
 }

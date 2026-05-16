@@ -52,8 +52,8 @@ export function buildGameResultEvents(before: ResultEventBaseline, room: RoomSta
   }
 
   if (before.phase === "DayVote" && phase === "DayDiscussion" && room.game.tieCountInRound > 0) {
-    const tied = room.game.lastDayVoteSummary?.tiedTopCandidates ?? [];
-    events.push(resultEvent(room, "tie", "Oylar Eşitlendi", `${names(tied).join(", ")} arasında beraberlik var. Son tartışma başlıyor.`, tied));
+    const tied = room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? [];
+    events.push(resultEvent(room, "tie", "Oylar Eşitlendi", `Oylar eşitlendi: ${names(tied).join(", ")}. Yeni oylama sadece bu adaylar arasında yapılacak.`, tied));
   }
 
   if (before.phase === "DayVote" && phase === "WinCheck" && room.game.lastDayVoteSummary?.noLynchWon) {

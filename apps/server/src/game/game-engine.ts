@@ -39,6 +39,7 @@ export class GameEngine {
     room.game.pausedRemainingMs = null;
     room.game.lastDayVoteSummary = null;
     room.game.lastEliminationSummary = null;
+    room.game.revoteCandidateIds = [];
     room.game.loverLinks = {};
     room.game.detectiveInspectedTargets = {};
     room.game.phaseEndsAt = this.phaseEndsAt(room, "RoleReveal");
@@ -242,15 +243,18 @@ export class GameEngine {
         room.game.actions = [];
         return "DayVote";
       case "DayVote": {
+        const revoteCandidateIds = room.game.tieCountInRound > 0 ? room.game.revoteCandidateIds ?? [] : [];
         const voteResult = resolveDayVotes(room.players, room.game.actions, {
           noLynchEnabled: room.game.rules.noLynchEnabled,
           mayorPlayerId: room.game.mayorPlayerId,
-          blockedTargetPlayerId: room.game.guardProtectedPlayerId
+          blockedTargetPlayerId: room.game.guardProtectedPlayerId,
+          allowedTargetIds: revoteCandidateIds.length > 0 ? revoteCandidateIds : undefined
         });
         room.game.lastDayVoteSummary = {
           entries: voteResult.voteBreakdown,
           executedPlayerId: voteResult.executedPlayerId,
           tiedTopCandidates: voteResult.tiedTopCandidates,
+          revoteCandidateIds: revoteCandidateIds.length > 0 ? revoteCandidateIds : undefined,
           noLynchWon: voteResult.noLynchWon
         };
         if (voteResult.executedPlayerId) {
@@ -262,16 +266,20 @@ export class GameEngine {
             this.eliminateWithLoverChain(room, executed.playerId, "Day");
           }
           room.game.tieCountInRound = 0;
+          room.game.revoteCandidateIds = [];
           return "ExecutionResolve";
         }
         if (voteResult.noLynchWon) {
           room.game.lastEliminationSummary = null;
           room.game.tieCountInRound = 0;
+          room.game.revoteCandidateIds = [];
           room.game.actions = [];
           return "WinCheck";
         }
         if (voteResult.tiedTopCandidates.length > 1 && room.game.tieCountInRound === 0) {
           room.game.tieCountInRound = 1;
+          room.game.revoteCandidateIds = voteResult.tiedTopCandidates;
+          room.game.lastDayVoteSummary.revoteCandidateIds = voteResult.tiedTopCandidates;
           room.game.actions = [];
           return "DayDiscussion";
         }
@@ -289,14 +297,17 @@ export class GameEngine {
               room.game.lastDayVoteSummary = {
                 entries: room.game.lastDayVoteSummary?.entries ?? [],
                 executedPlayerId: randomTargetId,
-                tiedTopCandidates: room.game.lastDayVoteSummary?.tiedTopCandidates ?? []
+                tiedTopCandidates: room.game.lastDayVoteSummary?.tiedTopCandidates ?? [],
+                revoteCandidateIds: revoteCandidateIds.length > 0 ? revoteCandidateIds : undefined
               };
               room.game.tieCountInRound = 0;
+              room.game.revoteCandidateIds = [];
               return "ExecutionResolve";
             }
           }
         }
         room.game.tieCountInRound = 0;
+        room.game.revoteCandidateIds = [];
         room.game.actions = [];
         room.game.privateResults = [];
         return "WinCheck";
@@ -348,6 +359,7 @@ export class GameEngine {
         room.game.actions = [];
         room.game.privateResults = [];
         room.game.guardProtectedPlayerId = null;
+        room.game.revoteCandidateIds = [];
         return "NightStart";
       }
       case "GameOver":
@@ -389,6 +401,7 @@ export class GameEngine {
 
     if (submission.targetPlayerId) {
       if (submission.actionType === "day-vote" && submission.targetPlayerId === "__NO_LYNCH__") {
+        if (room.game.tieCountInRound > 0) throw new Error("TARGET_NOT_IN_REVOTE");
         if (!room.game.rules.noLynchEnabled) throw new Error("NO_LYNCH_DISABLED");
         return;
       }
@@ -400,6 +413,12 @@ export class GameEngine {
       }
       if (submission.actionType === "day-vote" && room.game.guardProtectedPlayerId && submission.targetPlayerId === room.game.guardProtectedPlayerId) {
         throw new Error("TARGET_PROTECTED_BY_GUARD");
+      }
+      if (submission.actionType === "day-vote" && room.game.tieCountInRound > 0) {
+        const revoteCandidateIds = room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? [];
+        if (!revoteCandidateIds.includes(submission.targetPlayerId)) {
+          throw new Error("TARGET_NOT_IN_REVOTE");
+        }
       }
       const target = room.players.find((p) => p.playerId === submission.targetPlayerId);
       if (!target || !target.isAlive) throw new Error("INVALID_TARGET");

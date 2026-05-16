@@ -17,6 +17,7 @@ type SvgTransitionKind = "night-start" | "day-start" | "death" | "no-death" | "e
 
 interface SvgTransition {
   key: string;
+  dedupeKey: string;
   kind: SvgTransitionKind;
   payload: CinematicInfoPayload;
   resultKind: string | null;
@@ -33,11 +34,13 @@ const ROLE_REVEAL_TO_NIGHT_OVERLAY_DELAY_MS = 720;
 const DEBUG_SVG_OVERLAY = typeof __DEV__ !== "undefined" && __DEV__ && false;
 const EMPTY_PLAYERS: PlayerNameLookup[] = [];
 
-function phaseTransition(phase: GamePhase | null, round: number | null): SvgTransition | null {
+function phaseTransition(phase: GamePhase | null, round: number | null, roomCode: string | null): SvgTransition | null {
   const keySuffix = `${phase}:${round ?? "unknown"}`;
+  const room = roomCode ?? "room";
   if (phase === "NightStart") {
     return {
       key: `phase:${keySuffix}`,
+      dedupeKey: `${room}:${round ?? "unknown"}:phase:night-start`,
       kind: "night-start",
       payload: {
         title: "Gece Çöküyor",
@@ -51,6 +54,7 @@ function phaseTransition(phase: GamePhase | null, round: number | null): SvgTran
   if (phase === "DayStart") {
     return {
       key: `phase:${keySuffix}`,
+      dedupeKey: `${room}:${round ?? "unknown"}:phase:day-start`,
       kind: "day-start",
       payload: {
         title: "Gün Doğuyor",
@@ -64,12 +68,27 @@ function phaseTransition(phase: GamePhase | null, round: number | null): SvgTran
   if (phase === "ExecutionResolve") {
     return {
       key: `phase:${keySuffix}`,
+      dedupeKey: `${room}:${round ?? "unknown"}:phase:execution-resolve`,
       kind: "execution",
       payload: {
         title: "Köy Kararını Verdi",
         subtitle: round ? `Tur ${round}` : "Oylama",
         body: "Oylama sonucu açıklanıyor.",
         visualTone: "blood"
+      },
+      resultKind: null
+    };
+  }
+  if (phase === "MayorElection") {
+    return {
+      key: `phase:${keySuffix}`,
+      dedupeKey: `${room}:${round ?? "unknown"}:mayor-election`,
+      kind: "day-start",
+      payload: {
+        title: "Başkan Seçimi",
+        subtitle: round ? `Tur ${round}` : "Gündüz",
+        body: "Köy yeni başkanını seçmek için meydana dönüyor.",
+        visualTone: "gold"
       },
       resultKind: null
     };
@@ -114,7 +133,47 @@ function transitionVisibleMs(transition: SvgTransition, phaseEndsAt: number | nu
   return Math.max(readingMs, Math.max(0, phaseEndsAt - Date.now()));
 }
 
-function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): SvgTransition | null {
+function resultDedupeKey(event: GameResultEvent, roomCode: string | null): string {
+  const room = roomCode ?? event.id.split(":")[1] ?? "room";
+  const playerId = event.playerIds?.[0];
+  if (event.kind === "night") return playerId ? `${room}:${event.round}:night:death:${playerId}` : `${room}:${event.round}:night:no-death`;
+  if (event.kind === "day") return playerId ? `${room}:${event.round}:day:execution:${playerId}` : `${room}:${event.round}:day:no-execution`;
+  if (event.kind === "mayor") return playerId ? `${room}:${event.round}:mayor-selected:${playerId}` : `${room}:${event.round}:mayor-selected`;
+  return `${room}:${event.round}:${event.kind}:${event.playerIds?.join("-") || "none"}`;
+}
+
+function personalEliminationTransition(
+  event: GameResultEvent,
+  players: PlayerNameLookup[],
+  currentPlayerId: string | null,
+  roomCode: string | null
+): SvgTransition | null {
+  if (!currentPlayerId || !event.playerIds?.includes(currentPlayerId)) return null;
+  const playerName = players.find((player) => player.playerId === currentPlayerId)?.nickname;
+  const loverChain = event.message.includes("Aşık bağı");
+  const source = loverChain ? "lover-chain" : event.kind === "night" ? "night" : event.kind === "day" ? "day" : event.kind;
+  if (event.kind !== "night" && event.kind !== "day" && !loverChain) return null;
+  const copy = loverChain
+    ? { title: "Aşık Bağı Koptu", body: "Sevdiğinle birlikte elendin. Artık oyunu izleyebilirsin." }
+    : event.kind === "night"
+      ? { title: "Karanlık Seni Buldu", body: "Bu gece öldün. Artık oyunu izleyebilirsin." }
+      : { title: "Köy Seni Gönderdi", body: "Oylama sonucu elendin. Artık oyunu izleyebilirsin." };
+  return {
+    key: `personal:${event.id}:${currentPlayerId}`,
+    dedupeKey: `${roomCode ?? "room"}:${event.round}:personal-eliminated:${currentPlayerId}:${source}`,
+    kind: event.kind === "day" ? "execution" : "death",
+    payload: {
+      title: copy.title,
+      subtitle: `Tur ${event.round}`,
+      body: copy.body,
+      playerName,
+      visualTone: "blood"
+    },
+    resultKind: "personal.eliminated"
+  };
+}
+
+function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], roomCode: string | null): SvgTransition | null {
   const names = playerNames(event, players);
   const hasVictim = names.length > 0;
   const hasLoverChain = event.message.includes("Aşık bağı");
@@ -129,6 +188,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "night") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: hasVictim ? "death" : "no-death",
       payload: {
         ...common,
@@ -144,6 +204,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "day") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: hasVictim ? "execution" : "no-death",
       payload: {
         ...common,
@@ -159,6 +220,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "mayor") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: "day-start",
       payload: {
         ...common,
@@ -174,6 +236,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "guard") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: "no-death",
       payload: {
         ...common,
@@ -189,6 +252,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "tie") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: "execution",
       payload: {
         ...common,
@@ -204,6 +268,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
   if (event.kind === "hunter") {
     return {
       key: `result:${event.id}`,
+      dedupeKey: resultDedupeKey(event, roomCode),
       kind: hasVictim ? "death" : "no-death",
       payload: {
         ...common,
@@ -226,6 +291,8 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   const activeResultEvent = useGameStore((s) => s.activeResultEvent);
   const dismissActiveResultEvent = useGameStore((s) => s.dismissActiveResultEvent);
   const winner = useGameStore((s) => s.gameWinner);
+  const roomCode = useGameStore((s) => s.roomState?.roomCode ?? s.roomCode);
+  const currentPlayerId = useGameStore((s) => s.playerId);
   const players = useGameStore((s) => s.roomState?.players ?? EMPTY_PLAYERS);
   const logEntries = useLogFeedStore((s) => s.entries);
   const latestElimination = useMemo(
@@ -238,15 +305,47 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   );
   const [activeTransition, setActiveTransition] = useState<SvgTransition | null>(null);
   const activeKey = useRef<string | null>(null);
-  const pendingTransition = useRef<SvgTransition | null>(null);
+  const shownKeys = useRef(new Set<string>());
+  const queuedKeys = useRef(new Set<string>());
+  const transitionQueue = useRef<SvgTransition[]>([]);
   const isAnimating = useRef(false);
   const startTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const finishing = useRef(false);
+  const resetScope = useRef<string | null>(null);
 
-  const candidateTransition = useMemo(() => {
+  function clearOverlayQueue() {
+    startTimer.current && clearTimeout(startTimer.current);
+    startTimer.current = null;
+    activeAnimation.current?.stop();
+    activeAnimation.current = null;
+    transitionQueue.current = [];
+    queuedKeys.current.clear();
+    shownKeys.current.clear();
+    activeKey.current = null;
+    isAnimating.current = false;
+    finishing.current = false;
+    setActiveTransition(null);
+    opacity.setValue(0);
+  }
+
+  useEffect(() => {
+    const scope = `${roomCode ?? "no-room"}:${round ?? "no-round"}`;
+    if (resetScope.current === scope) return;
+    if (phase === "RoleReveal" && round === 1) {
+      clearOverlayQueue();
+    }
+    resetScope.current = scope;
+  }, [opacity, phase, roomCode, round]);
+
+  useEffect(() => {
+    if (phase !== "GameOver") return;
+    clearOverlayQueue();
+  }, [opacity, phase, winner]);
+
+  const candidateTransitions = useMemo(() => {
     if (activeResultEvent) {
-      const redirected = eventTransition(activeResultEvent, players);
+      const redirected = eventTransition(activeResultEvent, players, roomCode);
       if (redirected) {
         if (typeof __DEV__ !== "undefined" && __DEV__) {
           console.log("[CINEMATIC_OVERLAY] popup_redirected", {
@@ -255,7 +354,11 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
             phase: activeResultEvent.phase
           });
         }
-        return redirected;
+        const personal =
+          winner || phase === "GameOver"
+            ? null
+            : personalEliminationTransition(activeResultEvent, players, currentPlayerId, roomCode);
+        return personal ? [redirected, personal] : [redirected];
       }
     }
 
@@ -264,8 +367,9 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     const playerName = typeof playerId === "string" ? players.find((player) => player.playerId === playerId)?.nickname ?? playerId : undefined;
     const eliminationTs = latestElimination?.ts;
     if (source === "Night" && phase === "DayStart" && eliminationTs) {
-      return {
+      return [{
         key: `summary:${eliminationTs}:Night`,
+        dedupeKey: `${roomCode ?? "room"}:${round ?? "unknown"}:night:death:${playerId ?? "unknown"}`,
         kind: "death",
         payload: {
           title: "Bu Gece Bir Kayıp Var",
@@ -275,11 +379,12 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
           visualTone: "blood"
         },
         resultKind: "summary.elimination"
-      } satisfies SvgTransition;
+      } satisfies SvgTransition];
     }
     if (source === "Day" && phase === "ExecutionResolve" && eliminationTs) {
-      return {
+      return [{
         key: `summary:${eliminationTs}:Day`,
+        dedupeKey: `${roomCode ?? "room"}:${round ?? "unknown"}:day:execution:${playerId ?? "unknown"}`,
         kind: "execution",
         payload: {
           title: "İnfaz Gerçekleşti",
@@ -289,11 +394,12 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
           visualTone: "blood"
         },
         resultKind: "summary.elimination"
-      } satisfies SvgTransition;
+      } satisfies SvgTransition];
     }
     if (phase === "DayStart" && latestNoDeath?.payload?.round === round && latestNoDeath.ts) {
-      return {
+      return [{
         key: `summary:${latestNoDeath.ts}:NoDeath`,
+        dedupeKey: `${roomCode ?? "room"}:${round ?? "unknown"}:night:no-death`,
         kind: "no-death",
         payload: {
           title: "Kimse Ölmedi",
@@ -302,11 +408,12 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
           visualTone: "gold"
         },
         resultKind: "summary.night_no_elimination"
-      } satisfies SvgTransition;
+      } satisfies SvgTransition];
     }
 
-    return phaseTransition(phase, round);
-  }, [activeResultEvent, latestElimination, latestNoDeath, phase, players, round]);
+    const phaseCandidate = phaseTransition(phase, round, roomCode);
+    return phaseCandidate ? [phaseCandidate] : [];
+  }, [activeResultEvent, currentPlayerId, latestElimination, latestNoDeath, phase, players, roomCode, round, winner]);
 
   function completeTransition(transition: SvgTransition) {
     if (finishing.current) return;
@@ -314,6 +421,8 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     activeAnimation.current = null;
     isAnimating.current = false;
     setActiveTransition(null);
+    activeKey.current = null;
+    shownKeys.current.add(transition.dedupeKey);
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       console.log("[CINEMATIC_OVERLAY] complete", {
         key: transition.key,
@@ -324,18 +433,14 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     if (transition.resultEventId && activeResultEvent?.id === transition.resultEventId) {
       dismissActiveResultEvent();
     }
-    const pending = pendingTransition.current;
-    pendingTransition.current = null;
     requestAnimationFrame(() => {
       finishing.current = false;
-      if (pending && pending.key !== activeKey.current) {
-        startTransition(pending);
-      }
+      startNextQueuedTransition();
     });
   }
 
   function startTransition(transition: SvgTransition) {
-    activeKey.current = transition.key;
+    activeKey.current = transition.dedupeKey;
     isAnimating.current = true;
     finishing.current = false;
     setActiveTransition(transition);
@@ -373,11 +478,24 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   }
 
   function enqueueOrStart(transition: SvgTransition) {
+    if (shownKeys.current.has(transition.dedupeKey) || queuedKeys.current.has(transition.dedupeKey) || activeKey.current === transition.dedupeKey) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.log("[CINEMATIC_OVERLAY] deduped", {
+          key: transition.key,
+          dedupeKey: transition.dedupeKey,
+          resultKind: transition.resultKind,
+          transitionKind: transition.kind
+        });
+      }
+      return;
+    }
     if (isAnimating.current) {
-      pendingTransition.current = transition;
+      transitionQueue.current.push(transition);
+      queuedKeys.current.add(transition.dedupeKey);
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         console.log("[CINEMATIC_OVERLAY] enqueue", {
           key: transition.key,
+          dedupeKey: transition.dedupeKey,
           resultKind: transition.resultKind,
           transitionKind: transition.kind
         });
@@ -388,9 +506,19 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     startTransition(transition);
   }
 
+  function startNextQueuedTransition() {
+    const next = transitionQueue.current.shift();
+    if (!next) return;
+    queuedKeys.current.delete(next.dedupeKey);
+    if (shownKeys.current.has(next.dedupeKey)) {
+      startNextQueuedTransition();
+      return;
+    }
+    startTransition(next);
+  }
+
   useEffect(() => {
-    if (!candidateTransition) return;
-    if (candidateTransition.key === activeKey.current) return;
+    if (!candidateTransitions.length) return;
     if (startTimer.current) {
       clearTimeout(startTimer.current);
       startTimer.current = null;
@@ -398,22 +526,22 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
 
     const currentRoute = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
     const delayMs =
-      candidateTransition.kind === "night-start" && currentRoute === "RoleReveal"
+      candidateTransitions[0]?.kind === "night-start" && currentRoute === "RoleReveal"
         ? ROLE_REVEAL_TO_NIGHT_OVERLAY_DELAY_MS
         : 0;
 
     if (delayMs > 0) {
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         console.log("[CINEMATIC_OVERLAY] delayed", {
-          key: candidateTransition.key,
-          resultKind: candidateTransition.resultKind,
-          transitionKind: candidateTransition.kind,
+          key: candidateTransitions[0]?.key,
+          resultKind: candidateTransitions[0]?.resultKind,
+          transitionKind: candidateTransitions[0]?.kind,
           delayMs
         });
       }
       startTimer.current = setTimeout(() => {
         startTimer.current = null;
-        enqueueOrStart(candidateTransition);
+        candidateTransitions.forEach(enqueueOrStart);
       }, delayMs);
       return () => {
         if (startTimer.current) {
@@ -423,8 +551,8 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
       };
     }
 
-    enqueueOrStart(candidateTransition);
-  }, [activeResultEvent?.id, candidateTransition, dismissActiveResultEvent, opacity, phase, phaseEndsAt, round, winner]);
+    candidateTransitions.forEach(enqueueOrStart);
+  }, [activeResultEvent?.id, candidateTransitions, dismissActiveResultEvent, opacity, phase, phaseEndsAt, round, winner]);
 
   const dismissActiveTransition = () => {
     if (!activeTransition || finishing.current) return;
@@ -444,7 +572,7 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
 
   return (
     <Animated.View
-      pointerEvents="none"
+      pointerEvents="auto"
       style={[
         styles.wrap,
         {

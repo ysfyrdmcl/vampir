@@ -512,11 +512,12 @@ export class SocketRuntime {
         this.io.to(player.socketId).emit(SOCKET_EVENTS.GAME_PRIVATE_RESULT, privateResult);
       }
     }
+    const resultEvents = buildGameResultEvents(before, room);
     this.broadcastGamePhase(room);
-    this.broadcastRoomState(room);
-    for (const event of buildGameResultEvents(before, room)) {
+    for (const event of resultEvents) {
       this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_RESULT, event);
     }
+    this.broadcastRoomState(room);
     if (room.game.phase === "GameOver") {
       this.log.info({ roomCode: room.roomCode, winner: room.game.winner, round: room.game.round }, "game over");
       this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_OVER, {

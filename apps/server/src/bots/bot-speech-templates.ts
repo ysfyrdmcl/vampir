@@ -1,5 +1,6 @@
 import type { BotIntelligence, BotPersonality, BotSpeechIntent, GamePhase } from "@vampir-koylu/shared";
 import type { SpeechReferencedRole } from "./bot-role-awareness.js";
+import type { BotSpeechEvidenceClaim } from "./bot-speech-evidence.js";
 
 /** Template strings only; server substitutes placeholders. No LLM. */
 
@@ -17,6 +18,7 @@ export type SpeechTemplate = {
   requiresTarget?: boolean;
   requiredActiveRoles?: SpeechReferencedRole[];
   forbiddenWhenRolesMissing?: SpeechReferencedRole[];
+  requiresEvidence?: BotSpeechEvidenceClaim[];
   text: string;
   tags?: string[];
 };
@@ -106,6 +108,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["accuser", "analyst", "leader"],
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_was_quiet"],
     text: "{targetName} bana fazla sessiz geliyor."
   },
   {
@@ -162,6 +165,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intelligences: ["balanced", "deceptive"],
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_voted_in_tie"],
     text: "Dünkü oy havasına bakınca {targetName} biraz ayrışıyor."
   },
   {
@@ -192,6 +196,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "support_soft",
     phases: ["DayDiscussion", "MayorElection"],
     requiresTarget: true,
+    requiresEvidence: ["target_spoke_often"],
     text: "{targetName} bugün bana daha tutarlı geldi."
   },
   {
@@ -282,6 +287,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["accuser", "analyst"],
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_was_quiet"],
     text: "{targetName} bugün fazla görünmez kaldı. Bu oyunda görünmezlik bazen en gürültülü şeydir."
   },
   {
@@ -298,6 +304,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["analyst", "accuser"],
     phases: ["DayDiscussion"],
     requiresTarget: true,
+    requiresEvidence: ["target_spoke_often"],
     text: "{targetName} cevap veriyor ama hiçbir şeyi gerçekten açıklamıyor. Bunu not ediyorum."
   },
   {
@@ -307,6 +314,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intelligences: ["deceptive"],
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_voted_in_tie"],
     text: "{targetName} oyların gölgesinde yürümeyi seviyor gibi. Fazla temiz görünmek de kirli olabilir."
   },
   {
@@ -331,6 +339,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["quiet", "analyst"],
     phases: ["DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_was_quiet"],
     text: "Son kez düşünüyorum ama oyum {targetName} tarafına kayıyor. Bazı sessizlikler fazla düzenli."
   },
   {
@@ -339,6 +348,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["analyst", "leader"],
     phases: ["DayDiscussion"],
     requiresTarget: true,
+    requiresEvidence: ["target_spoke_often"],
     text: "{targetName} ne zaman konu değişse rahatlıyor. Tesadüf olabilir, ama bu köyde tesadüf pahalıdır."
   },
   {
@@ -347,6 +357,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["analyst"],
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
+    requiresEvidence: ["target_changed_vote"],
     text: "{targetName} dün çok ortada görünmeden yön değiştirdi. Ben bu tarz hamleleri masum bulmuyorum."
   },
   {

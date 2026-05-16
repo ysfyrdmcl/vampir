@@ -160,6 +160,7 @@ describe("bot speech context and selector", () => {
     expect(selectSpeechTargetForIntent(ctx!, "accuse_soft")?.playerId).toBe("v1");
     const speech = composeBotSpeech(ctx!);
     expect(speech?.targetPlayerId).toBe("v1");
+    expect(speech?.targetName).toBe("VampirAdayi");
     expect(speech?.message.toLocaleLowerCase("tr-TR")).not.toContain("dedektifim");
     expect(speech?.message.toLocaleLowerCase("tr-TR")).not.toContain("vampir bu");
   });
@@ -207,6 +208,41 @@ describe("bot speech context and selector", () => {
     ], { phase: "DayStart" }), bot, mem);
 
     expect(composeBotSpeech(ctx!)).toBeNull();
+  });
+
+  it("filters target speech claims when there is no public speech evidence", () => {
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true, botPersonality: "accuser" });
+    const target = player({ playerId: "p1", nickname: "P1", role: "Villager" });
+    const mem = createEmptyBotMemory();
+    mem.recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "accuse-answer-gap-1");
+    const ctx = buildBotSpeechContext(room([bot, target]), bot, mem);
+
+    expect(composeBotSpeech(ctx!)).toBeNull();
+  });
+
+  it("allows target speech claims when public speech evidence exists", () => {
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true, botPersonality: "accuser" });
+    const target = player({ playerId: "p1", nickname: "P1", role: "Villager", isBot: true });
+    const mem = createEmptyBotMemory();
+    mem.recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "accuse-answer-gap-1");
+    const publicSpeech = [1, 2].map((i) => ({
+      roomCode: "ROOM",
+      phaseId: `DayDiscussion:${i}`,
+      speakerPlayerId: "p1",
+      speakerName: "P1",
+      message: `Mesaj ${i}`,
+      tone: "calm" as const,
+      intent: "small_talk" as const,
+      durationMs: 5200,
+      createdAt: i
+    }));
+    const ctx = buildBotSpeechContext(room([bot, target]), bot, mem, publicSpeech);
+
+    expect(composeBotSpeech(ctx!)?.templateId).toBe("accuse-answer-gap-1");
   });
 });
 

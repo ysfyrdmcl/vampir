@@ -131,6 +131,42 @@ describe("BotBrainController", () => {
     expect(result).toMatchObject({ ok: false, reason: "invalid_response" });
   });
 
+  it("rejects LLM speech-count claims without evidence", async () => {
+    const speaker = player("b1");
+    const brain = new BotBrainController({
+      llm: fakeLLM({ ok: true, text: JSON.stringify({ message: "P1 çok konuşuyor ama dedikleri tutarlı değil." }), model: "fake" })
+    });
+
+    const result = await brain.generateSpeech({
+      room: room([speaker, player("p1"), player("p2"), player("p3")]),
+      speaker,
+      memory: createEmptyBotMemory(),
+      intent: "analysis",
+      tone: "calm",
+      targetPlayerId: "p1"
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "invalid_response" });
+  });
+
+  it("rejects LLM vote-change claims without vote evidence", async () => {
+    const speaker = player("b1");
+    const brain = new BotBrainController({
+      llm: fakeLLM({ ok: true, text: JSON.stringify({ message: "P1 oy değiştirdi, bu bana temiz gelmedi." }), model: "fake" })
+    });
+
+    const result = await brain.generateSpeech({
+      room: room([speaker, player("p1"), player("p2"), player("p3")]),
+      speaker,
+      memory: createEmptyBotMemory(),
+      intent: "analysis",
+      tone: "calm",
+      targetPlayerId: "p1"
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "invalid_response" });
+  });
+
   it("maps LLM failures without throwing", async () => {
     const speaker = player("b1");
     const brain = new BotBrainController({ llm: fakeLLM({ ok: false, reason: "disabled" }) });

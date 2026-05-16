@@ -35,6 +35,7 @@ export function GameOverScreen({ navigation }: Props) {
   const timeline = buildTimeline(logs, players);
   const analysis = buildGameAnalysis(logs, winner, players);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [leavingFinal, setLeavingFinal] = useState<"lobby" | "home" | null>(null);
   const winnerReady = winner === "Vampires" || winner === "Villagers";
   const isVampireWin = winner === "Vampires";
   const winnerIcon = isVampireWin ? "moon-outline" : "sunny-outline";
@@ -55,14 +56,28 @@ export function GameOverScreen({ navigation }: Props) {
   }, [winner, winnerReady]);
 
   const exitToHome = () => {
+    setLeavingFinal("home");
     emitLeaveRoom();
     useGameStore.getState().setErrorCode(null);
-    navigation.navigate("Welcome");
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+  };
+
+  const startNewGame = () => {
+    setLeavingFinal("lobby");
+    emitResetRoomToLobby();
   };
 
   return (
     <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="" suppressTransientBotSpeech>
-      {!winnerReady ? (
+      {leavingFinal ? (
+        <View style={styles.loadingWrap}>
+          <View style={styles.loadingIcon}>
+            <Ionicons name={leavingFinal === "home" ? "home-outline" : "refresh-outline"} size={34} color={colors.secondary} />
+          </View>
+          <Text style={styles.loadingTitle}>{leavingFinal === "home" ? "Ana Menü Açılıyor" : "Lobiye Dönülüyor"}</Text>
+          <Text style={styles.loadingText}>{leavingFinal === "home" ? "Oyun oturumu kapatılıyor." : "Yeni oyun için masa hazırlanıyor."}</Text>
+        </View>
+      ) : !winnerReady ? (
         <View style={styles.loadingWrap}>
           <View style={styles.loadingIcon}>
             <Ionicons name="hourglass-outline" size={34} color={colors.secondary} />
@@ -155,7 +170,7 @@ export function GameOverScreen({ navigation }: Props) {
         </View>
 
         {isHost ? (
-          <PrimaryButton label="Yeni Oyun" iconName="refresh-outline" onPress={emitResetRoomToLobby} />
+          <PrimaryButton label="Yeni Oyun" iconName="refresh-outline" onPress={startNewGame} />
         ) : (
           <Text style={styles.hostHint}>Yeni masayı lobiye almak için host &quot;Yeni Oyun&quot;a basmalı.</Text>
         )}

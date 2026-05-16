@@ -1,16 +1,12 @@
 import type { LogFeedEntry } from "./log-feed-store";
-import {
-  formatJournalRoundPrefix,
-  formatPersonalTurnLogLine,
-  journalPersonalPhaseLabel
-} from "../utils/journal-labels";
+import { formatJournalRoundPrefix } from "../utils/journal-labels";
 import { toRoleLabel, toWinnerLabel } from "../utils/role-label";
 
 export type LogScope = "general" | "personal";
 type LogTab = "general" | "personal";
 
 const HIDDEN_PREFIXES = ["test.", "sim.", "emit.", "socket."];
-const PERSONAL_PREFIXES = ["personal.", "game.private_result.", "game.role.", "game.phase.personal_turn_info"];
+const PERSONAL_PREFIXES = ["personal.", "game.private_result.", "game.role."];
 
 const GENERAL_EVENTS = new Set<string>([
   "room.joined",
@@ -20,6 +16,7 @@ const GENERAL_EVENTS = new Set<string>([
   "vote.mayor_started",
   "vote.tie",
   "vote.revote_started",
+  "vote.execution",
   "summary.elimination",
   "summary.chain_elimination",
   "summary.night_no_elimination",
@@ -30,7 +27,6 @@ const GENERAL_EVENTS = new Set<string>([
 ]);
 
 const PERSONAL_EVENTS = new Set<string>([
-  "game.phase.personal_turn_info",
   "game.role.assigned",
   "game.private_result.lover_link",
   "personal.detective.inspect_result",
@@ -40,7 +36,8 @@ const PERSONAL_EVENTS = new Set<string>([
   "personal.vampire.night_result",
   "personal.vampire.vote_preview",
   "personal.hunter.shot_selected",
-  "personal.guard.protect_selected"
+  "personal.guard.protect_selected",
+  "personal.eliminated"
 ]);
 
 export function shouldShowLogEntry(entry: LogFeedEntry, tab: LogTab): boolean {
@@ -80,9 +77,9 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   if (event === "vote.started") return `${rp}Gündüz oylaması başladı.`;
   if (event === "vote.mayor_started") return `${rp}Başkan seçimi başladı.`;
   if (event === "vote.tie") {
-    return `${rp}Oylar eşitlendi; tekrar oylama yapılacak. Adaylar: ${formatCandidates(p.tiedTopCandidates)}.`;
+    return `${rp}Oylar eşitlendi: ${formatCandidates(p.tiedTopCandidates)}. Yeni oylama sadece bu adaylar arasında yapılacak.`;
   }
-  if (event === "vote.revote_started") return `${rp}Tekrar oylama başladı.`;
+  if (event === "vote.revote_started") return `${rp}Tekrar oylama başladı. Adaylar: ${formatCandidates(p.tiedTopCandidates)}.`;
   if (event === "vote.execution") {
     const who = String(p.executedPlayerId ?? "bir oyuncu");
     return `${rp}Köy kararı: ${who} gönderildi.`;
@@ -97,9 +94,6 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   if (event === "summary.players_eliminated") return `Elenen oyuncular: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.chain_elimination") return `Aşık bağı tetiklendi. Birbirine bağlı oyuncular elendi: ${String((p.players as string[] | undefined)?.join(", ") ?? "-")}.`;
   if (event === "summary.night_no_elimination") return `${rp}Gece sona erdi: Kimse elenmedi.`;
-  if (event === "game.phase.personal_turn_info") {
-    return `${formatPersonalTurnLogLine(p)}.`;
-  }
   if (event === "game.role.assigned") return `Rolün atandı: ${toRoleLabel(p.role as string | null | undefined)}.`;
   if (event === "game.private_result.lover_link") return `Aşık bağı bildirimi: ${String(p.text ?? "-")}.`;
   if (event === "personal.detective.inspect_result") return `Sorgu sonucu: ${String(p.text ?? "-")}.`;
@@ -112,6 +106,7 @@ export function toReadableLogText(event: string, payload?: Record<string, unknow
   }
   if (event === "personal.hunter.shot_selected") return `Son nefes hedefin: ${String(p.targetName ?? p.targetPlayerId ?? "hedef")}.`;
   if (event === "personal.guard.protect_selected") return `${String(p.targetName ?? p.targetPlayerId ?? "Hedef")} bugün oylamayla elenemez.`;
+  if (event === "personal.eliminated") return String(p.text ?? "Elendin.");
   if (event === "role.hunter.triggered") return `${rp}Avcı son nefes hakkını kullanıyor.`;
   if (event === "role.hunter.shot") return `${rp}Avcı atışı: ${String(p.targetPlayerId ?? "hedef")} elendi.`;
   if (event === "role.mayor.selected") return `${rp}Köy başkanı seçildi (${String(p.mayorPlayerId ?? "-")}).`;

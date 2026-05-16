@@ -15,6 +15,7 @@ export function resolveDayVotes(
     mayorPlayerId?: string | null;
     voteActionType?: "day-vote" | "mayor-vote";
     blockedTargetPlayerId?: string | null;
+    allowedTargetIds?: string[];
   }
 ): VoteResolveResult {
   const aliveIds = new Set(players.filter((p) => p.isAlive).map((p) => p.playerId));
@@ -25,11 +26,13 @@ export function resolveDayVotes(
   const voteActionType = options?.voteActionType ?? "day-vote";
   const mayorPlayerId = options?.mayorPlayerId ?? null;
   const blockedTargetPlayerId = options?.blockedTargetPlayerId ?? null;
+  const allowedTargetIds = options?.allowedTargetIds ? new Set(options.allowedTargetIds) : null;
 
   for (const action of actions.filter((a) => a.actionType === voteActionType)) {
     if (!aliveIds.has(action.actorPlayerId)) continue;
     if (!action.targetPlayerId) continue;
     const voteWeight = voteActionType === "day-vote" && mayorPlayerId && action.actorPlayerId === mayorPlayerId ? 2 : 1;
+    if (allowedTargetIds && !allowedTargetIds.has(action.targetPlayerId)) continue;
     if (action.targetPlayerId === NO_LYNCH_TARGET && noLynchEnabled) {
       votes.set(action.targetPlayerId, (votes.get(action.targetPlayerId) ?? 0) + voteWeight);
       continue;

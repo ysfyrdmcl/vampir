@@ -13,6 +13,7 @@ import type { BotBrainController } from "./bot-brain-controller.js";
 import { pickBotTargetOrder } from "./bot-targeting.js";
 import { NO_LYNCH_TARGET } from "./bot-types.js";
 import { activeSpeechRoleIds, messageReferencesInactiveRole, type SpeechReferencedRole } from "./bot-role-awareness.js";
+import { buildBotSpeechEvidence, messageViolatesSpeechEvidence, type BotSpeechEvidence } from "./bot-speech-evidence.js";
 import {
   BOT_SPEECH_POPUP_MS,
   MAX_SPEECH_PER_BOT_PER_DAY,
@@ -61,6 +62,7 @@ export type BotSpeechContext = {
   knownVampires: string[];
   knownNonVampires: string[];
   activeRoleIds: SpeechReferencedRole[];
+  evidenceByTargetId: Record<string, BotSpeechEvidence>;
   lastVotedPlayerId?: string;
   lastProtectedPlayerId?: string;
   phaseSpeechCount: number;
@@ -224,7 +226,12 @@ function firstActionTarget(room: RoomState, speaker: PlayerState, memory: BotMem
   return order.find((id) => id !== NO_LYNCH_TARGET && id !== speaker.playerId);
 }
 
-export function buildBotSpeechContext(room: RoomState, speaker: PlayerState, memory: BotMemory): BotSpeechContext | null {
+export function buildBotSpeechContext(
+  room: RoomState,
+  speaker: PlayerState,
+  memory: BotMemory,
+  publicSpeechHistory: readonly BotSpeechEvent[] = []
+): BotSpeechContext | null {
   if (room.status !== "InGame" || room.game.isPaused || room.game.phase === "GameOver") return null;
   if (!SPEECH_PHASES.has(room.game.phase)) return null;
   if (!speaker.isBot || !speaker.isAlive || !speaker.role) return null;
@@ -251,6 +258,9 @@ export function buildBotSpeechContext(room: RoomState, speaker: PlayerState, mem
     knownVampires: memory.knownVampires,
     knownNonVampires: memory.knownNonVampires,
     activeRoleIds: activeSpeechRoleIds(room),
+    evidenceByTargetId: Object.fromEntries(
+      room.players.map((player) => [player.playerId, buildBotSpeechEvidence(room, player.playerId, publicSpeechHistory)])
+    ),
     lastVotedPlayerId: memory.lastVotedPlayerId,
     lastProtectedPlayerId: memory.lastProtectedPlayerId,
     phaseSpeechCount: memory.speechCountThisPhase,
@@ -333,6 +343,10 @@ function templateMatches(
   if (template.personalities && !template.personalities.includes(ctx.speakerPersonality)) return false;
   if (template.intelligences && !template.intelligences.includes(ctx.speakerIntelligence)) return false;
   if (template.requiresTarget && !target) return false;
+  if (template.requiresEvidence?.length) {
+    const evidence = target ? ctx.evidenceByTargetId[target.playerId] : undefined;
+    if (!evidence || template.requiresEvidence.some((claim) => !evidence.safeClaims.includes(claim))) return false;
+  }
   if (ctx.recentSpeechTemplateIds.includes(template.id)) return false;
   if (exclusions?.usedTemplateIds.has(template.id)) return false;
   if (ctx.lastSpeechIntent === template.intent && ctx.lastSpeechTargetId && target?.playerId === ctx.lastSpeechTargetId) return false;
@@ -377,6 +391,7 @@ export function composeBotSpeech(ctx: BotSpeechContext, exclusions?: BotSpeechPh
     if (ctx.recentSpeechFingerprints.includes(fingerprint)) continue;
     if (exclusions?.usedFingerprints.has(fingerprint)) continue;
     if (messageReferencesInactiveRole(message, ctx.activeRoleIds)) continue;
+    if (messageViolatesSpeechEvidence(message, target ? ctx.evidenceByTargetId[target.playerId] : undefined)) continue;
 
     return {
       roomCode: ctx.roomCode,
@@ -387,6 +402,7 @@ export function composeBotSpeech(ctx: BotSpeechContext, exclusions?: BotSpeechPh
       tone: randomToneForIntent(intent, ctx.speakerPersonality),
       intent,
       targetPlayerId: target?.playerId,
+      targetName: target?.nickname,
       durationMs: BOT_SPEECH_POPUP_MS,
       createdAt: Date.now(),
       templateId: template.id,
@@ -402,6 +418,7 @@ export class BotSpeechEngine {
   private readonly phaseStates = new Map<string, BotSpeechPhaseState>();
   private readonly timersByRoom = new Map<string, Set<ReturnType<typeof setTimeout>>>();
   private readonly recentByRoom = new Map<string, BotSpeechRoomRecent>();
+  private readonly publicSpeechByRoom = new Map<string, BotSpeechEvent[]>();
 
   constructor(
     private readonly deps: {
@@ -430,6 +447,7 @@ export class BotSpeechEngine {
     this.scheduleGen.delete(roomCode);
     this.phaseStates.delete(roomCode);
     this.recentByRoom.delete(roomCode);
+    this.publicSpeechByRoom.delete(roomCode);
   }
 
   onGamePaused(roomCode: string): void {
@@ -512,7 +530,7 @@ export class BotSpeechEngine {
     for (const speaker of shuffled(bots)) {
       if (st.usedSpeakerPlayerIds.has(speaker.playerId)) continue;
       const memory = this.deps.getBotMemory(roomCode, speaker.playerId);
-      const ctx = buildBotSpeechContext(room, speaker, memory);
+      const ctx = buildBotSpeechContext(room, speaker, memory, this.publicSpeechByRoom.get(roomCode) ?? []);
       if (!ctx) continue;
 
       const built = composeBotSpeech(ctx, st);
@@ -565,7 +583,8 @@ export class BotSpeechEngine {
       memory,
       intent: built.intent,
       tone: built.tone,
-      targetPlayerId: built.targetPlayerId
+      targetPlayerId: built.targetPlayerId,
+      evidence: built.targetPlayerId ? buildBotSpeechEvidence(room, built.targetPlayerId, this.publicSpeechByRoom.get(room.roomCode) ?? []) : undefined
     });
 
     if (generated.ok && !st.usedFingerprints.has(generated.fingerprint) && !memory.recentSpeechFingerprints.includes(generated.fingerprint)) {
@@ -574,6 +593,7 @@ export class BotSpeechEngine {
       st.usedFingerprints.add(generated.fingerprint);
       st.usedIntentTargetPairs.add(intentTargetPair(generated.event.intent, room.players.find((p) => p.playerId === generated.event.targetPlayerId)));
       this.rememberRoomSpeech(room.roomCode, templateId, generated.fingerprint);
+      this.rememberPublicSpeech(room.roomCode, generated.event);
       this.deps.emit(room.roomCode, generated.event);
       this.deps.onSpeechCommitted(
         room.roomCode,
@@ -610,11 +630,17 @@ export class BotSpeechEngine {
     st.usedFingerprints.add(fingerprint);
     st.usedIntentTargetPairs.add(intentTargetPair(event.intent, room.players.find((p) => p.playerId === event.targetPlayerId)));
     this.rememberRoomSpeech(room.roomCode, templateId, fingerprint);
+    this.rememberPublicSpeech(room.roomCode, event);
     this.deps.emit(room.roomCode, event);
     this.deps.onSpeechCommitted(room.roomCode, speaker.playerId, event.intent, event.targetPlayerId, templateId, fingerprint);
     this.getLog().info(
       { roomCode: room.roomCode, speakerPlayerId: speaker.playerId, intent: event.intent, phase: room.game.phase, templateId },
       "bot.speech.emit"
     );
+  }
+
+  private rememberPublicSpeech(roomCode: string, event: BotSpeechEvent): void {
+    const recent = this.publicSpeechByRoom.get(roomCode) ?? [];
+    this.publicSpeechByRoom.set(roomCode, [...recent, event].slice(-40));
   }
 }
