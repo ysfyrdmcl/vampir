@@ -15,6 +15,8 @@ import { resolveDayVotes } from "./vote-resolver.js";
 import { calculateWinner } from "./win-condition.js";
 import { pickRandom } from "../utils/random.js";
 
+const MIN_NIGHT_START_PRESENTATION_SECONDS = 10;
+
 export class GameEngine {
   startGame(room: RoomState): GameStatePrivateDelta[] {
     if (room.status !== "Lobby") {
@@ -192,8 +194,8 @@ export class GameEngine {
             detectiveTargetPlayerId: result.detectiveResult.targetPlayerId
           });
         }
-        if (calculateWinner(room.players)) {
-          return "WinCheck";
+        if (this.finishGameIfWinner(room)) {
+          return "GameOver";
         }
         return "DayStart";
       }
@@ -310,14 +312,21 @@ export class GameEngine {
             return "HunterLastBreath";
           }
         }
+        if (this.finishGameIfWinner(room)) {
+          return "GameOver";
+        }
         return "WinCheck";
       case "HunterLastBreath": {
         const hunterEliminatedId = room.game.lastEliminationSummary?.playerId ?? null;
-        if (!hunterEliminatedId) return "WinCheck";
+        if (!hunterEliminatedId) {
+          return this.finishGameIfWinner(room) ? "GameOver" : "WinCheck";
+        }
         const hunterShotAction = room.game.actions.find(
           (a) => a.actionType === "hunter-shot" && a.actorPlayerId === hunterEliminatedId
         );
-        if (!hunterShotAction?.targetPlayerId) return "WinCheck";
+        if (!hunterShotAction?.targetPlayerId) {
+          return this.finishGameIfWinner(room) ? "GameOver" : "WinCheck";
+        }
         const target = room.players.find((p) => p.playerId === hunterShotAction.targetPlayerId);
         if (target && target.isAlive) {
           if (room.game.mayorPlayerId === target.playerId) {
@@ -326,13 +335,13 @@ export class GameEngine {
           this.eliminateWithLoverChain(room, target.playerId, "Day");
         }
         room.game.actions = [];
+        if (this.finishGameIfWinner(room)) {
+          return "GameOver";
+        }
         return "WinCheck";
       }
       case "WinCheck": {
-        const winner = calculateWinner(room.players);
-        if (winner) {
-          room.game.winner = winner;
-          room.status = "GameOver";
+        if (this.finishGameIfWinner(room)) {
           return "GameOver";
         }
         room.game.round += 1;
@@ -506,7 +515,10 @@ export class GameEngine {
 
   private phaseSeconds(room: RoomState, phase: GamePhase): number {
     if (phase === "RoleReveal") return room.game.phaseDurations.roleReveal;
-    if (phase === "NightStart") return room.game.phaseDurations.nightStart;
+    if (phase === "NightStart") {
+      const seconds = room.game.phaseDurations.nightStart;
+      return seconds <= 0 ? seconds : Math.max(seconds, MIN_NIGHT_START_PRESENTATION_SECONDS);
+    }
     if (phase === "VampireVote") return room.game.phaseDurations.vampireVote;
     if (phase === "DetectiveInspect") return room.game.phaseDurations.detectiveInspect;
     if (phase === "DoctorProtect") return room.game.phaseDurations.doctorProtect;
@@ -526,6 +538,16 @@ export class GameEngine {
     if (!room.game.mayorPlayerId) return false;
     const mayor = room.players.find((p) => p.playerId === room.game.mayorPlayerId);
     return Boolean(mayor?.isAlive);
+  }
+
+  private finishGameIfWinner(room: RoomState): boolean {
+    const winner = calculateWinner(room.players);
+    if (!winner) return false;
+    room.game.winner = winner;
+    room.status = "GameOver";
+    room.game.actions = [];
+    room.game.privateResults = [];
+    return true;
   }
 
   /** Başkanlık bu oda kurulumunda (preset + oyuncu sayısı) tanımlıysa ve seçili başkan yoksa seçim fazı açılır. */

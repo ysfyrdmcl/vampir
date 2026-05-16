@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, Text, View } from "react-native";
+import { AnimatedBloodDrop, AnimatedCandleFlame } from "../animations/svg";
 import { LiquidGlassSurface } from "../glass";
 import { PhaseCountdown } from "./PhaseCountdown";
 import { colors } from "../theme/colors";
@@ -16,6 +17,7 @@ interface PhaseBannerProps {
   infoDetail?: string;
   infoIcon?: keyof typeof Ionicons.glyphMap;
   infoActive?: boolean;
+  visualAccent?: "none" | "candle" | "blood-candle";
   compact?: boolean;
   showCountdown?: boolean;
 }
@@ -30,9 +32,12 @@ export function PhaseBanner({
   infoDetail,
   infoIcon = "information-circle-outline",
   infoActive = false,
+  visualAccent = "none",
   compact = false,
   showCountdown = true
 }: PhaseBannerProps) {
+  const showCandle = visualAccent === "candle" || visualAccent === "blood-candle";
+
   return (
     <LiquidGlassSurface
       animatedSheen
@@ -51,6 +56,18 @@ export function PhaseBanner({
           <Text style={[styles.description, compact ? styles.descriptionCompact : null]} numberOfLines={compact ? 2 : 2}>{description}</Text>
           {notice ? <Text style={styles.notice} numberOfLines={compact ? 1 : 2}>{notice}</Text> : null}
         </View>
+        {showCandle ? (
+          <View pointerEvents="none" style={[styles.visualAccent, compact ? styles.visualAccentCompact : null]}>
+            <View style={styles.visualGlow} />
+            <AnimatedCandleFlame size={compact ? 34 : 38} />
+            {visualAccent === "blood-candle" ? (
+              <>
+                <AnimatedBloodDrop size={13} x={29} y={7} delayMs={120} durationMs={1180} loop />
+                <AnimatedBloodDrop size={9} x={9} y={15} delayMs={420} durationMs={1320} loop />
+              </>
+            ) : null}
+          </View>
+        ) : null}
         {showCountdown ? <PhaseCountdown phaseEndsAt={phaseEndsAt} mode="compact" presentation="phaseSummary" /> : null}
       </View>
       {infoText ? (
@@ -96,6 +113,27 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 7
+  },
+  visualAccent: {
+    width: 46,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  visualAccentCompact: {
+    width: 42,
+    height: 44
+  },
+  visualGlow: {
+    position: "absolute",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(233,195,73,0.12)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 }
   },
   title: {
     color: colors.text,

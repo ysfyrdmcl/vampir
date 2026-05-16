@@ -5,6 +5,10 @@ const GAMEPLAY_STACK_ROUTES = new Set(["RoleReveal", "Night", "Vote", "GameLog",
 
 const CONNECTION_CODES = new Set(["SOCKET_CONNECT_ERROR", "BOOTSTRAP_FAILED", "CONNECTION_ERROR"]);
 
+export function isGlobalCriticalErrorCode(code: string | null): boolean {
+  return Boolean(code && CONNECTION_CODES.has(code));
+}
+
 /** Ana menü (Welcome): yalnızca bağlantı / bootstrap. */
 export const WELCOME_SOCKET_ERROR_CODES = CONNECTION_CODES;
 

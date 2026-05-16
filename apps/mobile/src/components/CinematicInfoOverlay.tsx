@@ -1,5 +1,5 @@
-import { memo, type ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { memo, type ReactNode, useEffect, useRef } from "react";
+import { Animated, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { GothicDividerSvg, ParchmentCornerSvg } from "../assets/svg";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -47,6 +47,8 @@ function toneStyle(tone: CinematicOverlayTone | undefined) {
 }
 
 function CinematicMajorOverlayBase({ payload, visual }: MajorProps) {
+  const visualEntry = useRef(new Animated.Value(0)).current;
+  const plaqueEntry = useRef(new Animated.Value(0)).current;
   const tone = payload.visualTone ?? "neutral";
   const chips = [
     payload.playerName,
@@ -54,11 +56,45 @@ function CinematicMajorOverlayBase({ payload, visual }: MajorProps) {
     ...(payload.chips ?? [])
   ].filter(Boolean) as string[];
 
+  useEffect(() => {
+    visualEntry.setValue(0);
+    plaqueEntry.setValue(0);
+    Animated.parallel([
+      Animated.timing(visualEntry, {
+        toValue: 1,
+        duration: 760,
+        useNativeDriver: true
+      }),
+      Animated.sequence([
+        Animated.delay(280),
+        Animated.timing(plaqueEntry, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true
+        })
+      ])
+    ]).start();
+  }, [payload.title, plaqueEntry, visualEntry]);
+
+  const visualEntryStyle = {
+    opacity: visualEntry,
+    transform: [
+      { scale: visualEntry.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }
+    ]
+  };
+  const plaqueEntryStyle = {
+    opacity: plaqueEntry,
+    transform: [
+      { translateY: plaqueEntry.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) },
+      { scale: plaqueEntry.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] }) }
+    ]
+  };
+
   return (
     <View style={styles.majorRoot}>
       <View style={[styles.aura, toneStyle(tone)]} />
-      <View style={styles.visualLayer}>{visual}</View>
-      <View style={styles.plaqueWrap}>
+      <Animated.View style={[styles.visualLayer, visualEntryStyle]}>{visual}</Animated.View>
+      <Animated.View style={[styles.plaqueWrap, plaqueEntryStyle]}>
         <ParchmentCornerSvg width={34} height={34} style={[styles.corner, styles.cornerTopLeft]} opacity={0.34} />
         <ParchmentCornerSvg width={34} height={34} style={[styles.corner, styles.cornerBottomRight]} opacity={0.26} />
         <Text style={styles.kicker}>{payload.subtitle ?? "Ritüel Duyurusu"}</Text>
@@ -74,7 +110,8 @@ function CinematicMajorOverlayBase({ payload, visual }: MajorProps) {
             ))}
           </View>
         ) : null}
-      </View>
+        <Text style={styles.dismissHint}>Dokun kapat</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -221,6 +258,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
     textTransform: "uppercase"
+  },
+  dismissHint: {
+    marginTop: 4,
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    opacity: 0.78
   },
   ribbon: {
     width: "100%",

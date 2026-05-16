@@ -30,19 +30,42 @@ export function RoleRevealScreen(_: Props) {
   const compact = height < 720;
   const narrow = width < 380;
   const maxCardHeight = Math.max(compact ? 374 : 520, height - (compact ? 278 : 310));
+  const phase = gameState?.phase ?? null;
+  const isLeavingRoleReveal = phase !== null && phase !== "RoleReveal";
 
   const headerEntry = useRef(new Animated.Value(0)).current;
+  const exitProgress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     headerEntry.setValue(0);
     Animated.timing(headerEntry, { toValue: 1, duration: 420, useNativeDriver: true }).start();
   }, [headerEntry]);
+  useEffect(() => {
+    Animated.timing(exitProgress, {
+      toValue: isLeavingRoleReveal ? 1 : 0,
+      duration: isLeavingRoleReveal ? 420 : 180,
+      useNativeDriver: true
+    }).start();
+  }, [exitProgress, isLeavingRoleReveal]);
 
   const headerEntryStyle = {
-    opacity: headerEntry,
+    opacity: Animated.multiply(
+      headerEntry,
+      exitProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    ),
     transform: [
       {
         translateY: headerEntry.interpolate({ inputRange: [0, 1], outputRange: [10, 0] })
+      },
+      {
+        translateY: exitProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -10] })
       }
+    ]
+  };
+  const stageExitStyle = {
+    opacity: exitProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+    transform: [
+      { translateY: exitProgress.interpolate({ inputRange: [0, 1], outputRange: [0, 18] }) },
+      { scale: exitProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.975] }) }
     ]
   };
 
@@ -50,7 +73,13 @@ export function RoleRevealScreen(_: Props) {
   const titleLineHeight = compact ? 43 : 52;
 
   return (
-    <ScreenShell scene="role" bottomNavActiveIndex={0} headerTitle="" showTopBar={false}>
+    <ScreenShell
+      scene="role"
+      bottomNavActiveIndex={0}
+      headerTitle=""
+      showTopBar={false}
+      suppressTransientBotSpeech
+    >
       <View style={styles.root}>
         <Animated.View style={[styles.header, compact ? styles.headerCompact : null, headerEntryStyle]}>
           <View style={styles.topRule}>
@@ -70,7 +99,12 @@ export function RoleRevealScreen(_: Props) {
             <View style={styles.headerCenter}>
               <View style={styles.titleRow}>
                 <View style={styles.titleLine} />
-                <Text style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]} numberOfLines={1}>
+                <Text
+                  style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.72}
+                >
                   ROLÜN
                 </Text>
                 <View style={styles.titleLine} />
@@ -91,7 +125,7 @@ export function RoleRevealScreen(_: Props) {
           </View>
         </Animated.View>
 
-        <View style={styles.cardStage}>
+        <Animated.View style={[styles.cardStage, stageExitStyle]}>
           <LinearGradient
             pointerEvents="none"
             colors={[
@@ -112,7 +146,7 @@ export function RoleRevealScreen(_: Props) {
             maxColumnWidth={CARD_COLUMN_MAX}
             maxCardHeight={maxCardHeight}
           />
-        </View>
+        </Animated.View>
       </View>
     </ScreenShell>
   );
@@ -177,11 +211,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10
+    gap: 8
   },
   titleLine: {
     flex: 1,
-    maxWidth: 52,
+    maxWidth: 42,
     height: 1,
     backgroundColor: "rgba(233,195,73,0.24)"
   },
@@ -189,7 +223,8 @@ const styles = StyleSheet.create({
     color: "#f4dfad",
     fontFamily: typography.serif,
     textAlign: "center",
-    letterSpacing: 3,
+    letterSpacing: 1.8,
+    includeFontPadding: false,
     textShadowColor: "rgba(233,195,73,0.18)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10

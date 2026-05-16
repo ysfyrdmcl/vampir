@@ -18,9 +18,6 @@ export interface BotSpeechHistorySheetProps {
   entries: BotSpeechEvent[];
 }
 
-/** Üst blok (başlık + alt başlık + kapat) tahmini — ScrollView için kalan yükseklik. */
-const HEADER_BLOCK_MIN = 96;
-
 export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHistorySheetProps) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -36,7 +33,6 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
   const bottomPad = Math.max(insets.bottom, spacing.sm) + spacing.xs;
   const topPad = Math.max(insets.top, spacing.sm);
   const maxSheetHeight = Math.min(winH * 0.88, winH - topPad - bottomPad - 16);
-  const scrollAreaHeight = Math.max(140, maxSheetHeight - HEADER_BLOCK_MIN);
 
   return (
     <Modal
@@ -55,7 +51,7 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
           accessibilityLabel="Söylentileri kapat"
         />
         <View
-          style={[styles.sheet, { height: maxSheetHeight, maxHeight: maxSheetHeight }]}
+          style={[styles.sheet, { maxHeight: maxSheetHeight }]}
           accessibilityViewIsModal
         >
           <View style={styles.header}>
@@ -77,7 +73,7 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
             En yeni üstte
           </Text>
           <ScrollView
-            style={[styles.scroll, { height: scrollAreaHeight, maxHeight: scrollAreaHeight }]}
+            style={styles.scroll}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator
@@ -123,7 +119,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
-    overflow: "hidden"
+    overflow: "hidden",
+    zIndex: 2,
+    elevation: 24
   },
   header: {
     flexDirection: "row",
@@ -136,7 +134,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     color: colors.secondary,
     fontFamily: typography.serifSemi,
-    fontSize: 20
+    fontSize: 20,
+    lineHeight: 25
   },
   closeBtn: {
     flexDirection: "row",
@@ -161,7 +160,10 @@ const styles = StyleSheet.create({
     lineHeight: 17
   },
   scroll: {
-    marginTop: spacing.sm
+    flexGrow: 0,
+    flexShrink: 1,
+    marginTop: spacing.sm,
+    minHeight: 140
   },
   listContent: {
     flexGrow: 1,
@@ -187,12 +189,15 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: typography.sansBold,
     fontSize: 11,
-    letterSpacing: 0.3
+    lineHeight: 15,
+    letterSpacing: 0.3,
+    flexShrink: 1
   },
   rowPhase: {
     color: colors.textMuted,
     fontFamily: typography.sansMedium,
     fontSize: 10,
+    lineHeight: 14,
     marginTop: 4
   },
   rowMessage: {

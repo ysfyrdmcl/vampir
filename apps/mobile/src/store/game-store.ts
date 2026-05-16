@@ -272,7 +272,13 @@ export const useGameStore = create<GameStoreState>((set) => ({
           : {})
       };
       if (roomState.status !== "InGame") {
-        return { ...base, activeBotSpeech: null, botSpeechQueue: [], botSpeechUnreadCount: 0 };
+        return {
+          ...base,
+          activeBotSpeech: null,
+          botSpeechQueue: [],
+          botSpeechUnreadCount: 0,
+          ...(roomState.status === "GameOver" ? { resultEventQueue: [] as GameResultEvent[] } : {})
+        };
       }
       return base;
     }),

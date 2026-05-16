@@ -185,12 +185,28 @@ describe("bot speech context and selector", () => {
     const mem = createEmptyBotMemory();
     mem.recentSpeechTemplateIds = speechTemplates
       .map((template) => template.id)
-      .filter((id) => id !== "mayor-spotlight-vampire-suspicion-1");
+      .filter((id) => id !== "accuse-invisible-1");
     const ctx = buildBotSpeechContext(room([bot, player({ playerId: "p1", nickname: "P1", role: "Villager" })]), bot, mem);
 
     const speech = composeBotSpeech(ctx!);
 
-    expect(speech?.templateId).toBe("mayor-spotlight-vampire-suspicion-1");
+    expect(speech?.templateId).toBe("accuse-invisible-1");
+  });
+
+  it("filters role-specific templates when the active role is missing", () => {
+    const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true, botPersonality: "chaotic" });
+    const mem = createEmptyBotMemory();
+    mem.recentSpeechTemplateIds = speechTemplates
+      .map((template) => template.id)
+      .filter((id) => id !== "chaos-detective-sherlock-1" && id !== "chaos-doctor-distance-learning-1");
+    const ctx = buildBotSpeechContext(room([
+      bot,
+      player({ playerId: "v1", nickname: "Vampir", role: "Vampire" }),
+      player({ playerId: "p1", nickname: "Koylu1", role: "Villager" }),
+      player({ playerId: "p2", nickname: "Koylu2", role: "Villager" })
+    ], { phase: "DayStart" }), bot, mem);
+
+    expect(composeBotSpeech(ctx!)).toBeNull();
   });
 });
 
@@ -269,7 +285,7 @@ describe("bot speech phase coordinator", () => {
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0.1);
     const bot = player({ playerId: "b1", nickname: "Bot", role: "Villager", isBot: true });
-    const other = player({ playerId: "p1", nickname: "P1", role: "Villager" });
+    const other = player({ playerId: "p1", nickname: "P1", role: "Vampire" });
     const r = room([bot, other], { phase: "DayStart" });
     const { engine, memory, committed } = makeEngine(r);
     memory.get(r.roomCode, bot.playerId).recentSpeechTemplateIds = speechTemplates

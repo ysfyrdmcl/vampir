@@ -23,7 +23,7 @@ function RedVignettePulseBase({
   style
 }: RedVignettePulseProps) {
   const progress = useSharedValue(0);
-  const maxOpacity = intensity === "medium" ? 0.42 : 0.35;
+  const maxOpacity = intensity === "medium" ? 0.32 : 0.24;
 
   useEffect(() => {
     progress.value = withSequence(

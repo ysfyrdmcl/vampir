@@ -7,6 +7,7 @@ import { getBotPersonalityCard, renderBotPersonalityPrompt } from "./bot-persona
 import { buildBotWorldAwareness, renderBotWorldAwarenessPrompt } from "./bot-world-awareness.js";
 import type { BotShortTermMemoryStore } from "./bot-short-term-memory.js";
 import type { BotLongTermMemory } from "./bot-long-term-memory.js";
+import { activeSpeechRoleIds, messageReferencesInactiveRole } from "./bot-role-awareness.js";
 
 export type BotBrainSpeechRequest = {
   room: RoomState;
@@ -83,6 +84,7 @@ export class BotBrainController {
             "Turkce, kisa ve oyun evreninde kal.",
             "En fazla iki cumle yaz.",
             "Gizli rol bilgisini dogrudan ifsa etme.",
+            "Aktif roller disindaki rollere, Sherlock/dedektif/sorgu gibi role-specific imalara veya aktif olmayan koruma/baskan/avci/asik referanslarina deginme.",
             "Sadece JSON dondur: {\"message\":\"...\",\"tone\":\"calm|sharp|neutral|playful\",\"intent\":\"...\",\"targetPlayerId\":\"...\"}."
           ].join(" ")
         },
@@ -117,7 +119,8 @@ export class BotBrainController {
     const parsed = parseSpeechJson(llm.text);
     if (!parsed) return { ok: false, reason: "invalid_response", error: "Invalid JSON response" };
 
-    const guarded = guardSpeechMessage(parsed.message);
+    const activeRoles = activeSpeechRoleIds(request.room);
+    const guarded = guardSpeechMessage(parsed.message, activeRoles);
     if (!guarded) return { ok: false, reason: "invalid_response", error: "Unsafe or empty message" };
 
     const tone = typeof parsed.tone === "string" && VALID_TONES.has(parsed.tone as BotSpeechTone) ? parsed.tone as BotSpeechTone : request.tone;
@@ -154,13 +157,14 @@ function parseSpeechJson(text: string): BotLLMSpeechJson | null {
   }
 }
 
-function guardSpeechMessage(value: unknown): string | null {
+function guardSpeechMessage(value: unknown, activeRoles: ReturnType<typeof activeSpeechRoleIds>): string | null {
   if (typeof value !== "string") return null;
   const compact = value.replace(/\s+/g, " ").trim();
   if (!compact) return null;
   const lowered = compact.toLocaleLowerCase("tr-TR");
   const blocked = ["openai", "api", "model", "llm", "yapay zeka", "ben bir botum", "dedektifim", "ben vampirim"];
   if (blocked.some((word) => lowered.includes(word))) return null;
+  if (messageReferencesInactiveRole(compact, activeRoles)) return null;
   return compact.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ").slice(0, 180).trim();
 }
 

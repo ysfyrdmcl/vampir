@@ -1,13 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AnimatedBloodDrop, AnimatedCandleFlame } from "../animations/svg";
 import { LiquidGlassPressable } from "../glass";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { PhaseCountdown } from "./PhaseCountdown";
 
+type PhaseVisual = "bar" | "candle" | "blood-candle";
+
 interface InGameTopBarProps {
   phaseLabel: string;
   phaseType: "day" | "night" | "other";
+  phaseVisual?: PhaseVisual;
   phaseEndsAt: number | null;
   rumorCount: number;
   hasRumorAttention: boolean;
@@ -17,6 +21,7 @@ interface InGameTopBarProps {
 export function InGameTopBar({
   phaseLabel,
   phaseType,
+  phaseVisual = phaseType === "night" ? "candle" : "bar",
   phaseEndsAt,
   rumorCount,
   hasRumorAttention,
@@ -26,13 +31,33 @@ export function InGameTopBar({
   const displayLabel = phaseLabel.replace(" FAZI", "");
   const showCount = rumorCount > 0;
   const compact = width < 380;
+  const showCandle = phaseVisual === "candle" || phaseVisual === "blood-candle";
 
   return (
     <View style={styles.root}>
       <View style={styles.divider} />
       <View style={[styles.wings, compact ? styles.wingsCompact : null]}>
         <View style={[styles.phaseWing, compact ? styles.phaseWingCompact : null]}>
-          <View style={[styles.phaseAccent, phaseType === "day" ? styles.phaseAccentDay : styles.phaseAccentNight]} />
+          <View style={[styles.phaseSignal, compact ? styles.phaseSignalCompact : null]}>
+            {showCandle ? (
+              <>
+                <View style={styles.flameHalo} />
+                <AnimatedCandleFlame size={compact ? 24 : 28} />
+                {phaseVisual === "blood-candle" ? (
+                  <AnimatedBloodDrop
+                    size={compact ? 9 : 10}
+                    x={compact ? 16 : 18}
+                    y={compact ? 8 : 9}
+                    delayMs={180}
+                    durationMs={1300}
+                    loop
+                  />
+                ) : null}
+              </>
+            ) : (
+              <View style={[styles.phaseAccent, phaseType === "day" ? styles.phaseAccentDay : styles.phaseAccentNight]} />
+            )}
+          </View>
           <Text style={[styles.phaseText, compact ? styles.phaseTextCompact : null, phaseType === "night" ? styles.phaseTextNight : null]} numberOfLines={1}>
             {displayLabel}
           </Text>
@@ -106,6 +131,27 @@ const styles = StyleSheet.create({
   phaseWingCompact: {
     maxWidth: "28%",
     gap: 7
+  },
+  phaseSignal: {
+    width: 28,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  phaseSignalCompact: {
+    width: 24,
+    height: 27
+  },
+  flameHalo: {
+    position: "absolute",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(233,195,73,0.14)",
+    shadowColor: colors.secondary,
+    shadowOpacity: 0.34,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 }
   },
   phaseAccent: {
     width: 8,

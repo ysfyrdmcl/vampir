@@ -39,7 +39,8 @@ export function RootNavigator() {
           animation: "fade",
           contentStyle: {
             backgroundColor: colors.backgroundDeep
-          }
+          },
+          presentation: "card"
         }}
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} />

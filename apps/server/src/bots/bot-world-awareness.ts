@@ -3,6 +3,7 @@ import type { PlayerState, RoomState } from "../game/game-types.js";
 import { actionTypeForBotPhase } from "./bot-types.js";
 import { legalTargetsForBot } from "./bot-targeting.js";
 import type { BotMemory } from "./bot-memory.js";
+import { activeSpeechRoleIds, type SpeechReferencedRole } from "./bot-role-awareness.js";
 
 export type BotWorldAwareness = {
   roomCode: string;
@@ -22,6 +23,7 @@ export type BotWorldAwareness = {
     isConnected: boolean;
   }[];
   publicEvents: string[];
+  activeRoleIds: SpeechReferencedRole[];
   privateFacts: string[];
   legalActionHints: string[];
 };
@@ -48,6 +50,7 @@ export function buildBotWorldAwareness(room: RoomState, speakerPlayerId: string,
       isConnected: p.isConnected
     })),
     publicEvents: buildPublicEvents(room),
+    activeRoleIds: activeSpeechRoleIds(room),
     privateFacts: buildPrivateFacts(room, speaker, memory),
     legalActionHints: buildLegalActionHints(room, speaker, memory)
   };
@@ -62,6 +65,8 @@ export function renderBotWorldAwarenessPrompt(world: BotWorldAwareness): string 
     `Faz: ${world.phase}, round: ${world.round}`,
     `Sen: ${world.speaker.nickname} (${world.speaker.role ?? "rol yok"}, ${world.speaker.isAlive ? "hayatta" : "olu"})`,
     `Oyuncular: ${players}`,
+    `Aktif rol seti: ${world.activeRoleIds.join(", ") || "Yok"}`,
+    "Aktif rol setinde olmayan rollere veya o rolleri cagristiran isimlere deginme.",
     `Public olaylar: ${world.publicEvents.length ? world.publicEvents.join(" | ") : "Yok"}`,
     `Sana ozel bilgiler: ${world.privateFacts.length ? world.privateFacts.join(" | ") : "Yok"}`,
     `Legal aksiyon ipuclari: ${world.legalActionHints.length ? world.legalActionHints.join(" | ") : "Yok"}`

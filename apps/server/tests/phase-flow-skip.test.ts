@@ -132,6 +132,42 @@ describe("phase skip when role absent or dead", () => {
     expect(room.game.phase).toBe("DayVote");
   });
 
+  it("clamps nonzero NightStart duration to at least 10 seconds", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager")
+      ],
+      phase: "RoleReveal",
+      rolePreset: "beginner"
+    });
+    room.game.phaseDurations.nightStart = 1;
+    const before = Date.now();
+    engine.tick(room);
+    expect(room.game.phase).toBe("NightStart");
+    expect(room.game.phaseEndsAt).not.toBeNull();
+    expect(room.game.phaseEndsAt! - before).toBeGreaterThanOrEqual(10_000);
+  });
+
+  it("keeps NightStart endless when configured as 0", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager"),
+        makePlayer("c", "Villager")
+      ],
+      phase: "RoleReveal",
+      rolePreset: "beginner"
+    });
+    room.game.phaseDurations.nightStart = 0;
+    engine.tick(room);
+    expect(room.game.phase).toBe("NightStart");
+    expect(room.game.phaseEndsAt).toBeNull();
+  });
+
   it("manual advance rejects VampireVote before living vampires choose", () => {
     const room = makeRoom({
       players: [
@@ -252,5 +288,47 @@ describe("phase skip when role absent or dead", () => {
     });
     engine.tick(room);
     expect(room.game.phase).toBe("DayDiscussion");
+  });
+
+  it("goes from final execution result directly to GameOver without scheduling WinCheck", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager"),
+        makePlayer("b", "Villager")
+      ],
+      phase: "DayVote",
+      rolePreset: "beginner",
+      gameMode: "Classic"
+    });
+    room.game.actions = [
+      { actorPlayerId: "v1", actionType: "day-vote", targetPlayerId: "b", round: 1 },
+      { actorPlayerId: "a", actionType: "day-vote", targetPlayerId: "b", round: 1 },
+      { actorPlayerId: "b", actionType: "day-vote", targetPlayerId: "v1", round: 1 }
+    ];
+    engine.tick(room);
+    expect(room.game.phase).toBe("ExecutionResolve");
+    expect(room.status).toBe("InGame");
+
+    room.game.phaseEndsAt = Date.now() - 1000;
+    engine.tick(room);
+    expect(room.game.phase).toBe("GameOver");
+    expect(room.status).toBe("GameOver");
+    expect(room.game.winner).toBe("Vampires");
+  });
+
+  it("ends as Vampires when only one vampire and one villager remain", () => {
+    const room = makeRoom({
+      players: [
+        makePlayer("v1", "Vampire"),
+        makePlayer("a", "Villager")
+      ],
+      phase: "WinCheck",
+      rolePreset: "beginner",
+      gameMode: "Classic"
+    });
+    engine.tick(room);
+    expect(room.game.phase).toBe("GameOver");
+    expect(room.game.winner).toBe("Vampires");
   });
 });

@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
 import { useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { CinematicMinorRibbon } from "../components/CinematicInfoOverlay";
 import { PhaseBanner } from "../components/PhaseBanner";
@@ -111,6 +111,12 @@ function phaseDescription(phase: GamePhase, tieCount: number): string {
   }
 }
 
+function phaseVisualAccent(phase: GamePhase): "none" | "candle" | "blood-candle" {
+  if (phase === "VampireVote" || phase === "HunterLastBreath") return "blood-candle";
+  if (phase === "NightStart" || phase === "DetectiveInspect" || phase === "DoctorProtect" || phase === "NightResolve") return "candle";
+  return "none";
+}
+
 function actionSummaryText(phase: GamePhase, canAct: boolean, meAlive: boolean): { label: string; value: string; icon: keyof typeof Ionicons.glyphMap } {
   if (!meAlive) {
     return { label: "Durum", value: "Elendin; fazı izliyorsun.", icon: "skull-outline" };
@@ -138,6 +144,9 @@ function initialsFromName(name: string): string {
 export function NightScreen(_: Props) {
   const { width, height } = useWindowDimensions();
   const submittedActionKeyRef = useRef<string | null>(null);
+  const bannerEntry = useRef(new Animated.Value(0)).current;
+  const listEntry = useRef(new Animated.Value(0)).current;
+  const actionEntry = useRef(new Animated.Value(0)).current;
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const role = useGameStore((s) => s.privateRole);
@@ -164,6 +173,36 @@ export function NightScreen(_: Props) {
       submittedActionKeyRef.current = null;
     }
   }, [actionKey]);
+
+  useEffect(() => {
+    bannerEntry.setValue(0);
+    listEntry.setValue(0);
+    actionEntry.setValue(0);
+    const initialDelay = phase === "NightStart" ? 1250 : 0;
+    Animated.sequence([
+      Animated.delay(initialDelay),
+      Animated.timing(bannerEntry, {
+        toValue: 1,
+        duration: 420,
+        useNativeDriver: true
+      }),
+      Animated.parallel([
+        Animated.timing(listEntry, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true
+        }),
+        Animated.sequence([
+          Animated.delay(140),
+          Animated.timing(actionEntry, {
+            toValue: 1,
+            duration: 360,
+            useNativeDriver: true
+          })
+        ])
+      ])
+    ]).start();
+  }, [actionEntry, bannerEntry, listEntry, phase, round]);
 
   const players = roomState?.players ?? [];
   const mePlayer = players.find((p) => p.playerId === playerId);
@@ -211,7 +250,8 @@ export function NightScreen(_: Props) {
       isSelected: selectedTargetPlayerId === player.playerId,
       statusText: player.isAlive ? "Hayatta" : "Elendi",
       disabledReason,
-      badgeText: player.playerId === playerId ? "SEN" : role === "Vampire" && vampireSet.has(player.playerId) ? "VAMPİR" : null
+      badgeText: player.playerId === playerId ? "SEN" : role === "Vampire" && vampireSet.has(player.playerId) ? "VAMPİR" : null,
+      selectionAccent: actionConfig?.actionType === "vampire-target" ? "blood" : undefined
     };
   });
   const selectedActionTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
@@ -226,6 +266,25 @@ export function NightScreen(_: Props) {
   const actionDockBottom = uiStandard.actionDock.bottomGap;
   const actionScrollPadding = uiStandard.actionDock.minHeight + actionDockBottom + uiStandard.actionDock.scrollGap;
   const actionButtonWidth = scaledSize(146, layout.controlScale, 130, 146);
+  const bannerEntryStyle = {
+    opacity: bannerEntry,
+    transform: [
+      { translateY: bannerEntry.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }
+    ]
+  };
+  const listEntryStyle = {
+    opacity: listEntry,
+    transform: [
+      { translateY: listEntry.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }
+    ]
+  };
+  const actionEntryStyle = {
+    opacity: actionEntry,
+    transform: [
+      { translateY: actionEntry.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) },
+      { scale: actionEntry.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] }) }
+    ]
+  };
 
   const submitAction = () => {
     if (!actionConfig || !selectedTargetPlayerId || !actionKey || alreadySubmittedThisPhase) {
@@ -252,57 +311,63 @@ export function NightScreen(_: Props) {
       bottomNavActiveIndex={0}
       headerTitle={phase.startsWith("Day") || phase === "HunterLastBreath" || phase === "GuardProtect" ? "GÜNDÜZ FAZI" : "GECE FAZI"}
       contentDensity="game"
+      suppressTransientBotSpeech={canAct}
     >
       <View style={styles.screenRoot}>
-        <PhaseBanner
-          title={phaseTitle(phase)}
-          description={phaseDescription(phase, tieCount)}
-          phaseEndsAt={gameState?.phaseEndsAt ?? null}
-          infoLabel={currentActionSummary.label}
-          infoText={currentActionSummary.value}
-          infoDetail={actionDetailText}
-          infoIcon={currentActionSummary.icon}
-          infoActive={canAct}
-          compact
-          showCountdown={false}
-        />
-        <ScrollView
+        <Animated.View style={bannerEntryStyle}>
+          <PhaseBanner
+            title={phaseTitle(phase)}
+            description={phaseDescription(phase, tieCount)}
+            phaseEndsAt={gameState?.phaseEndsAt ?? null}
+            infoLabel={currentActionSummary.label}
+            infoText={currentActionSummary.value}
+            infoDetail={actionDetailText}
+            infoIcon={currentActionSummary.icon}
+            infoActive={canAct}
+            visualAccent={phaseVisualAccent(phase)}
+            compact
+            showCountdown={false}
+          />
+        </Animated.View>
+        <Animated.ScrollView
           style={styles.targetScroll}
           contentContainerStyle={[styles.targetContent, { paddingBottom: canAct ? actionScrollPadding : spacing.lg }]}
           showsVerticalScrollIndicator={false}
         >
-          <TargetSelectionList
-            items={targetItems}
-            onSelect={setSelectedTargetPlayerId}
-            disabledSummary={null}
-          />
-
-          {role === "Doctor" && phase === "DoctorProtect" ? (
-            <Text style={styles.tip}>Kural: Kendini art arda iki gece koruyamazsın.</Text>
-          ) : null}
-
-          {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
-            <CinematicMinorRibbon
-              title="Vampir Oyları"
-              subtitle="Gece Bilgisi"
-              tone="night"
-              compact
-              style={styles.vampireVotesRibbon}
-              body={vampireVotePreview.votes
-                .map((row) => `${row.voterName}${row.isBot ? " (bot)" : ""}: ${row.targetName ?? "Henüz seçmedi"}`)
-                .join(" · ")}
-              chips={vampireVotePreview.targetCounts.map((target) => `${target.targetName}: ${target.count}`)}
+          <Animated.View style={listEntryStyle}>
+            <TargetSelectionList
+              items={targetItems}
+              onSelect={setSelectedTargetPlayerId}
+              disabledSummary={null}
             />
-          ) : null}
 
-          {privateResultText && privateResultKind && privateResultKind !== "info" ? (
-            <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
-          ) : null}
-          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        </ScrollView>
+            {role === "Doctor" && phase === "DoctorProtect" ? (
+              <Text style={styles.tip}>Kural: Kendini art arda iki gece koruyamazsın.</Text>
+            ) : null}
+
+            {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
+              <CinematicMinorRibbon
+                title="Vampir Oyları"
+                subtitle="Gece Bilgisi"
+                tone="night"
+                compact
+                style={styles.vampireVotesRibbon}
+                body={vampireVotePreview.votes
+                  .map((row) => `${row.voterName}${row.isBot ? " (bot)" : ""}: ${row.targetName ?? "Henüz seçmedi"}`)
+                  .join(" · ")}
+                chips={vampireVotePreview.targetCounts.map((target) => `${target.targetName}: ${target.count}`)}
+              />
+            ) : null}
+
+            {privateResultText && privateResultKind && privateResultKind !== "info" ? (
+              <PrivateInfoCard kind={privateResultKind} body={privateResultText} />
+            ) : null}
+            {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+          </Animated.View>
+        </Animated.ScrollView>
       </View>
       {canAct ? (
-        <View style={[styles.stickyAction, { bottom: actionDockBottom }]}>
+        <Animated.View style={[styles.stickyAction, { bottom: actionDockBottom }, actionEntryStyle]}>
           <View style={styles.actionSummary}>
             <Text style={styles.actionSummaryLabel}>Hedef</Text>
             <Text style={styles.actionSummaryValue} numberOfLines={1}>{selectedTargetName ?? "Seçilmedi"}</Text>
@@ -317,7 +382,7 @@ export function NightScreen(_: Props) {
             compact
             style={[styles.actionButton, { width: actionButtonWidth }]}
           />
-        </View>
+        </Animated.View>
       ) : null}
     </ScreenShell>
   );

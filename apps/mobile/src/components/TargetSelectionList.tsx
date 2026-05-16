@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { AnimatedBloodDrop } from "../animations/svg";
 import { LiquidGlassPressable } from "../glass";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
@@ -15,6 +16,7 @@ export interface TargetSelectionItem {
   statusText: string;
   disabledReason?: string | null;
   badgeText?: string | null;
+  selectionAccent?: "blood";
 }
 
 interface TargetSelectionListProps {
@@ -86,6 +88,12 @@ function TargetCard({ item, onSelect }: TargetCardProps) {
       intensity={item.isSelected ? "strong" : item.isSelectable ? "medium" : "subtle"}
       tone={item.isSelected ? "gold" : item.isSelectable ? "obsidian" : "obsidian"}
     >
+      {item.selectionAccent === "blood" && item.isSelected ? (
+        <View pointerEvents="none" style={styles.bloodAccent}>
+          <AnimatedBloodDrop size={16} x={5} y={-4} />
+          <AnimatedBloodDrop size={11} x={20} y={3} delayMs={180} />
+        </View>
+      ) : null}
       {item.isSelected ? (
         <View style={styles.selectedBadge}>
           <Ionicons name="checkmark" size={11} color={colors.backgroundDeep} />
@@ -157,7 +165,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 8,
-    gap: 5
+    gap: 5,
+    position: "relative"
+  },
+  bloodAccent: {
+    position: "absolute",
+    right: 4,
+    top: 18,
+    width: 38,
+    height: 58
   },
   avatar: {
     width: 42,

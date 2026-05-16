@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export function GameSettingsScreen({ navigation }: Props) {
   const canPauseControl = isHost && roomState?.status === "InGame" && gameState?.phase !== "GameOver";
   const isPaused = Boolean(gameState?.isPaused);
   const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "GameSettings"));
+  const showPhaseAdvanceWarning = errorCode === "PHASE_ACTIONS_PENDING";
 
   useFocusEffect(
     useCallback(() => {
@@ -37,11 +39,32 @@ export function GameSettingsScreen({ navigation }: Props) {
   );
 
   return (
-    <ScreenShell scene="result" bottomNavActiveIndex={2} headerTitle="AYARLAR" showPauseOverlay={false}>
+    <ScreenShell
+      scene="result"
+      bottomNavActiveIndex={2}
+      headerTitle="AYARLAR"
+      showPauseOverlay={false}
+      suppressTransientBotSpeech
+      opaqueBackground
+    >
       <View style={styles.root}>
         <Text style={styles.title}>Oyun Ayarları</Text>
         <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda yalnızca güvenli çıkış kullanılabilir."}</Text>
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+        {showPhaseAdvanceWarning ? (
+          <View style={styles.inlineWarning}>
+            <View style={styles.warningIcon}>
+              <Ionicons name="hourglass-outline" size={18} color="#ffcc8f" />
+            </View>
+            <View style={styles.warningCopy}>
+              <Text style={styles.warningTitle}>Önce faz görevi tamamlanmalı</Text>
+              <Text style={styles.warningBody}>
+                Bu faz geçmeden önce ilgili oyuncuların görevini tamamlaması gerekiyor.
+              </Text>
+            </View>
+          </View>
+        ) : errorText ? (
+          <Text style={styles.error}>{errorText}</Text>
+        ) : null}
         {canPauseControl ? (
           <>
             <PrimaryButton
@@ -132,6 +155,48 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 13,
     lineHeight: 18
+  },
+  inlineWarning: {
+    width: "100%",
+    maxWidth: 360,
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,184,108,0.38)",
+    borderRadius: 14,
+    backgroundColor: "rgba(34,18,14,0.96)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start"
+  },
+  warningIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "rgba(255,184,108,0.32)",
+    backgroundColor: "rgba(76,36,22,0.78)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  warningCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3
+  },
+  warningTitle: {
+    color: "#ffcc8f",
+    fontFamily: typography.sansBold,
+    fontSize: 13,
+    lineHeight: 17
+  },
+  warningBody: {
+    color: colors.textMuted,
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    lineHeight: 17,
+    flexShrink: 1
   },
   pauseButton: {
     alignSelf: "center",

@@ -12,6 +12,7 @@ import type { BotMemory } from "./bot-memory.js";
 import type { BotBrainController } from "./bot-brain-controller.js";
 import { pickBotTargetOrder } from "./bot-targeting.js";
 import { NO_LYNCH_TARGET } from "./bot-types.js";
+import { activeSpeechRoleIds, messageReferencesInactiveRole, type SpeechReferencedRole } from "./bot-role-awareness.js";
 import {
   BOT_SPEECH_POPUP_MS,
   MAX_SPEECH_PER_BOT_PER_DAY,
@@ -59,6 +60,7 @@ export type BotSpeechContext = {
   trustByPlayerId: Record<string, number>;
   knownVampires: string[];
   knownNonVampires: string[];
+  activeRoleIds: SpeechReferencedRole[];
   lastVotedPlayerId?: string;
   lastProtectedPlayerId?: string;
   phaseSpeechCount: number;
@@ -248,6 +250,7 @@ export function buildBotSpeechContext(room: RoomState, speaker: PlayerState, mem
     trustByPlayerId: memory.trustByPlayerId,
     knownVampires: memory.knownVampires,
     knownNonVampires: memory.knownNonVampires,
+    activeRoleIds: activeSpeechRoleIds(room),
     lastVotedPlayerId: memory.lastVotedPlayerId,
     lastProtectedPlayerId: memory.lastProtectedPlayerId,
     phaseSpeechCount: memory.speechCountThisPhase,
@@ -324,6 +327,8 @@ function templateMatches(
   target: PlayerState | undefined,
   exclusions?: BotSpeechPhaseExclusions
 ): boolean {
+  const requiredRoles = template.requiredActiveRoles ?? template.forbiddenWhenRolesMissing ?? [];
+  if (requiredRoles.some((role) => !ctx.activeRoleIds.includes(role))) return false;
   if (template.phases && !template.phases.includes(ctx.phase)) return false;
   if (template.personalities && !template.personalities.includes(ctx.speakerPersonality)) return false;
   if (template.intelligences && !template.intelligences.includes(ctx.speakerIntelligence)) return false;
@@ -371,6 +376,7 @@ export function composeBotSpeech(ctx: BotSpeechContext, exclusions?: BotSpeechPh
     const fingerprint = speechFingerprint(message);
     if (ctx.recentSpeechFingerprints.includes(fingerprint)) continue;
     if (exclusions?.usedFingerprints.has(fingerprint)) continue;
+    if (messageReferencesInactiveRole(message, ctx.activeRoleIds)) continue;
 
     return {
       roomCode: ctx.roomCode,

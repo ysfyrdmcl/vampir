@@ -502,6 +502,10 @@ export class SocketRuntime {
     this.botMemoryStore.onPhaseAdvanced(room);
     this.botActionEngine.onPhaseAdvanced(room);
     this.botSpeechEngine.onPhaseAdvanced(room);
+    if (room.game.phase === "GameOver") {
+      this.botActionEngine.disposeRoom(room.roomCode);
+      this.botSpeechEngine.disposeRoom(room.roomCode);
+    }
     for (const privateResult of privateResults) {
       const player = room.players.find((p) => p.playerId === privateResult.playerId);
       if (player?.socketId) {

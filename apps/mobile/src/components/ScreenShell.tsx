@@ -29,7 +29,7 @@ import { colors } from "../theme/colors";
 import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { socketErrorAllowedForRoute, toFriendlyToastText } from "../ui/error-text";
+import { isGlobalCriticalErrorCode, socketErrorAllowedForRoute, toFriendlyToastText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
 
@@ -37,6 +37,8 @@ type SceneType = GameBackgroundVariant;
 
 interface ScreenShellProps extends PropsWithChildren {
   scene?: SceneType;
+  backgroundMode?: "game" | "solid" | "none";
+  opaqueBackground?: boolean;
   /** Alt menüde hangi sekmenin vurgulanacağı (görsel `scene` ile karışmasın — örn. gündüz atmosferi + Durum sekmesi). */
   bottomNavActiveIndex?: 0 | 1 | 2;
   headerTitle?: string;
@@ -49,6 +51,7 @@ interface ScreenShellProps extends PropsWithChildren {
   keyboardExtraScrollPadding?: number;
   keyboardShouldPersistTaps?: ScrollViewProps["keyboardShouldPersistTaps"];
   keyboardAwareContentContainerStyle?: StyleProp<ViewStyle>;
+  suppressTransientBotSpeech?: boolean;
 }
 
 function phaseLabelFromState(phase: GamePhase | null): string {
@@ -71,6 +74,8 @@ function activeNavIndex(scene: SceneType): number {
 export function ScreenShell({
   children,
   scene = "night",
+  backgroundMode,
+  opaqueBackground: _opaqueBackground = false,
   bottomNavActiveIndex,
   headerTitle,
   showTopBar = true,
@@ -81,7 +86,8 @@ export function ScreenShell({
   keyboardVerticalOffset,
   keyboardExtraScrollPadding = spacing.lg,
   keyboardShouldPersistTaps = "handled",
-  keyboardAwareContentContainerStyle
+  keyboardAwareContentContainerStyle,
+  suppressTransientBotSpeech = false
 }: ScreenShellProps) {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
@@ -175,6 +181,7 @@ export function ScreenShell({
 
   useEffect(() => {
     if (!errorCode) return;
+    if (!isGlobalCriticalErrorCode(errorCode)) return;
     const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
     if (!socketErrorAllowedForRoute(errorCode, route)) return;
     const toastText = toFriendlyToastText(errorCode);
@@ -202,6 +209,13 @@ export function ScreenShell({
   const contentMaxWidth = layout.contentMaxWidth;
   const topBarHeight = layout.topBarBaseHeight + insets.top;
   const bottomNavHeight = layout.bottomNavBaseHeight + insets.bottom;
+  const shouldShowTransientBotSpeech =
+    roomState?.status === "InGame" &&
+    shouldShowBottomNav &&
+    !suppressTransientBotSpeech &&
+    !rumorsOpen &&
+    phase !== "RoleReveal" &&
+    phase !== "GameOver";
   const contentTopPadding = contentDensity === "game" ? spacing.sm : spacing.lg;
   const navIconSize = scaledSize(24, layout.controlScale, 21, 25);
   const navSettingsIconSize = scaledSize(22, layout.controlScale, 20, 24);
@@ -223,11 +237,14 @@ export function ScreenShell({
     setRumorsOpen(true);
   };
   const phaseType = scene === "vote" || scene === "day" ? "day" : scene === "night" || scene === "vampire" || scene === "detective" || scene === "doctor" ? "night" : "other";
+  const phaseVisual = phase === "VampireVote" || phase === "HunterLastBreath" ? "blood-candle" : phaseType === "night" ? "candle" : "bar";
+  const resolvedBackgroundMode = backgroundMode ?? "solid";
 
   return (
     <View style={styles.safe}>
       <View style={styles.root}>
-        <GameBackground variant={scene} backdropScale={backdropScale} />
+        <View pointerEvents="none" style={styles.opaqueBackdrop} />
+        <GameBackground variant={scene} backdropScale={backdropScale} mode={resolvedBackgroundMode} />
 
         {shouldShowTopBar ? (
           <View style={[styles.topBar, isGameTopBar ? styles.topBarGame : null, { height: topBarHeight, paddingTop: insets.top }]}>
@@ -245,6 +262,7 @@ export function ScreenShell({
                 <InGameTopBar
                   phaseLabel={label}
                   phaseType={phaseType}
+                  phaseVisual={phaseVisual}
                   phaseEndsAt={gameState?.phaseEndsAt ?? null}
                   rumorCount={botSpeechUnreadCount}
                   hasRumorAttention={hasRumorAttention}
@@ -296,7 +314,12 @@ export function ScreenShell({
             children
           )}
         </Animated.View>
-        <BotSpeechOverlay layoutTopOffset={shouldShowTopBar ? topBarHeight : insets.top + spacing.sm} />
+        <BotSpeechOverlay
+          bottomOffset={bottomNavHeight + spacing.sm}
+          disabled={!shouldShowTransientBotSpeech}
+          unreadCount={botSpeechUnreadCount}
+          onOpenHistory={openRumors}
+        />
         <BotSpeechHistorySheet visible={rumorsOpen} onClose={() => setRumorsOpen(false)} entries={botSpeechHistory} />
         {showConnectionBanner ? (
           <Animated.View
@@ -320,7 +343,9 @@ export function ScreenShell({
             </Text>
           </Animated.View>
         ) : null}
-        <GameToast topOffset={isGameTopBar ? topBarHeight + 8 : undefined} />
+        <GameToast
+          topOffset={isGameTopBar ? topBarHeight + 8 : undefined}
+        />
         {isPaused && showPauseOverlay ? (
           <View style={[styles.pauseOverlay, { top: shouldShowTopBar ? topBarHeight : 0, bottom: shouldShowBottomNav ? bottomNavHeight : 0 }]}>
             <View style={styles.pausePanel}>
@@ -410,6 +435,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundDeep,
     overflow: "hidden"
+  },
+  opaqueBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.backgroundDeep
   },
   topBar: {
     height: 64,

@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
-  ImageBackground,
   PanResponder,
   Platform,
   StyleSheet,
@@ -68,7 +67,7 @@ export function RoleRevealCard({
   const { width, height } = useWindowDimensions();
 
   const roleTheme = useMemo(() => getRoleTheme(role), [role]);
-  const roleArt = role ? ROLE_REVEAL_ART[role] : null;
+  const roleArt = role ? (ROLE_REVEAL_ART[role] ?? ROLE_REVEAL_ART.Villager) : null;
   const cardWidth = Math.min(356, maxColumnWidth, width - spacing.md * 2);
   const compact = height < 720;
   const computedCardHeight = Math.round(cardWidth * (compact ? 1.47 : 1.66));
@@ -320,27 +319,37 @@ export function RoleRevealCard({
   };
 
   const cardFlipStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipProgress.value, [0, 1], [0, 180]);
     return {
       transform: [
         { perspective: 1200 },
-        { rotateY: `${spin}deg` },
         { scale: interpolate(flipProgress.value, [0, 0.5, 1], [1, 0.975, 1]) }
       ]
     };
   });
 
   const frontFlipStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipProgress.value, [0, 1], [0, 180]);
     const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [1, 1, 0, 0]);
     return {
-      opacity
+      opacity,
+      zIndex: flipProgress.value < 0.5 ? 2 : 0,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${spin}deg` }
+      ]
     };
   });
 
   const backFlipStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipProgress.value, [0, 1], [180, 360]);
     const opacity = interpolate(flipProgress.value, [0, 0.48, 0.52, 1], [0, 0, 1, 1]);
     return {
-      opacity
+      opacity,
+      zIndex: flipProgress.value >= 0.5 ? 2 : 0,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${spin}deg` }
+      ]
     };
   });
 
@@ -466,16 +475,15 @@ export function RoleRevealCard({
 
             <Reanimated.View style={[styles.face, styles.back, backFlipStyle]}>
               <Animated.View style={[styles.revealedContent, contentStyle]}>
-                <View style={[styles.artFrame, { borderColor: `${accent}5c` }]}>
+                <View style={[styles.artFrame, { height: artHeight, borderColor: `${accent}5c` }]}>
                   <RoleAuraAnimation role={role} color={accent} size={118} style={styles.artAura} />
                   {roleArt ? (
                     <Animated.View style={[styles.artParallaxWrap, artParallaxStyle]}>
-                      <ImageBackground
+                      <Animated.Image
                         source={roleArt}
                         resizeMode="cover"
-                        style={[styles.art, { height: artHeight }]}
-                        imageStyle={styles.artImage}
-                      >
+                        style={styles.artImage}
+                      />
                       <LinearGradient
                         pointerEvents="none"
                         colors={[
@@ -496,10 +504,9 @@ export function RoleRevealCard({
                         locations={[0, 0.55, 1]}
                         style={StyleSheet.absoluteFillObject}
                       />
-                      </ImageBackground>
                     </Animated.View>
                   ) : (
-                    <View style={[styles.fallbackArt, { height: artHeight }]}>
+                    <View style={styles.fallbackArt}>
                       <Ionicons name={roleTheme.icon} size={72} color={accent} />
                     </View>
                   )}
@@ -673,8 +680,7 @@ const styles = StyleSheet.create({
   back: {
     backgroundColor: "rgba(5,6,8,0.22)",
     alignItems: "center",
-    justifyContent: "flex-start",
-    transform: [{ rotateY: "180deg" }]
+    justifyContent: "flex-start"
   },
   hiddenInner: {
     flex: 1,
@@ -780,6 +786,7 @@ const styles = StyleSheet.create({
   },
   revealedContent: {
     width: "100%",
+    flex: 1,
     gap: 9,
     alignItems: "center"
   },
@@ -797,22 +804,22 @@ const styles = StyleSheet.create({
   artAura: {
     top: "12%",
     alignSelf: "center",
-    zIndex: 1
-  },
-  art: {
-    width: "100%",
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(4,4,5,0.92)"
+    zIndex: 1,
+    opacity: 0.55
   },
   artParallaxWrap: {
-    width: "100%"
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(4,4,5,0.92)"
   },
   artImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
     borderRadius: 17,
     transform: [{ scale: 1.02 }]
   },
   fallbackArt: {
-    width: "100%",
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(10,10,12,0.76)"

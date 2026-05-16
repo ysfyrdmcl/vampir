@@ -122,7 +122,13 @@ export function VoteScreen(_: Props) {
   };
 
   return (
-    <ScreenShell scene="vote" bottomNavActiveIndex={0} headerTitle="GÜNDÜZ FAZI" contentDensity="game">
+    <ScreenShell
+      scene="vote"
+      bottomNavActiveIndex={0}
+      headerTitle="GÜNDÜZ FAZI"
+      contentDensity="game"
+      suppressTransientBotSpeech
+    >
       <View style={styles.screenRoot}>
         <PhaseBanner
           title={isMayorElection ? "Baskan Secimi" : "Oylama"}

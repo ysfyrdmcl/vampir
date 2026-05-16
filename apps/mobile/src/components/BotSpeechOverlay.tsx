@@ -16,11 +16,18 @@ function resolveDisplayMs(event: BotSpeechEvent): number {
 }
 
 interface BotSpeechOverlayProps {
-  /** İçerik alanının üst sınırı (faz çubuğu altı — balon için). */
-  layoutTopOffset: number;
+  bottomOffset: number;
+  disabled?: boolean;
+  unreadCount?: number;
+  onOpenHistory: () => void;
 }
 
-export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
+export function BotSpeechOverlay({
+  bottomOffset,
+  disabled = false,
+  unreadCount = 0,
+  onOpenHistory
+}: BotSpeechOverlayProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const roomState = useGameStore((s) => s.roomState);
@@ -28,7 +35,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
   const dismissActiveBotSpeech = useGameStore((s) => s.dismissActiveBotSpeech);
 
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-14)).current;
+  const translateY = useRef(new Animated.Value(18)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +47,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
 
   const resetBubbleMotion = useCallback(() => {
     opacity.setValue(0);
-    translateY.setValue(-14);
+    translateY.setValue(18);
     translateX.setValue(0);
     scale.setValue(1);
   }, [opacity, scale, translateX, translateY]);
@@ -73,14 +80,16 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
     [opacity, resetBubbleMotion, scale, translateX, translateY, width]
   );
 
-  const dismissFromUser = useCallback(() => {
+  const openHistoryFromRibbon = useCallback(() => {
     if (!active) return;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    runExit(finishDismiss);
-  }, [active, finishDismiss, runExit]);
+    onOpenHistory();
+    dismissActiveBotSpeech();
+    resetBubbleMotion();
+  }, [active, dismissActiveBotSpeech, onOpenHistory, resetBubbleMotion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +102,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
     translateX.stopAnimation();
     scale.stopAnimation();
 
-    if (!active) {
+    if (!active || disabled) {
       resetBubbleMotion();
       return;
     }
@@ -130,13 +139,12 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
         timerRef.current = null;
       }
     };
-  }, [active, finishDismiss, opacity, resetBubbleMotion, runExit, scale, translateX, translateY]);
+  }, [active, disabled, finishDismiss, opacity, resetBubbleMotion, runExit, scale, translateX, translateY]);
 
   const inGame = roomState?.status === "InGame";
-  const gameOver = roomState?.status === "GameOver";
-  const showBubble = Boolean(active) && inGame;
+  const showBubble = Boolean(active) && inGame && !disabled;
 
-  if (!inGame && !gameOver) {
+  if (!inGame) {
     return null;
   }
 
@@ -149,7 +157,7 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
             style={[
               styles.bubbleBand,
               {
-                top: layoutTopOffset + 8,
+                bottom: bottomOffset,
                 paddingHorizontal: horizontalPad
               }
             ]}
@@ -161,7 +169,12 @@ export function BotSpeechOverlay({ layoutTopOffset }: BotSpeechOverlayProps) {
                   transform: [{ translateY }, { translateX }, { scale }]
                 }}
               >
-                <BotSpeechBubble event={active} onPress={dismissFromUser} />
+                <BotSpeechBubble
+                  event={active}
+                  onPress={openHistoryFromRibbon}
+                  variant="bottom-ribbon"
+                  unreadCount={unreadCount}
+                />
               </Animated.View>
             </View>
           </View>
@@ -176,8 +189,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    zIndex: 45,
-    alignItems: "center"
+    zIndex: 22,
+    alignItems: "center",
+    elevation: 18
   },
   bubbleInner: {
     width: "100%",

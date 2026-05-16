@@ -1,4 +1,5 @@
 import type { BotIntelligence, BotPersonality, BotSpeechIntent, GamePhase } from "@vampir-koylu/shared";
+import type { SpeechReferencedRole } from "./bot-role-awareness.js";
 
 /** Template strings only; server substitutes placeholders. No LLM. */
 
@@ -14,6 +15,8 @@ export type SpeechTemplate = {
   intelligences?: BotIntelligence[];
   phases?: GamePhase[];
   requiresTarget?: boolean;
+  requiredActiveRoles?: SpeechReferencedRole[];
+  forbiddenWhenRolesMissing?: SpeechReferencedRole[];
   text: string;
   tags?: string[];
 };
@@ -140,6 +143,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "mayor_hint",
     phases: ["MayorElection"],
     requiresTarget: true,
+    requiredActiveRoles: ["Mayor"],
     text: "Başkanlık için {targetName} daha dengeli duruyor gibi."
   },
   {
@@ -148,6 +152,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["leader", "analyst"],
     phases: ["MayorElection"],
     requiresTarget: true,
+    requiredActiveRoles: ["Mayor"],
     text: "Dağılmayalım; başkanlıkta {targetName} üstünden düşünelim."
   },
   {
@@ -203,6 +208,7 @@ export const speechTemplates: SpeechTemplate[] = [
     phases: ["DayDiscussion", "DayVote"],
     requiresTarget: true,
     text: "Ben {targetName} üzerinde ekstra dikkatli olurdum, başka bir şey demiyorum.",
+    requiredActiveRoles: ["Detective"],
     tags: ["detective_safe"]
   },
   {
@@ -210,6 +216,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "generic_observation",
     phases: ["DayStart", "DayDiscussion"],
     text: "Gece riskli geçti; gündüz oylarını iyi kullanalım.",
+    requiredActiveRoles: ["Doctor"],
     tags: ["doctor_safe"]
   },
   {
@@ -217,6 +224,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "generic_observation",
     phases: ["DayDiscussion"],
     text: "Geceyi açık etmeyelim; bugün oy düzenine bakalım.",
+    requiredActiveRoles: ["Doctor"],
     tags: ["doctor_safe"]
   },
   {
@@ -244,6 +252,7 @@ export const speechTemplates: SpeechTemplate[] = [
     id: "hunter-reaction",
     intent: "hunter_reaction",
     phases: ["HunterLastBreath"],
+    requiredActiveRoles: ["Hunter"],
     text: "Avcının son sözü hafife alınmaz; herkes sakin kalsın."
   },
   {
@@ -382,6 +391,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["leader", "analyst"],
     phases: ["MayorElection"],
     requiresTarget: true,
+    requiredActiveRoles: ["Mayor"],
     text: "Başkanlık için {targetName} düşünülebilir. Panik anında köyü dağıtmayacak biri lazım."
   },
   {
@@ -417,6 +427,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "chaos",
     personalities: ["chaotic"],
     phases: ["DayStart", "ExecutionResolve"],
+    requiredActiveRoles: ["Doctor"],
     text: "Doktor uzaktan eğitim galiba, sürekli biri ölüyor."
   },
   {
@@ -425,6 +436,7 @@ export const speechTemplates: SpeechTemplate[] = [
     personalities: ["accuser", "analyst"],
     phases: ["MayorElection", "DayDiscussion"],
     requiresTarget: true,
+    requiredActiveRoles: ["Mayor"],
     text: "{targetName} belediye başkanı olmak için çok göz önünde duruyor, vampir olabilir."
   },
   {
@@ -432,7 +444,8 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "chaos",
     personalities: ["chaotic", "analyst"],
     phases: ["DayStart", "DayDiscussion"],
-    text: "Dedektif Sherlock galiba, hiç konuşmadan olayı çözdü."
+    requiredActiveRoles: ["Detective"],
+    text: "Dedektif bugün fazla sessiz; ipucu varsa bile köyün bunu tartması lazım."
   },
   {
     id: "chaos-vampire-sunscreen-1",
@@ -446,6 +459,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "chaos",
     personalities: ["chaotic"],
     phases: ["DayStart", "DayDiscussion"],
+    requiredActiveRoles: ["Villager"],
     text: "Köylülerin elinde dirgen var ama plan yok. Bu enerjiyle samanlığı bile yanlış suçlarız."
   },
   {
@@ -453,6 +467,7 @@ export const speechTemplates: SpeechTemplate[] = [
     intent: "chaos",
     personalities: ["chaotic"],
     phases: ["DayStart", "DayDiscussion"],
+    requiredActiveRoles: ["Guard"],
     text: "Bizim gardiyan yakışıklı güvenlik galiba, vampirler köyde volta atıyor."
   },
   {

@@ -114,6 +114,23 @@ describe("BotBrainController", () => {
     expect(result).toMatchObject({ ok: false, reason: "invalid_response" });
   });
 
+  it("rejects LLM role references that are not active in the room", async () => {
+    const speaker = player("b1");
+    const brain = new BotBrainController({
+      llm: fakeLLM({ ok: true, text: JSON.stringify({ message: "Dedektif Sherlock bu işi çözdü." }), model: "fake" })
+    });
+
+    const result = await brain.generateSpeech({
+      room: room([speaker, player("p1"), player("p2"), player("p3")]),
+      speaker,
+      memory: createEmptyBotMemory(),
+      intent: "small_talk",
+      tone: "neutral"
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "invalid_response" });
+  });
+
   it("maps LLM failures without throwing", async () => {
     const speaker = player("b1");
     const brain = new BotBrainController({ llm: fakeLLM({ ok: false, reason: "disabled" }) });

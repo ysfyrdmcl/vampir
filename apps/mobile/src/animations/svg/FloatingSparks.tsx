@@ -40,7 +40,7 @@ function FloatingSparksBase({
   radius = 180,
   loop = true,
   burst = false,
-  opacity = 0.76,
+  opacity = 0.58,
   style
 }: FloatingSparksProps) {
   return (

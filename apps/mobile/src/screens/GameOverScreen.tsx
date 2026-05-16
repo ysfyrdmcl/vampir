@@ -61,7 +61,7 @@ export function GameOverScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="">
+    <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="" suppressTransientBotSpeech>
       {!winnerReady ? (
         <View style={styles.loadingWrap}>
           <View style={styles.loadingIcon}>

@@ -29,7 +29,7 @@ export function buildGameResultEvents(before: ResultEventBaseline, room: RoomSta
   const phase = room.game.phase;
   const round = room.game.round;
 
-  if (before.phase === "NightResolve" && (phase === "DayStart" || phase === "WinCheck")) {
+  if (before.phase === "NightResolve" && (phase === "DayStart" || phase === "WinCheck" || phase === "GameOver")) {
     if (newlyDead.length) {
       const primary = room.game.lastEliminationSummary?.playerId ?? newlyDead[0].playerId;
       const chain = newlyDead.filter((p) => p.playerId !== primary);
@@ -69,7 +69,7 @@ export function buildGameResultEvents(before: ResultEventBaseline, room: RoomSta
     events.push(resultEvent(room, "day", "İnfaz Sonucu", message, newlyDead, room.game.lastEliminationSummary?.revealedRole));
   }
 
-  if (before.phase === "HunterLastBreath" && phase === "WinCheck") {
+  if (before.phase === "HunterLastBreath" && (phase === "WinCheck" || phase === "GameOver")) {
     if (newlyDead.length) {
       events.push(resultEvent(room, "hunter", "Avcı Son Nefes", `${names(newlyDead.map((p) => p.playerId)).join(", ")} avcının son nefesiyle öldü.`, newlyDead));
     } else {

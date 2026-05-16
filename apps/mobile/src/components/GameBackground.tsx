@@ -2,7 +2,9 @@ import type { ImageSourcePropType } from "react-native";
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { AnimatedBats, AnimatedMist, RedVignettePulse } from "../animations/svg";
 import { uiStandard } from "../ui/ui-standard";
+import { colors } from "../theme/colors";
 
 export type GameBackgroundVariant =
   | "home"
@@ -42,10 +44,15 @@ const sceneBackgrounds: Record<GameBackgroundVariant, ImageSourcePropType> = {
 interface GameBackgroundProps {
   variant: GameBackgroundVariant;
   backdropScale: Animated.Value;
+  mode?: "game" | "solid" | "none";
 }
 
-export function GameBackground({ variant, backdropScale }: GameBackgroundProps) {
+export function GameBackground({ variant, backdropScale, mode = "game" }: GameBackgroundProps) {
   const drift = useRef(new Animated.Value(0)).current;
+  const showNightAtmosphere =
+    mode !== "none" && (variant === "night" || variant === "vampire" || variant === "detective" || variant === "doctor");
+  const showBats = mode !== "none" && (variant === "night" || variant === "vampire");
+  const showBloodPulse = mode !== "none" && variant === "vampire";
 
   useEffect(() => {
     drift.setValue(0);
@@ -61,29 +68,41 @@ export function GameBackground({ variant, backdropScale }: GameBackgroundProps) 
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Animated.Image source={sceneBackgrounds[variant]} resizeMode="cover" style={[styles.backdrop, { transform: [{ scale: backdropScale }] }]} />
+      <View style={styles.opaqueBase} />
+      {mode === "game" ? (
+        <Animated.Image source={sceneBackgrounds[variant]} resizeMode="cover" style={[styles.backdrop, { transform: [{ scale: backdropScale }] }]} />
+      ) : null}
       <LinearGradient colors={["rgba(5,5,5,0.88)", "rgba(9,8,10,0.86)", "rgba(5,5,5,0.93)"]} style={styles.overlay} />
       <LinearGradient colors={["rgba(15,16,20,0.20)", "rgba(15,16,20,0)", "rgba(15,16,20,0.26)"]} style={styles.textureLayer} />
-      <Animated.View
-        style={[
-          styles.ambientDrift,
-          {
-            opacity: drift.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.32] }),
-            transform: [
-              { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [-34, 36] }) },
-              { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [18, -22] }) },
-              { scale: drift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }
-            ]
-          }
-        ]}
-      >
-        <LinearGradient
-          colors={[uiStandard.phaseTheme[variant].accent, "rgba(12,12,15,0)"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
+      {mode !== "none" ? (
+        <Animated.View
+          style={[
+            styles.ambientDrift,
+            {
+              opacity: drift.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.32] }),
+              transform: [
+                { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [-34, 36] }) },
+                { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [18, -22] }) },
+                { scale: drift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }
+              ]
+            }
+          ]}
+        >
+          <LinearGradient
+            colors={[uiStandard.phaseTheme[variant].accent, "rgba(12,12,15,0)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      ) : null}
+      {showNightAtmosphere ? (
+        <AnimatedMist height={150} opacity={variant === "vampire" ? 0.22 : 0.16} style={styles.mist} />
+      ) : null}
+      {showBats ? (
+        <AnimatedBats count={variant === "vampire" ? 3 : 2} height={120} durationMs={variant === "vampire" ? 3900 : 4600} style={styles.bats} />
+      ) : null}
+      {showBloodPulse ? <RedVignettePulse intensity="low" durationMs={1100} /> : null}
       <LinearGradient
         colors={[uiStandard.phaseTheme[variant].accent, "rgba(12,12,15,0)", uiStandard.phaseTheme[variant].atmosphere]}
         style={styles.tint}
@@ -93,6 +112,10 @@ export function GameBackground({ variant, backdropScale }: GameBackgroundProps) 
 }
 
 const styles = StyleSheet.create({
+  opaqueBase: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.backgroundDeep
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.22
@@ -114,5 +137,17 @@ const styles = StyleSheet.create({
     top: "-8%",
     height: "58%",
     overflow: "hidden"
+  },
+  mist: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0
+  },
+  bats: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: "11%"
   }
 });

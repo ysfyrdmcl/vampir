@@ -21,7 +21,7 @@ interface AnimatedMistProps {
 
 function AnimatedMistBase({
   height = 180,
-  opacity = 0.16,
+  opacity = 0.11,
   durationMs = svgMotion.mistDriftMs,
   reverse = false,
   style

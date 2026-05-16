@@ -83,6 +83,17 @@ describe("buildGameResultEvents", () => {
     expect(events[0].playerIds).toEqual(["a", "b"]);
   });
 
+  it("announces night deaths even when they end the game", () => {
+    const r = room([player("v", "Vampire"), player("a", "Villager")], "NightResolve");
+    const before = captureResultEventBaseline(r);
+    r.players[1].isAlive = false;
+    r.game.phase = "GameOver";
+    r.game.winner = "Vampires";
+    r.game.lastEliminationSummary = { source: "Night", playerId: "a" };
+    const events = buildGameResultEvents(before, r);
+    expect(events[0]).toMatchObject({ kind: "night", playerIds: ["a"] });
+  });
+
   it("announces mayor selection", () => {
     const r = room([player("a", "Villager"), player("b", "Villager")], "MayorElection");
     const before = captureResultEventBaseline(r);

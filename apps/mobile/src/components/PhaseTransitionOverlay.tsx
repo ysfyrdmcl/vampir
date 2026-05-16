@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { GamePhase, GameResultEvent } from "@vampir-koylu/shared";
 import { DayStartTransition, DeathTransition, ExecutionTransition, NightStartTransition, NoDeathTransition } from "../animations";
 import { CinematicMajorOverlay, type CinematicInfoPayload } from "./CinematicInfoOverlay";
+import { navigationRef } from "../app/navigation/navigation-ref";
 import { useLogFeedStore } from "../logging/log-feed-store";
 import { useGameStore } from "../store/game-store";
 import { typography } from "../theme/typography";
@@ -24,7 +25,11 @@ interface SvgTransition {
 
 type PlayerNameLookup = { playerId: string; nickname: string };
 
-const MIN_TRANSITION_MS = 1400;
+const MIN_TRANSITION_MS = 4600;
+const MAX_TRANSITION_MS = 7600;
+const OVERLAY_FADE_IN_MS = 420;
+const OVERLAY_FADE_OUT_MS = 420;
+const ROLE_REVEAL_TO_NIGHT_OVERLAY_DELAY_MS = 720;
 const DEBUG_SVG_OVERLAY = typeof __DEV__ !== "undefined" && __DEV__ && false;
 const EMPTY_PLAYERS: PlayerNameLookup[] = [];
 
@@ -86,6 +91,27 @@ function renderTransition(kind: SvgTransitionKind | null, phase: GamePhase | nul
 
 function playerNames(event: GameResultEvent, players: PlayerNameLookup[]): string[] {
   return (event.playerIds ?? []).map((id) => players.find((player) => player.playerId === id)?.nickname ?? id);
+}
+
+function readingDurationMs(payload: CinematicInfoPayload): number {
+  const text = [
+    payload.title,
+    payload.subtitle,
+    payload.body,
+    payload.playerName,
+    payload.roleName,
+    ...(payload.chips ?? [])
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, 2600 + wordCount * 115));
+}
+
+function transitionVisibleMs(transition: SvgTransition, phaseEndsAt: number | null): number {
+  const readingMs = readingDurationMs(transition.payload);
+  if (transition.kind !== "night-start" || !phaseEndsAt) return readingMs;
+  return Math.max(readingMs, Math.max(0, phaseEndsAt - Date.now()));
 }
 
 function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): SvgTransition | null {
@@ -196,6 +222,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[]): S
 export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const round = useGameStore((s) => s.gameState?.round ?? null);
+  const phaseEndsAt = useGameStore((s) => s.gameState?.phaseEndsAt ?? null);
   const activeResultEvent = useGameStore((s) => s.activeResultEvent);
   const dismissActiveResultEvent = useGameStore((s) => s.dismissActiveResultEvent);
   const winner = useGameStore((s) => s.gameWinner);
@@ -213,6 +240,9 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   const activeKey = useRef<string | null>(null);
   const pendingTransition = useRef<SvgTransition | null>(null);
   const isAnimating = useRef(false);
+  const startTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const finishing = useRef(false);
 
   const candidateTransition = useMemo(() => {
     if (activeResultEvent) {
@@ -277,73 +307,138 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
 
     return phaseTransition(phase, round);
   }, [activeResultEvent, latestElimination, latestNoDeath, phase, players, round]);
-  useEffect(() => {
-    if (!candidateTransition) return;
-    if (candidateTransition.key === activeKey.current) return;
 
-    const startTransition = (transition: SvgTransition) => {
-      activeKey.current = transition.key;
-      isAnimating.current = true;
-      setActiveTransition(transition);
-      opacity.setValue(0);
-
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        console.log("[CINEMATIC_OVERLAY] show", {
-          phase,
-          round,
-          resultKind: transition.resultKind,
-          transitionKind: transition.kind,
-          winner
-        });
-      }
-
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 260,
-          useNativeDriver: true
-        }),
-        Animated.delay(MIN_TRANSITION_MS - 520),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true
-        })
-      ]).start(() => {
-        isAnimating.current = false;
-        setActiveTransition(null);
-        if (typeof __DEV__ !== "undefined" && __DEV__) {
-          console.log("[CINEMATIC_OVERLAY] complete", {
-            key: transition.key,
-            resultKind: transition.resultKind,
-            transitionKind: transition.kind
-          });
-        }
-        if (transition.resultEventId && activeResultEvent?.id === transition.resultEventId) {
-          dismissActiveResultEvent();
-        }
-        const pending = pendingTransition.current;
-        pendingTransition.current = null;
-        if (pending && pending.key !== activeKey.current) {
-          startTransition(pending);
-        }
+  function completeTransition(transition: SvgTransition) {
+    if (finishing.current) return;
+    finishing.current = true;
+    activeAnimation.current = null;
+    isAnimating.current = false;
+    setActiveTransition(null);
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.log("[CINEMATIC_OVERLAY] complete", {
+        key: transition.key,
+        resultKind: transition.resultKind,
+        transitionKind: transition.kind
       });
-    };
+    }
+    if (transition.resultEventId && activeResultEvent?.id === transition.resultEventId) {
+      dismissActiveResultEvent();
+    }
+    const pending = pendingTransition.current;
+    pendingTransition.current = null;
+    requestAnimationFrame(() => {
+      finishing.current = false;
+      if (pending && pending.key !== activeKey.current) {
+        startTransition(pending);
+      }
+    });
+  }
 
+  function startTransition(transition: SvgTransition) {
+    activeKey.current = transition.key;
+    isAnimating.current = true;
+    finishing.current = false;
+    setActiveTransition(transition);
+    opacity.setValue(0);
+
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.log("[CINEMATIC_OVERLAY] show", {
+        phase,
+        round,
+        resultKind: transition.resultKind,
+        transitionKind: transition.kind,
+        winner
+      });
+    }
+
+    const visibleMs = transitionVisibleMs(transition, phaseEndsAt);
+    const animation = Animated.sequence([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: OVERLAY_FADE_IN_MS,
+        useNativeDriver: true
+      }),
+      Animated.delay(Math.max(0, visibleMs - OVERLAY_FADE_IN_MS - OVERLAY_FADE_OUT_MS)),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: OVERLAY_FADE_OUT_MS,
+        useNativeDriver: true
+      })
+    ]);
+    activeAnimation.current = animation;
+    animation.start(({ finished }) => {
+      if (!finished) return;
+      completeTransition(transition);
+    });
+  }
+
+  function enqueueOrStart(transition: SvgTransition) {
     if (isAnimating.current) {
-      pendingTransition.current = candidateTransition;
+      pendingTransition.current = transition;
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         console.log("[CINEMATIC_OVERLAY] enqueue", {
-          key: candidateTransition.key,
-          resultKind: candidateTransition.resultKind,
-          transitionKind: candidateTransition.kind
+          key: transition.key,
+          resultKind: transition.resultKind,
+          transitionKind: transition.kind
         });
       }
       return;
     }
 
-    startTransition(candidateTransition);
-  }, [activeResultEvent?.id, candidateTransition, dismissActiveResultEvent, opacity, phase, round, winner]);
+    startTransition(transition);
+  }
+
+  useEffect(() => {
+    if (!candidateTransition) return;
+    if (candidateTransition.key === activeKey.current) return;
+    if (startTimer.current) {
+      clearTimeout(startTimer.current);
+      startTimer.current = null;
+    }
+
+    const currentRoute = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
+    const delayMs =
+      candidateTransition.kind === "night-start" && currentRoute === "RoleReveal"
+        ? ROLE_REVEAL_TO_NIGHT_OVERLAY_DELAY_MS
+        : 0;
+
+    if (delayMs > 0) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.log("[CINEMATIC_OVERLAY] delayed", {
+          key: candidateTransition.key,
+          resultKind: candidateTransition.resultKind,
+          transitionKind: candidateTransition.kind,
+          delayMs
+        });
+      }
+      startTimer.current = setTimeout(() => {
+        startTimer.current = null;
+        enqueueOrStart(candidateTransition);
+      }, delayMs);
+      return () => {
+        if (startTimer.current) {
+          clearTimeout(startTimer.current);
+          startTimer.current = null;
+        }
+      };
+    }
+
+    enqueueOrStart(candidateTransition);
+  }, [activeResultEvent?.id, candidateTransition, dismissActiveResultEvent, opacity, phase, phaseEndsAt, round, winner]);
+
+  const dismissActiveTransition = () => {
+    if (!activeTransition || finishing.current) return;
+    const transition = activeTransition;
+    activeAnimation.current?.stop();
+    activeAnimation.current = null;
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 260,
+      useNativeDriver: true
+    }).start(() => {
+      completeTransition(transition);
+    });
+  };
 
   if (!activeTransition && !DEBUG_SVG_OVERLAY) return null;
 
@@ -359,19 +454,21 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
         }
       ]}
     >
-      {DEBUG_SVG_OVERLAY ? (
-        <View style={styles.debugOverlay}>
-          <Text style={styles.debugText}>SVG OVERLAY TEST</Text>
-        </View>
-      ) : null}
-      {activeTransition ? (
-        <CinematicMajorOverlay
-          payload={activeTransition.payload}
-          visual={renderTransition(activeTransition.kind, phase)}
-        />
-      ) : (
-        renderTransition(null, phase)
-      )}
+      <Pressable style={styles.pressable} onPress={dismissActiveTransition}>
+        {DEBUG_SVG_OVERLAY ? (
+          <View style={styles.debugOverlay}>
+            <Text style={styles.debugText}>SVG OVERLAY TEST</Text>
+          </View>
+        ) : null}
+        {activeTransition ? (
+          <CinematicMajorOverlay
+            payload={activeTransition.payload}
+            visual={renderTransition(activeTransition.kind, phase)}
+          />
+        ) : (
+          renderTransition(null, phase)
+        )}
+      </Pressable>
     </Animated.View>
   );
 }
@@ -385,6 +482,11 @@ const styles = StyleSheet.create({
     zIndex: 99999,
     elevation: 99999,
     overflow: "visible"
+  },
+  pressable: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center"
   },
   debugOverlay: {
     ...StyleSheet.absoluteFillObject,

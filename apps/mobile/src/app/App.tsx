@@ -36,6 +36,7 @@ export default function App() {
   const roomState = useGameStore((s) => s.roomState);
   const gameState = useGameStore((s) => s.gameState);
   const gameWinner = useGameStore((s) => s.gameWinner);
+  const activeResultEvent = useGameStore((s) => s.activeResultEvent);
   const [bootstrapDone, setBootstrapDone] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -84,7 +85,7 @@ export default function App() {
         useGameStore.getState().setErrorCode("BOOTSTRAP_FAILED");
         logGameEvent("app.bootstrap.error");
       } finally {
-        await new Promise((resolve) => setTimeout(resolve, 1050));
+        await new Promise((resolve) => setTimeout(resolve, 2050));
         if (isMounted) {
           setBootstrapDone(true);
         }
@@ -121,7 +122,14 @@ export default function App() {
       return;
     }
     if (current === targetRoute) return;
-    const delayMs = targetRoute === "GameOver" ? 450 : 0;
+    const delayMs =
+      targetRoute === "GameOver"
+        ? activeResultEvent
+          ? 5400
+          : 450
+        : current === "RoleReveal" && targetRoute === "Night"
+          ? 520
+          : 0;
     const timer = setTimeout(() => {
       const latest = navigationRef.getCurrentRoute()?.name;
       if (latest !== targetRoute) {
@@ -129,7 +137,7 @@ export default function App() {
       }
     }, delayMs);
     return () => clearTimeout(timer);
-  }, [targetRoute]);
+  }, [activeResultEvent, targetRoute]);
 
   if (!fontsLoaded || !bootstrapDone) {
     return (
