@@ -1,12 +1,14 @@
 import type { GameResultEvent, Role } from "@vampir-koylu/shared";
 import type { GamePhase } from "@vampir-koylu/shared";
 import type { PlayerState, RoomState } from "./game-types.js";
+import { resolveDayVotes } from "./vote-resolver.js";
 
 export interface ResultEventBaseline {
   phase: GamePhase;
   round: number;
   aliveByPlayerId: Map<string, boolean>;
   mayorPlayerId: string | null;
+  mayorVoteBreakdown: { playerId: string; votes: number }[] | null;
   guardProtectedPlayerId: string | null;
   winner: "Vampires" | "Villagers" | null;
 }
@@ -17,6 +19,13 @@ export function captureResultEventBaseline(room: RoomState): ResultEventBaseline
     round: room.game.round,
     aliveByPlayerId: new Map(room.players.map((p) => [p.playerId, p.isAlive])),
     mayorPlayerId: room.game.mayorPlayerId,
+    mayorVoteBreakdown:
+      room.game.phase === "MayorElection"
+        ? resolveDayVotes(room.players, room.game.actions, {
+            noLynchEnabled: false,
+            voteActionType: "mayor-vote"
+          }).voteBreakdown
+        : null,
     guardProtectedPlayerId: room.game.guardProtectedPlayerId,
     winner: room.game.winner
   };
@@ -44,7 +53,17 @@ export function buildGameResultEvents(before: ResultEventBaseline, room: RoomSta
   }
 
   if (before.phase === "MayorElection" && (phase === "GuardProtect" || phase === "DayDiscussion") && room.game.mayorPlayerId) {
-    events.push(resultEvent(room, "mayor", "Belediye Başkanı", `${playerName(room.players, room.game.mayorPlayerId)} belediye başkanı seçildi.`, [room.game.mayorPlayerId]));
+    events.push(
+      resultEvent(
+        room,
+        "mayor",
+        "Belediye Başkanı",
+        `${playerName(room.players, room.game.mayorPlayerId)} belediye başkanı seçildi.`,
+        [room.game.mayorPlayerId],
+        undefined,
+        before.mayorVoteBreakdown
+      )
+    );
   }
 
   if (before.phase === "GuardProtect" && phase === "DayDiscussion" && room.game.guardProtectedPlayerId) {
@@ -86,7 +105,8 @@ function resultEvent(
   title: string,
   message: string,
   players: PlayerState[] | string[],
-  role?: Role | null
+  role?: Role | null,
+  voteBreakdown?: { playerId: string; votes: number }[] | null
 ): GameResultEvent {
   const playerIds = players.map((p) => (typeof p === "string" ? p : p.playerId));
   return {
@@ -97,7 +117,8 @@ function resultEvent(
     phase: room.game.phase,
     round: room.game.round,
     playerIds,
-    role
+    role,
+    voteBreakdown: voteBreakdown?.length ? voteBreakdown : undefined
   };
 }
 

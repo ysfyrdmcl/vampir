@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { GamePhase } from "@vampir-koylu/shared";
 import type { PropsWithChildren } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   KeyboardAvoidingView,
@@ -219,11 +219,11 @@ export function ScreenShell({
   const contentTopPadding = contentDensity === "game" ? spacing.sm : spacing.lg;
   const navIconSize = scaledSize(24, layout.controlScale, 21, 25);
   const navSettingsIconSize = scaledSize(22, layout.controlScale, 20, 24);
-  const navigateIfReady = (route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
+  const navigateIfReady = useCallback((route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
     if (!navigationRef.isReady()) return;
     navigationRef.navigate(route);
-  };
-  const goStatus = () => {
+  }, []);
+  const goStatus = useCallback(() => {
     if (isPaused) return;
     if (roomState?.status === "GameOver") {
       navigateIfReady("GameOver");
@@ -231,11 +231,11 @@ export function ScreenShell({
     }
     const route = getRouteForCurrentPhase(phase);
     navigateIfReady(route);
-  };
-  const openRumors = () => {
+  }, [isPaused, navigateIfReady, phase, roomState?.status]);
+  const openRumors = useCallback(() => {
     markBotSpeechInboxRead();
     setRumorsOpen(true);
-  };
+  }, [markBotSpeechInboxRead]);
   const phaseType = scene === "vote" || scene === "day" ? "day" : scene === "night" || scene === "vampire" || scene === "detective" || scene === "doctor" ? "night" : "other";
   const phaseVisual = phase === "VampireVote" || phase === "HunterLastBreath" ? "blood-candle" : phaseType === "night" ? "candle" : "bar";
   const resolvedBackgroundMode = backgroundMode ?? "solid";

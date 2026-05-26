@@ -14,6 +14,7 @@ export interface CinematicInfoPayload {
   playerName?: string;
   roleName?: string;
   chips?: string[];
+  voteRows?: Array<{ label: string; value: string; highlighted?: boolean }>;
   visualTone?: CinematicOverlayTone;
 }
 
@@ -101,6 +102,20 @@ function CinematicMajorOverlayBase({ payload, visual }: MajorProps) {
         <Text style={styles.majorTitle}>{payload.title}</Text>
         <GothicDividerSvg width={170} height={18} opacity={0.56} />
         {payload.body ? <Text style={styles.majorBody}>{payload.body}</Text> : null}
+        {payload.voteRows?.length ? (
+          <View style={styles.votePanel}>
+            {payload.voteRows.slice(0, 6).map((row) => (
+              <View key={`${row.label}:${row.value}`} style={[styles.voteRow, row.highlighted ? styles.voteRowWinner : null]}>
+                <Text style={[styles.voteName, row.highlighted ? styles.voteNameWinner : null]} numberOfLines={1}>
+                  {row.label}
+                </Text>
+                <Text style={[styles.voteCount, row.highlighted ? styles.voteCountWinner : null]} numberOfLines={1}>
+                  {row.value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {chips.length ? (
           <View style={styles.chipRow}>
             {chips.slice(0, 4).map((chip) => (
@@ -236,6 +251,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23,
     textAlign: "center"
+  },
+  votePanel: {
+    width: "100%",
+    maxWidth: 310,
+    gap: 5,
+    marginTop: 2
+  },
+  voteRow: {
+    minHeight: 28,
+    borderWidth: 1,
+    borderColor: "rgba(170,137,132,0.22)",
+    borderRadius: 8,
+    backgroundColor: "rgba(5,5,7,0.38)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  voteRowWinner: {
+    borderColor: "rgba(233,195,73,0.54)",
+    backgroundColor: "rgba(72,52,18,0.38)"
+  },
+  voteName: {
+    flex: 1,
+    color: colors.textMuted,
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  voteNameWinner: {
+    color: colors.secondary
+  },
+  voteCount: {
+    color: colors.text,
+    fontFamily: typography.sansBold,
+    fontSize: 12
+  },
+  voteCountWinner: {
+    color: colors.secondary
   },
   chipRow: {
     flexDirection: "row",

@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Reanimated from "react-native-reanimated";
 import { LiquidGlassSurface } from "../glass";
@@ -16,7 +16,7 @@ interface PhaseCountdownProps {
   presentation?: "default" | "roleRevealFooter" | "roleRevealBadge" | "phaseSummary" | "topBar";
 }
 
-export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
+function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
   const { width } = useWindowDimensions();
   const isPaused = useGameStore((s) => Boolean(s.gameState?.isPaused));
   const [now, setNow] = useState(Date.now());
@@ -30,11 +30,13 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
   }, [phaseEndsAt]);
 
   useEffect(() => {
+    if (!phaseEndsAt || isPaused) return;
+    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused, phaseEndsAt]);
 
   const seconds = useMemo(() => {
     if (!phaseEndsAt) return null;
@@ -196,6 +198,8 @@ export function PhaseCountdown({ phaseEndsAt, mode = "dramatic", presentation = 
     </View>
   );
 }
+
+export const PhaseCountdown = memo(PhaseCountdownBase);
 
 const styles = StyleSheet.create({
   wrap: {

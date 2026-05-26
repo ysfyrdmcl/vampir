@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { GamePhase, GameResultEvent } from "@vampir-koylu/shared";
-import { DayStartTransition, DeathTransition, ExecutionTransition, NightStartTransition, NoDeathTransition } from "../animations";
+import {
+  DayStartTransition,
+  DeathTransition,
+  ExecutionTransition,
+  LoverChainTransition,
+  MayorSelectedTransition,
+  NightStartTransition,
+  NoDeathTransition
+} from "../animations";
 import { CinematicMajorOverlay, type CinematicInfoPayload } from "./CinematicInfoOverlay";
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { useLogFeedStore } from "../logging/log-feed-store";
@@ -13,7 +21,7 @@ interface PhaseTransitionOverlayProps {
   phase: GamePhase | null;
 }
 
-type SvgTransitionKind = "night-start" | "day-start" | "death" | "no-death" | "execution";
+type SvgTransitionKind = "night-start" | "day-start" | "death" | "no-death" | "execution" | "mayor-selected" | "lover-chain";
 
 interface SvgTransition {
   key: string;
@@ -102,6 +110,8 @@ function renderTransition(kind: SvgTransitionKind | null, phase: GamePhase | nul
   if (kind === "death") return <DeathTransition />;
   if (kind === "no-death") return <NoDeathTransition />;
   if (kind === "execution") return <ExecutionTransition />;
+  if (kind === "mayor-selected") return <MayorSelectedTransition />;
+  if (kind === "lover-chain") return <LoverChainTransition />;
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     console.warn("[SVG_TRANSITION_NULL]", { phase, transitionKind: kind });
   }
@@ -119,7 +129,8 @@ function readingDurationMs(payload: CinematicInfoPayload): number {
     payload.body,
     payload.playerName,
     payload.roleName,
-    ...(payload.chips ?? [])
+    ...(payload.chips ?? []),
+    ...(payload.voteRows ?? []).map((row) => `${row.label} ${row.value}`)
   ]
     .filter(Boolean)
     .join(" ");
@@ -177,6 +188,15 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], ro
   const names = playerNames(event, players);
   const hasVictim = names.length > 0;
   const hasLoverChain = event.message.includes("Aşık bağı");
+  const selectedPlayerId = event.playerIds?.[0];
+  const voteRows = event.voteBreakdown
+    ?.slice()
+    .sort((a, b) => b.votes - a.votes || (players.find((player) => player.playerId === a.playerId)?.nickname ?? a.playerId).localeCompare(players.find((player) => player.playerId === b.playerId)?.nickname ?? b.playerId, "tr"))
+    .map((entry) => ({
+      label: players.find((player) => player.playerId === entry.playerId)?.nickname ?? entry.playerId,
+      value: `${entry.votes} oy`,
+      highlighted: entry.playerId === selectedPlayerId
+    }));
   const roundChip = `Tur ${event.round}`;
   const common = {
     body: event.message,
@@ -186,6 +206,23 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], ro
   };
 
   if (event.kind === "night") {
+    if (hasLoverChain && hasVictim) {
+      return {
+        key: `result:${event.id}`,
+        dedupeKey: resultDedupeKey(event, roomCode),
+        kind: "lover-chain",
+        payload: {
+          ...common,
+          title: "Aşık Bağı Koptu",
+          subtitle: event.title || "Gece Sonucu",
+          body: event.message,
+          playerName: undefined,
+          visualTone: "blood"
+        },
+        resultKind: event.kind,
+        resultEventId: event.id
+      };
+    }
     return {
       key: `result:${event.id}`,
       dedupeKey: resultDedupeKey(event, roomCode),
@@ -202,6 +239,23 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], ro
   }
 
   if (event.kind === "day") {
+    if (hasLoverChain && hasVictim) {
+      return {
+        key: `result:${event.id}`,
+        dedupeKey: resultDedupeKey(event, roomCode),
+        kind: "lover-chain",
+        payload: {
+          ...common,
+          title: "Aşık Bağı Koptu",
+          subtitle: event.title || "İnfaz Sonucu",
+          body: event.message,
+          playerName: undefined,
+          visualTone: "blood"
+        },
+        resultKind: event.kind,
+        resultEventId: event.id
+      };
+    }
     return {
       key: `result:${event.id}`,
       dedupeKey: resultDedupeKey(event, roomCode),
@@ -221,11 +275,12 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], ro
     return {
       key: `result:${event.id}`,
       dedupeKey: resultDedupeKey(event, roomCode),
-      kind: "day-start",
+      kind: "mayor-selected",
       payload: {
         ...common,
         title: "Köy Başkanını Seçti",
         subtitle: event.title,
+        voteRows,
         visualTone: "gold"
       },
       resultKind: event.kind,
@@ -294,15 +349,8 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   const roomCode = useGameStore((s) => s.roomState?.roomCode ?? s.roomCode);
   const currentPlayerId = useGameStore((s) => s.playerId);
   const players = useGameStore((s) => s.roomState?.players ?? EMPTY_PLAYERS);
-  const logEntries = useLogFeedStore((s) => s.entries);
-  const latestElimination = useMemo(
-    () => [...logEntries].reverse().find((entry) => entry.event === "summary.elimination") ?? null,
-    [logEntries]
-  );
-  const latestNoDeath = useMemo(
-    () => [...logEntries].reverse().find((entry) => entry.event === "summary.night_no_elimination") ?? null,
-    [logEntries]
-  );
+  const latestElimination = useLogFeedStore((s) => s.latestEliminationEntry);
+  const latestNoDeath = useLogFeedStore((s) => s.latestNoDeathEntry);
   const [activeTransition, setActiveTransition] = useState<SvgTransition | null>(null);
   const activeKey = useRef<string | null>(null);
   const shownKeys = useRef(new Set<string>());
@@ -330,6 +378,11 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   }
 
   useEffect(() => {
+    if (!roomCode || !phase) {
+      clearOverlayQueue();
+      resetScope.current = null;
+      return;
+    }
     const scope = `${roomCode ?? "no-room"}:${round ?? "no-round"}`;
     if (resetScope.current === scope) return;
     if (phase === "RoleReveal" && round === 1) {

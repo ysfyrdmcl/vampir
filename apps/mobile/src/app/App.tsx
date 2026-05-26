@@ -34,10 +34,10 @@ function configureStableTextScale() {
 configureStableTextScale();
 
 export default function App() {
-  const roomState = useGameStore((s) => s.roomState);
-  const gameState = useGameStore((s) => s.gameState);
+  const roomStatus = useGameStore((s) => s.roomState?.status ?? null);
+  const phase = useGameStore((s) => s.gameState?.phase ?? null);
   const gameWinner = useGameStore((s) => s.gameWinner);
-  const activeResultEvent = useGameStore((s) => s.activeResultEvent);
+  const hasActiveResultEvent = useGameStore((s) => Boolean(s.activeResultEvent));
   const [bootstrapDone, setBootstrapDone] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -101,18 +101,18 @@ export default function App() {
   }, []);
 
   const targetRoute = useMemo(() => {
-    if (!roomState) {
+    if (!roomStatus) {
       return null;
     }
-    if (roomState.status === "Lobby") {
+    if (roomStatus === "Lobby") {
       return "Lobby" as const;
     }
-    if (roomState.status === "GameOver") {
+    if (roomStatus === "GameOver") {
       if (!gameWinner) return null;
       return "GameOver" as const;
     }
-    return getRouteForCurrentPhase(gameState?.phase ?? null);
-  }, [gameState?.phase, gameWinner, roomState]);
+    return getRouteForCurrentPhase(phase);
+  }, [gameWinner, phase, roomStatus]);
 
   useEffect(() => {
     if (!targetRoute || !navigationRef.isReady()) {
@@ -125,7 +125,7 @@ export default function App() {
     if (current === targetRoute) return;
     const delayMs =
       targetRoute === "GameOver"
-        ? activeResultEvent
+        ? hasActiveResultEvent
           ? 5400
           : 450
         : current === "RoleReveal" && targetRoute === "Night"
@@ -138,7 +138,7 @@ export default function App() {
       }
     }, delayMs);
     return () => clearTimeout(timer);
-  }, [activeResultEvent, targetRoute]);
+  }, [hasActiveResultEvent, targetRoute]);
 
   if (!fontsLoaded || !bootstrapDone) {
     return (
@@ -153,7 +153,7 @@ export default function App() {
       <StatusBar style="light" translucent backgroundColor="transparent" />
       <View style={styles.appRoot}>
         <RootNavigator />
-        <PhaseTransitionOverlay phase={gameState?.phase ?? null} />
+        <PhaseTransitionOverlay phase={phase} />
         <PrivateInfoNudge />
       </View>
     </SafeAreaProvider>

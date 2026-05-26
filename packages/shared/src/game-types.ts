@@ -188,6 +188,7 @@ export interface GameResultEvent {
   playerIds?: string[];
   role?: Role | null;
   winner?: "Vampires" | "Villagers";
+  voteBreakdown?: DayVoteSummaryEntry[];
 }
 
 export interface GamePrivateResultPayload {

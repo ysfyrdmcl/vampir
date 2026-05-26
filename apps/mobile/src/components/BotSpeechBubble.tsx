@@ -7,7 +7,6 @@ import { CinematicMinorRibbon, type CinematicOverlayTone } from "./CinematicInfo
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
-import { botSpeechIntentLabel, formatBotSpeechPhaseContext } from "../utils/bot-speech-labels";
 
 export type BotSpeechDisplayTone =
   | "neutral"
@@ -131,23 +130,14 @@ export function BotSpeechBubble({
         accessibilityLabel="Köy söylentilerini aç"
         style={({ pressed }) => [styles.bottomRibbon, { opacity: pressed ? 0.92 : 1 }]}
       >
-        <View style={styles.bottomIcon}>
-          <Ionicons name="chatbubbles-outline" size={18} color={colors.secondary} />
-        </View>
         <View style={styles.bottomCopy}>
-          <View style={styles.bottomHeader}>
-            <Text style={styles.speakerChip} numberOfLines={1}>{event.speakerName}</Text>
-            {event.targetName ? <Text style={styles.targetChip} numberOfLines={1}>Hedef: {event.targetName}</Text> : null}
-          </View>
-          <Text style={styles.bottomMeta} numberOfLines={1}>
-            {botSpeechIntentLabel(event.intent)} · {formatBotSpeechPhaseContext(event.phaseId)}
-          </Text>
+          <Text style={styles.bottomLabel} numberOfLines={1}>Söylenti</Text>
           <HighlightedBotSpeechMessage
             message={event.message}
             targetName={event.targetName}
             style={styles.bottomMessage}
             highlightStyle={styles.messageTarget}
-            numberOfLines={2}
+            numberOfLines={1}
           />
         </View>
         <View style={styles.bottomAction}>
@@ -158,9 +148,6 @@ export function BotSpeechBubble({
               </Text>
             </View>
           ) : null}
-          <Text style={styles.bottomActionText} numberOfLines={1}>
-            Söylentiler
-          </Text>
           <Ionicons name="chevron-forward" size={15} color={colors.secondary} />
         </View>
       </Pressable>
@@ -206,82 +193,44 @@ const styles = StyleSheet.create({
   },
   bottomRibbon: {
     width: "100%",
-    minHeight: 74,
+    minHeight: 46,
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.34)",
-    borderRadius: 15,
+    borderRadius: 14,
     backgroundColor: "rgba(14,8,10,0.96)",
     paddingHorizontal: spacing.sm,
-    paddingVertical: 9,
+    paddingVertical: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
+    gap: 8,
     shadowColor: "#000",
     shadowOpacity: 0.34,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 14
   },
-  bottomIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.32)",
-    backgroundColor: "rgba(45,24,22,0.9)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
   bottomCopy: {
     flex: 1,
     minWidth: 0,
-    gap: 2
-  },
-  bottomHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    minWidth: 0
+    overflow: "hidden"
   },
-  speakerChip: {
-    maxWidth: "58%",
-    color: colors.backgroundDeep,
-    backgroundColor: colors.secondary,
-    overflow: "hidden",
-    borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    lineHeight: 13
-  },
-  targetChip: {
-    flexShrink: 1,
-    maxWidth: "42%",
+  bottomLabel: {
+    flexShrink: 0,
     color: colors.secondary,
-    backgroundColor: "rgba(233,195,73,0.13)",
-    overflow: "hidden",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.26)",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
     fontFamily: typography.sansBold,
-    fontSize: 10,
-    lineHeight: 13
-  },
-  bottomMeta: {
-    color: colors.textDim,
-    fontFamily: typography.sansBold,
-    fontSize: 10,
-    lineHeight: 13,
-    letterSpacing: 0.5
+    fontSize: 11,
+    lineHeight: 14
   },
   bottomMessage: {
+    flex: 1,
+    minWidth: 0,
     color: colors.text,
     fontFamily: typography.sansMedium,
-    fontSize: 12.5,
-    lineHeight: 17
+    fontSize: 12,
+    lineHeight: 16
   },
   messageTarget: {
     color: colors.secondary,
@@ -289,16 +238,10 @@ const styles = StyleSheet.create({
   },
   bottomAction: {
     flexShrink: 0,
-    maxWidth: 94,
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 3
-  },
-  bottomActionText: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 10.5,
-    lineHeight: 13
+    flexDirection: "row",
+    gap: 5
   },
   unreadChip: {
     minWidth: 22,

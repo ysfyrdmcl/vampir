@@ -54,6 +54,14 @@ function resetSocketErrorDedup(): void {
   lastSocketErrorDedup = null;
 }
 
+function clearPendingRoomConfigEmit(): void {
+  if (roomConfigEmitTimer) {
+    clearTimeout(roomConfigEmitTimer);
+    roomConfigEmitTimer = null;
+  }
+  lastEmittedRoomConfigKey = null;
+}
+
 function markJoinEmitIntent(intent: JoinEmitIntent): void {
   lastJoinEmitIntent = intent;
 }
@@ -196,6 +204,7 @@ export function initSocketRuntime(): void {
       lastExecutionRoundLogged = null;
       lastEliminationKeyLogged = null;
       lastVampireVotePreviewLogKey = null;
+      clearPendingRoomConfigEmit();
       store.getState().clearBotSpeechHistory();
     }
     const prevPhaseForLog = lastPhase;
@@ -423,6 +432,7 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.GAME_OVER, (payload: { winner: "Vampires" | "Villagers" }) => {
+    clearPendingRoomConfigEmit();
     store.getState().setGameWinner(payload.winner);
     store.getState().setErrorCode(null);
     store.getState().clearBotSpeech();
@@ -434,6 +444,7 @@ export function initSocketRuntime(): void {
       const intent = lastJoinEmitIntent;
       lastJoinEmitIntent = "manual";
       void clearRoomSession();
+      clearPendingRoomConfigEmit();
       store.getState().restoreSession({ playerSessionToken: null, roomCode: null });
       if (intent === "manual") {
         const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
@@ -600,6 +611,7 @@ export function emitLeaveRoom(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
   resetSocketErrorDedup();
+  clearPendingRoomConfigEmit();
   ensureConnected();
   getSocket().emit(SOCKET_EVENTS.ROOM_LEAVE, {
     identity: identityPayload(),
@@ -620,6 +632,7 @@ export function emitResetRoomToLobby(): void {
     });
     return;
   }
+  clearPendingRoomConfigEmit();
   ensureConnected();
   state.setErrorCode(null);
   getSocket().emit(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, {

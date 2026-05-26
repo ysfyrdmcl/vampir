@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AnimatedBloodDrop } from "../animations/svg";
@@ -25,11 +25,14 @@ interface TargetSelectionListProps {
   disabledSummary?: string | null;
 }
 
-export function TargetSelectionList({ items, onSelect, disabledSummary }: TargetSelectionListProps) {
+function TargetSelectionListBase({ items, onSelect, disabledSummary }: TargetSelectionListProps) {
   const [graveyardOpen, setGraveyardOpen] = useState(false);
-  const aliveItems = items.filter((item) => item.isAlive);
-  const deadItems = items.filter((item) => !item.isAlive);
-  const selectableCount = aliveItems.filter((item) => item.isSelectable).length;
+  const aliveItems = useMemo(() => items.filter((item) => item.isAlive), [items]);
+  const deadItems = useMemo(() => items.filter((item) => !item.isAlive), [items]);
+  const selectableCount = useMemo(
+    () => aliveItems.filter((item) => item.isSelectable).length,
+    [aliveItems]
+  );
 
   return (
     <View style={styles.section}>
@@ -66,12 +69,14 @@ export function TargetSelectionList({ items, onSelect, disabledSummary }: Target
   );
 }
 
+export const TargetSelectionList = memo(TargetSelectionListBase);
+
 interface TargetCardProps {
   item: TargetSelectionItem;
   onSelect: (id: string) => void;
 }
 
-function TargetCard({ item, onSelect }: TargetCardProps) {
+const TargetCard = memo(function TargetCard({ item, onSelect }: TargetCardProps) {
   return (
     <LiquidGlassPressable
       disabled={!item.isSelectable}
@@ -123,7 +128,7 @@ function TargetCard({ item, onSelect }: TargetCardProps) {
       </View>
     </LiquidGlassPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   section: {

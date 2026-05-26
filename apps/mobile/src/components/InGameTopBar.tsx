@@ -1,6 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { memo } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { AnimatedBloodDrop, AnimatedCandleFlame } from "../animations/svg";
+import { reducedEffects } from "../animations/motionTokens";
+import { CandleFlameSvg } from "../assets/svg";
 import { LiquidGlassPressable } from "../glass";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
@@ -18,7 +21,7 @@ interface InGameTopBarProps {
   onPressRumors: () => void;
 }
 
-export function InGameTopBar({
+function InGameTopBarBase({
   phaseLabel,
   phaseType,
   phaseVisual = phaseType === "night" ? "candle" : "bar",
@@ -42,8 +45,12 @@ export function InGameTopBar({
             {showCandle ? (
               <>
                 <View style={styles.flameHalo} />
-                <AnimatedCandleFlame size={compact ? 24 : 28} />
-                {phaseVisual === "blood-candle" ? (
+                {reducedEffects ? (
+                  <CandleFlameSvg width={compact ? 24 : 28} height={compact ? 24 : 28} />
+                ) : (
+                  <AnimatedCandleFlame size={compact ? 24 : 28} />
+                )}
+                {phaseVisual === "blood-candle" && !reducedEffects ? (
                   <AnimatedBloodDrop
                     size={compact ? 9 : 10}
                     x={compact ? 16 : 18}
@@ -103,6 +110,8 @@ export function InGameTopBar({
     </View>
   );
 }
+
+export const InGameTopBar = memo(InGameTopBarBase);
 
 const styles = StyleSheet.create({
   root: {

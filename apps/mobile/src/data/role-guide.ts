@@ -31,6 +31,17 @@ export const ROLE_ART: Record<RoleGuideId, ImageSourcePropType> = {
   Lover: require("../assets/roles/lover.png")
 };
 
+export const ROLE_THUMB_ART: Record<RoleGuideId, ImageSourcePropType> = {
+  Villager: require("../assets/roles/thumbs/villager.png"),
+  Vampire: require("../assets/roles/thumbs/vampire.png"),
+  Detective: require("../assets/roles/thumbs/detective.png"),
+  Doctor: require("../assets/roles/thumbs/doctor.png"),
+  Hunter: require("../assets/roles/thumbs/hunter.png"),
+  Mayor: require("../assets/roles/thumbs/mayor.png"),
+  Guard: require("../assets/roles/thumbs/guard.png"),
+  Lover: require("../assets/roles/thumbs/lover.png")
+};
+
 export const ROLE_GUIDE: RoleGuideDefinition[] = [
   {
     id: "Villager",

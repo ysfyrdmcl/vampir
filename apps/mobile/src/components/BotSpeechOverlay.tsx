@@ -30,7 +30,7 @@ export function BotSpeechOverlay({
 }: BotSpeechOverlayProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const roomState = useGameStore((s) => s.roomState);
+  const roomStatus = useGameStore((s) => s.roomState?.status ?? null);
   const active = useGameStore((s) => s.activeBotSpeech);
   const dismissActiveBotSpeech = useGameStore((s) => s.dismissActiveBotSpeech);
 
@@ -141,7 +141,7 @@ export function BotSpeechOverlay({
     };
   }, [active, disabled, finishDismiss, opacity, resetBubbleMotion, runExit, scale, translateX, translateY]);
 
-  const inGame = roomState?.status === "InGame";
+  const inGame = roomStatus === "InGame";
   const showBubble = Boolean(active) && inGame && !disabled;
 
   if (!inGame) {

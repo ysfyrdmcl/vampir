@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ActionType, GamePhase } from "@vampir-koylu/shared";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { CinematicMinorRibbon } from "../components/CinematicInfoOverlay";
@@ -165,7 +165,7 @@ export function NightScreen(_: Props) {
   const phase = gameState?.phase;
   const round = gameState?.round ?? 0;
   const tieCount = gameState?.tieCountInRound ?? 0;
-  const actionConfig = phase ? getActionConfig(phase) : null;
+  const actionConfig = useMemo(() => (phase ? getActionConfig(phase) : null), [phase]);
   const actionKey = actionConfig ? `${phase}:${round}:${actionConfig.actionType}` : null;
   const alreadySubmittedThisPhase = actionKey !== null && submittedActionKeyRef.current === actionKey;
 
@@ -220,46 +220,50 @@ export function NightScreen(_: Props) {
     : meAlive
       ? "Hedef kartları yalnızca bilgi için gösteriliyor."
       : "Oyunu izleyebilirsin.";
-  const playerNameById = new Map(players.map((p) => [p.playerId, p.nickname] as const));
+  const playerNameById = useMemo(() => new Map(players.map((p) => [p.playerId, p.nickname] as const)), [players]);
   const selectedTargetName = selectedTargetPlayerId ? playerNameById.get(selectedTargetPlayerId) ?? "hedef" : null;
-  const inspectedSet = new Set(detectiveInspectedPlayerIds);
-  const vampireSet = new Set(knownVampirePlayerIds);
-  const targetItems: TargetSelectionItem[] = players.map((player) => {
-    const alreadyInspectedByDetective =
-      actionConfig?.actionType === "detective-inspect" &&
-      role === "Detective" &&
-      inspectedSet.has(player.playerId);
-    const isSelectable =
-      !!actionConfig &&
-      canAct &&
-      player.isAlive &&
-      !alreadyInspectedByDetective &&
-      (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId) &&
-      !(actionConfig.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId));
-    const disabledReason = !player.isAlive
-      ? "Elendi"
-      : !canAct
-        ? meAlive ? "Bu fazda aksiyon hakkın yok" : "Elendin"
-        : alreadyInspectedByDetective
-          ? "Daha önce sorgulandı"
-          : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
-            ? "Kendini seçemezsin"
-            : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
-              ? "Vampir baska vampiri hedefleyemez"
-              : null;
-    return {
-      id: player.playerId,
-      label: player.nickname,
-      initials: initialsFromName(player.nickname),
-      isAlive: player.isAlive,
-      isSelectable,
-      isSelected: selectedTargetPlayerId === player.playerId,
-      statusText: player.isAlive ? "Hayatta" : "Elendi",
-      disabledReason,
-      badgeText: player.playerId === playerId ? "SEN" : role === "Vampire" && vampireSet.has(player.playerId) ? "VAMPİR" : null,
-      selectionAccent: actionConfig?.actionType === "vampire-target" ? "blood" : undefined
-    };
-  });
+  const inspectedSet = useMemo(() => new Set(detectiveInspectedPlayerIds), [detectiveInspectedPlayerIds]);
+  const vampireSet = useMemo(() => new Set(knownVampirePlayerIds), [knownVampirePlayerIds]);
+  const targetItems: TargetSelectionItem[] = useMemo(
+    () =>
+      players.map((player) => {
+        const alreadyInspectedByDetective =
+          actionConfig?.actionType === "detective-inspect" &&
+          role === "Detective" &&
+          inspectedSet.has(player.playerId);
+        const isSelectable =
+          !!actionConfig &&
+          canAct &&
+          player.isAlive &&
+          !alreadyInspectedByDetective &&
+          (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId) &&
+          !(actionConfig.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId));
+        const disabledReason = !player.isAlive
+          ? "Elendi"
+          : !canAct
+            ? meAlive ? "Bu fazda aksiyon hakkın yok" : "Elendin"
+            : alreadyInspectedByDetective
+              ? "Daha önce sorgulandı"
+              : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
+                ? "Kendini seçemezsin"
+                : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
+                  ? "Vampir baska vampiri hedefleyemez"
+                  : null;
+        return {
+          id: player.playerId,
+          label: player.nickname,
+          initials: initialsFromName(player.nickname),
+          isAlive: player.isAlive,
+          isSelectable,
+          isSelected: selectedTargetPlayerId === player.playerId,
+          statusText: player.isAlive ? "Hayatta" : "Elendi",
+          disabledReason,
+          badgeText: player.playerId === playerId ? "SEN" : role === "Vampire" && vampireSet.has(player.playerId) ? "VAMPİR" : null,
+          selectionAccent: actionConfig?.actionType === "vampire-target" ? "blood" : undefined
+        };
+      }),
+    [actionConfig, canAct, inspectedSet, meAlive, playerId, players, role, selectedTargetPlayerId, vampireSet]
+  );
   const selectedActionTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
   const actionDisabledReason = alreadySubmittedThisPhase
     ? "Bu fazdaki seçimin kilitlendi"

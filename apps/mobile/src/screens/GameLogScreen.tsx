@@ -1,14 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from "react-native";
 import Reanimated from "react-native-reanimated";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ScreenShell } from "../components/ScreenShell";
 import { LiquidGlassChip, LiquidGlassPressable, LiquidGlassSurface } from "../glass";
 import { useSegmentedThumbMotion } from "../motion";
-import { buildGameAnalysis } from "../logging/game-analysis";
 import { shouldShowLogEntry, toReadableLogText } from "../logging/log-policy";
 import type { LogFeedEntry } from "../logging/log-feed-store";
 import { useLogFeedStore } from "../logging/log-feed-store";
@@ -36,7 +35,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "GameLog">;
 type Tab = "general" | "personal";
 type PersonalView = "logs" | "notebook";
 type GeneralFilter = "all" | "night" | "vote" | "result";
-type TimelineGroup = { key: string; title: string; meta: string; entries: LogFeedEntry[] };
+type LogSection = { key: string; title: string; meta: string; data: LogFeedEntry[] };
 
 const EMPTY_PLAYERS: RoomPlayerView[] = [];
 
@@ -47,7 +46,6 @@ export function GameLogScreen({ route }: Props) {
   const roomPlayers = useGameStore((s) => s.roomState?.players ?? EMPTY_PLAYERS);
   const playerId = useGameStore((s) => s.playerId);
   const roomCode = useGameStore((s) => s.roomState?.roomCode ?? s.roomCode);
-  const winner = useGameStore((s) => s.gameWinner);
   const playerNameById = useMemo(
     () => new Map(roomPlayers.map((player) => [player.playerId, player.nickname] as const)),
     [roomPlayers]
@@ -66,8 +64,7 @@ export function GameLogScreen({ route }: Props) {
     [entries, generalFilter, tab]
   );
   const personalSummary = useMemo(() => buildPersonalSummary(entries), [entries]);
-  const timelineGroups = useMemo(() => buildTimelineGroups(filtered.slice().reverse()), [filtered]);
-  const gameAnalysis = useMemo(() => buildGameAnalysis(entries, winner, roomPlayers), [entries, winner, roomPlayers]);
+  const logSections = useMemo(() => buildTimelineSections(filtered.slice().reverse()), [filtered]);
   const notePlayers = useMemo(
     () => roomPlayers.filter((player) => player.playerId !== playerId),
     [playerId, roomPlayers]
@@ -78,6 +75,22 @@ export function GameLogScreen({ route }: Props) {
       return note.tag !== "none" || note.note.trim().length > 0;
     }),
     [notePlayers, playerNotes]
+  );
+  const isNotebookView = tab === "personal" && personalView === "notebook";
+  const isLogListView = tab === "general" || (tab === "personal" && personalView === "logs");
+  const renderLogItem = useCallback(
+    ({ item }: { item: LogFeedEntry; index: number }) => (
+      <LogEntryRow entry={item} playerNameById={playerNameById} />
+    ),
+    [playerNameById]
+  );
+  const renderLogSectionHeader = useCallback(
+    ({ section }: { section: LogSection }) => <TimelineSectionHeader section={section} />,
+    []
+  );
+  const logKeyExtractor = useCallback(
+    (entry: LogFeedEntry, index: number) => `${entry.ts}:${entry.event}:${index}`,
+    []
   );
 
   useEffect(() => {
@@ -149,7 +162,7 @@ export function GameLogScreen({ route }: Props) {
       bottomNavActiveIndex={1}
       headerTitle="GÜNLÜK"
       showPauseOverlay={false}
-      keyboardAware
+      keyboardAware={isNotebookView}
       keyboardExtraScrollPadding={spacing.xxl + spacing.md}
       keyboardAwareContentContainerStyle={styles.content}
     >
@@ -199,21 +212,17 @@ export function GameLogScreen({ route }: Props) {
             />
           </View>
         )}
-        {tab === "general" && gameAnalysis ? (
-          <View style={styles.analysisPanel}>
-            <Text style={styles.analysisTitle}>Oyun Sonu Analizi</Text>
-            <Text style={styles.analysisLine}>Kazanan: {gameAnalysis.winnerText}</Text>
-            <Text style={styles.analysisLine}>En yüksek tur: {gameAnalysis.roundsPlayed || "—"}</Text>
-            <Text style={styles.analysisLine}>Eleme: {gameAnalysis.eliminationCount}</Text>
-            <Text style={styles.analysisLine}>Beraberlik: {gameAnalysis.tieCount}</Text>
-            <Text style={styles.analysisLine}>Hayatta kalanlar: {gameAnalysis.aliveText}</Text>
-            {gameAnalysis.highlights.map((line) => (
-              <Text key={line} style={styles.analysisHighlight}>{line}</Text>
-            ))}
+        {tab === "general" ? (
+          <View style={styles.generalLogHeader}>
+            <View>
+              <Text style={styles.panelTitle}>Genel Günlük</Text>
+              <Text style={styles.panelSubtitle}>Oyun akışı ve herkese açık olaylar.</Text>
+            </View>
+            <Text style={styles.panelCount}>{filtered.length} kayıt</Text>
           </View>
         ) : null}
         {tab === "personal" && personalView === "logs" ? (
-          <View style={styles.personalLogPanel}>
+          <View style={styles.personalLogPanelHeader}>
             <View style={styles.panelHeader}>
               <View>
                 <Text style={styles.panelTitle}>Kişisel Loglar</Text>
@@ -221,38 +230,28 @@ export function GameLogScreen({ route }: Props) {
               </View>
               <Text style={styles.panelCount}>{filtered.length} kayıt</Text>
             </View>
-            {filtered.length === 0 ? <Text style={styles.empty}>Henüz kişisel log yok.</Text> : null}
-            {timelineGroups.map((group) => (
-              <View key={group.key} style={styles.timelineGroup}>
-                <View style={styles.timelineHeader}>
-                  <View style={styles.timelineDot} />
-                  <View style={styles.timelineHeaderCopy}>
-                    <Text style={styles.timelineTitle}>{group.title}</Text>
-                    <Text style={styles.timelineMeta}>{group.meta}</Text>
-                  </View>
-                </View>
-                <View style={styles.timelineRail}>
-                  {group.entries.map((entry, idx) => (
-                    <View style={[styles.row, eventToneStyle(entry.event)]} key={`${entry.ts}-${entry.event}-${idx}`}>
-                      <View style={styles.rowTop}>
-                        <View style={styles.eventMeta}>
-                          <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
-                          <Text style={styles.headline}>{eventHeadline(entry.event, entry.payload)}</Text>
-                        </View>
-                        <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event, entry.payload)}</Text>
-                      </View>
-                      <View style={styles.rowTop}>
-                        <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
-                      </View>
-                      <Text style={styles.event}>
-                        {toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
           </View>
+        ) : null}
+        {isLogListView ? (
+          <SectionList
+            sections={logSections}
+            keyExtractor={logKeyExtractor}
+            renderItem={renderLogItem}
+            renderSectionHeader={renderLogSectionHeader}
+            style={styles.logList}
+            contentContainerStyle={styles.logListContent}
+            showsVerticalScrollIndicator={false}
+            stickySectionHeadersEnabled={false}
+            initialNumToRender={12}
+            maxToRenderPerBatch={10}
+            windowSize={7}
+            removeClippedSubviews
+            ListEmptyComponent={
+              <Text style={styles.empty}>
+                {tab === "personal" ? "Henüz kişisel log yok." : "Bu sekmede henüz kayıt yok."}
+              </Text>
+            }
+          />
         ) : null}
         {tab === "personal" && personalView === "notebook" ? (
           <View style={styles.notesPanel}>
@@ -305,41 +304,50 @@ export function GameLogScreen({ route }: Props) {
             })}
           </View>
         ) : null}
-        {tab === "general" && filtered.length === 0 ? <Text style={styles.empty}>Bu sekmede henüz kayıt yok.</Text> : null}
-        {tab === "general" ? timelineGroups.map((group) => (
-          <View key={group.key} style={styles.timelineGroup}>
-            <View style={styles.timelineHeader}>
-              <View style={styles.timelineDot} />
-              <View style={styles.timelineHeaderCopy}>
-                <Text style={styles.timelineTitle}>{group.title}</Text>
-                <Text style={styles.timelineMeta}>{group.meta}</Text>
-              </View>
-            </View>
-            <View style={styles.timelineRail}>
-              {group.entries.map((entry, idx) => (
-                <View style={[styles.row, eventToneStyle(entry.event)]} key={`${entry.ts}-${entry.event}-${idx}`}>
-                  <View style={styles.rowTop}>
-                    <View style={styles.eventMeta}>
-                      <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
-                      <Text style={styles.headline}>{eventHeadline(entry.event, entry.payload)}</Text>
-                    </View>
-                    <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event, entry.payload)}</Text>
-                  </View>
-                  <View style={styles.rowTop}>
-                    <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
-                  </View>
-                  <Text style={styles.event}>
-                    {toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )) : null}
       </View>
     </ScreenShell>
   );
 }
+
+const TimelineSectionHeader = memo(function TimelineSectionHeader({ section }: { section: LogSection }) {
+  return (
+    <View style={styles.timelineHeader}>
+      <View style={styles.timelineDot} />
+      <View style={styles.timelineHeaderCopy}>
+        <Text style={styles.timelineTitle}>{section.title}</Text>
+        <Text style={styles.timelineMeta}>{section.meta}</Text>
+      </View>
+    </View>
+  );
+});
+
+const LogEntryRow = memo(function LogEntryRow({
+  entry,
+  playerNameById
+}: {
+  entry: LogFeedEntry;
+  playerNameById: Map<string, string>;
+}) {
+  return (
+    <View style={styles.timelineRail}>
+      <View style={[styles.row, eventToneStyle(entry.event)]}>
+        <View style={styles.rowTop}>
+          <View style={styles.eventMeta}>
+            <Ionicons name={eventIcon(entry.event)} size={16} color={eventIconColor(entry.event)} />
+            <Text style={styles.headline}>{eventHeadline(entry.event, entry.payload)}</Text>
+          </View>
+          <Text style={[styles.tag, eventTagStyle(entry.event)]}>{eventTag(entry.event, entry.payload)}</Text>
+        </View>
+        <View style={styles.rowTop}>
+          <Text style={styles.time}>{entry.ts.slice(11, 19)}</Text>
+        </View>
+        <Text style={styles.event}>
+          {toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))}
+        </Text>
+      </View>
+    </View>
+  );
+});
 
 const NOTE_TAGS: Array<{ value: PlayerNoteTag; label: string }> = [
   { value: "trusted", label: "Güvenilir" },
@@ -530,13 +538,31 @@ const styles = StyleSheet.create({
   segmentedLabelActive: {
     color: colors.secondary
   },
-  personalLogPanel: {
+  personalLogPanelHeader: {
     borderWidth: 1,
     borderColor: "rgba(169,123,255,0.20)",
     borderRadius: 10,
     backgroundColor: "rgba(14,13,20,0.62)",
     padding: 10,
     gap: 10
+  },
+  generalLogHeader: {
+    borderWidth: 1,
+    borderColor: "rgba(233,195,73,0.22)",
+    borderRadius: 10,
+    backgroundColor: "rgba(33,29,16,0.48)",
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  logList: {
+    flex: 1
+  },
+  logListContent: {
+    gap: 8,
+    paddingBottom: spacing.xl
   },
   panelHeader: {
     flexDirection: "row",
@@ -712,30 +738,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.sans,
     fontSize: 11
   },
-  analysisPanel: {
-    borderWidth: 1,
-    borderColor: "rgba(233,195,73,0.35)",
-    borderRadius: 10,
-    backgroundColor: "rgba(33,29,16,0.72)",
-    padding: 10,
-    gap: 5
-  },
-  analysisTitle: {
-    color: colors.secondary,
-    fontFamily: typography.sansBold,
-    fontSize: 13
-  },
-  analysisLine: {
-    color: colors.text,
-    fontFamily: typography.sansMedium,
-    fontSize: 13
-  },
-  analysisHighlight: {
-    color: colors.textMuted,
-    fontFamily: typography.serifRegular,
-    fontSize: 14,
-    lineHeight: 20
-  },
   notesPanel: {
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.28)",
@@ -860,21 +862,21 @@ function matchesGeneralFilter(entry: LogFeedEntry, tab: Tab, filter: GeneralFilt
   return true;
 }
 
-function buildTimelineGroups(entries: LogFeedEntry[]): TimelineGroup[] {
-  const groups: TimelineGroup[] = [];
+function buildTimelineSections(entries: LogFeedEntry[]): LogSection[] {
+  const groups: LogSection[] = [];
   for (const entry of entries) {
     const title = timelineTitleForEntry(entry);
     const lastGroup = groups[groups.length - 1];
     if (lastGroup?.title === title) {
-      lastGroup.entries.push(entry);
-      lastGroup.meta = `${lastGroup.entries.length} kayıt`;
+      lastGroup.data.push(entry);
+      lastGroup.meta = `${lastGroup.data.length} kayıt`;
       continue;
     }
     groups.push({
       key: `${title}:${entry.ts.slice(0, 10)}:${groups.length}`,
       title,
       meta: "1 kayıt",
-      entries: [entry]
+      data: [entry]
     });
   }
   return groups;

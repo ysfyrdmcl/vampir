@@ -1,6 +1,6 @@
 import type { BotSpeechEvent } from "@vampir-koylu/shared";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
@@ -15,10 +15,39 @@ export interface BotSpeechHistorySheetProps {
   entries: BotSpeechEvent[];
 }
 
+const keyExtractor = (e: BotSpeechEvent) => `${e.phaseId}:${e.speakerPlayerId}:${e.createdAt}`;
+
+const EmptyRumorList = memo(function EmptyRumorList() {
+  return <Text style={styles.empty}>Henüz söylenti yok</Text>;
+});
+
+const BotSpeechHistoryRow = memo(function BotSpeechHistoryRow({ entry: e }: { entry: BotSpeechEvent }) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowHeader}>
+        <Text style={styles.speakerName} numberOfLines={1}>{e.speakerName}</Text>
+        {e.targetName ? <Text style={styles.targetChip} numberOfLines={1}>Hedef: {e.targetName}</Text> : null}
+      </View>
+      <Text style={styles.rowMeta} numberOfLines={2}>
+        {botSpeechIntentLabel(e.intent)}
+      </Text>
+      <Text style={styles.rowPhase} numberOfLines={2}>
+        {formatBotSpeechPhaseContext(e.phaseId)} · {formatBotSpeechRelativeTime(e.createdAt)}
+      </Text>
+      <HighlightedBotSpeechMessage
+        message={e.message}
+        targetName={e.targetName}
+        style={styles.rowMessage}
+        highlightStyle={styles.messageTarget}
+      />
+    </View>
+  );
+});
+
 export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHistorySheetProps) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
-  const [, setTimeTick] = useState(0);
+  const [timeTick, setTimeTick] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -30,6 +59,7 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
   const bottomPad = Math.max(insets.bottom, spacing.sm) + spacing.xs;
   const topPad = Math.max(insets.top, spacing.sm);
   const maxSheetHeight = Math.min(winH * 0.88, winH - topPad - bottomPad - 16);
+  const renderItem = useCallback(({ item }: { item: BotSpeechEvent }) => <BotSpeechHistoryRow entry={item} />, []);
 
   return (
     <Modal
@@ -71,34 +101,20 @@ export function BotSpeechHistorySheet({ visible, onClose, entries }: BotSpeechHi
           </Text>
           <FlatList
             data={entries}
-            keyExtractor={(e) => `${e.phaseId}:${e.speakerPlayerId}:${e.createdAt}`}
+            keyExtractor={keyExtractor}
             style={styles.scroll}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator
             nestedScrollEnabled
             bounces
-            ListEmptyComponent={<Text style={styles.empty}>Henüz söylenti yok</Text>}
-            renderItem={({ item: e }) => (
-              <View style={styles.row}>
-                <View style={styles.rowHeader}>
-                  <Text style={styles.speakerName} numberOfLines={1}>{e.speakerName}</Text>
-                  {e.targetName ? <Text style={styles.targetChip} numberOfLines={1}>Hedef: {e.targetName}</Text> : null}
-                </View>
-                <Text style={styles.rowMeta} numberOfLines={2}>
-                  {botSpeechIntentLabel(e.intent)}
-                </Text>
-                <Text style={styles.rowPhase} numberOfLines={2}>
-                  {formatBotSpeechPhaseContext(e.phaseId)} · {formatBotSpeechRelativeTime(e.createdAt)}
-                </Text>
-                <HighlightedBotSpeechMessage
-                  message={e.message}
-                  targetName={e.targetName}
-                  style={styles.rowMessage}
-                  highlightStyle={styles.messageTarget}
-                />
-              </View>
-            )}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            removeClippedSubviews
+            extraData={timeTick}
+            ListEmptyComponent={EmptyRumorList}
+            renderItem={renderItem}
           />
         </View>
       </View>

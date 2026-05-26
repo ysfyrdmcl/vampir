@@ -50,10 +50,13 @@ export function VoteScreen(_: Props) {
   const meAlive = mePlayer?.isAlive ?? true;
   const ownEliminationResultActive = Boolean(playerId && activeResultEvent?.playerIds?.includes(playerId));
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const selectedName =
-    selectedTargetPlayerId === "__NO_LYNCH__"
-      ? "Kimseyi Gönderme"
-      : players.find((player) => player.playerId === selectedTargetPlayerId)?.nickname ?? null;
+  const selectedName = useMemo(
+    () =>
+      selectedTargetPlayerId === "__NO_LYNCH__"
+        ? "Kimseyi Gönderme"
+        : players.find((player) => player.playerId === selectedTargetPlayerId)?.nickname ?? null,
+    [players, selectedTargetPlayerId]
+  );
   const voteInfoText = ownEliminationResultActive
     ? "Oylama sonucu açıklanıyor."
     : !meAlive
@@ -72,40 +75,47 @@ export function VoteScreen(_: Props) {
   const hasTieRevote = !isMayorElection && gameState?.tieCountInRound ? tiedTopCandidates.length > 1 : false;
   const tieCandidateSet = useMemo(() => new Set(tiedTopCandidates), [tiedTopCandidates]);
 
-  const candidates = players.filter((p) => {
-    if (!p.isAlive) return false;
-    if (p.playerId === playerId) return false;
-    if (!isMayorElection && p.playerId === guardProtectedPlayerId) return false;
-    if (hasTieRevote && !tieCandidateSet.has(p.playerId)) return false;
-    return true;
-  });
-  const targetItems: TargetSelectionItem[] = [
-    ...(!isMayorElection && noLynchEnabled && !hasTieRevote
-      ? [
-          {
-            id: "__NO_LYNCH__",
-            label: "Kimseyi Gönderme",
-            initials: "Ø",
-            isAlive: true,
-            isSelectable: meAlive,
-            isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
-            statusText: "Boş oy",
-            disabledReason: meAlive ? null : "Elendin"
-          }
-        ]
-      : []),
-    ...candidates.map((player) => ({
-      id: player.playerId,
-      label: player.nickname,
-      initials: initialsFromName(player.nickname),
-      isAlive: player.isAlive,
-      isSelectable: meAlive,
-      isSelected: selectedTargetPlayerId === player.playerId,
-      statusText: player.playerId === mayorPlayerId ? "Başkan adayı" : "Aday",
-      disabledReason: meAlive ? null : "Elendin",
-      badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
-    }))
-  ];
+  const candidates = useMemo(
+    () =>
+      players.filter((p) => {
+        if (!p.isAlive) return false;
+        if (p.playerId === playerId) return false;
+        if (!isMayorElection && p.playerId === guardProtectedPlayerId) return false;
+        if (hasTieRevote && !tieCandidateSet.has(p.playerId)) return false;
+        return true;
+      }),
+    [guardProtectedPlayerId, hasTieRevote, isMayorElection, playerId, players, tieCandidateSet]
+  );
+  const targetItems: TargetSelectionItem[] = useMemo(
+    () => [
+      ...(!isMayorElection && noLynchEnabled && !hasTieRevote
+        ? [
+            {
+              id: "__NO_LYNCH__",
+              label: "Kimseyi Gönderme",
+              initials: "Ø",
+              isAlive: true,
+              isSelectable: meAlive,
+              isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
+              statusText: "Boş oy",
+              disabledReason: meAlive ? null : "Elendin"
+            }
+          ]
+        : []),
+      ...candidates.map((player) => ({
+        id: player.playerId,
+        label: player.nickname,
+        initials: initialsFromName(player.nickname),
+        isAlive: player.isAlive,
+        isSelectable: meAlive,
+        isSelected: selectedTargetPlayerId === player.playerId,
+        statusText: player.playerId === mayorPlayerId ? "Başkan adayı" : "Aday",
+        disabledReason: meAlive ? null : "Elendin",
+        badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
+      }))
+    ],
+    [candidates, hasTieRevote, isMayorElection, mayorPlayerId, meAlive, noLynchEnabled, selectedTargetPlayerId]
+  );
   const selectedVoteTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
   const voteDisabledReason = !meAlive
     ? "Elendin, artık aksiyon alamazsın"

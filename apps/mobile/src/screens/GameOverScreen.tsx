@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GameOverTransition } from "../animations";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
@@ -32,8 +32,8 @@ export function GameOverScreen({ navigation }: Props) {
   const logs = useLogFeedStore((s) => s.entries);
   const mePlayerId = useGameStore((s) => s.playerId);
   const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === mePlayerId);
-  const timeline = buildTimeline(logs, players);
-  const analysis = buildGameAnalysis(logs, winner, players);
+  const timeline = useMemo(() => buildTimeline(logs, players), [logs, players]);
+  const analysis = useMemo(() => buildGameAnalysis(logs, winner, players), [logs, players, winner]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [leavingFinal, setLeavingFinal] = useState<"lobby" | "home" | null>(null);
   const winnerReady = winner === "Vampires" || winner === "Villagers";
@@ -433,11 +433,20 @@ const styles = StyleSheet.create({
 function buildTimeline(entries: LogFeedEntry[], players: RoomPlayerView[]): Array<{ time: string; text: string }> {
   const picked = entries.filter((entry) => shouldShowLogEntry(entry, "general"));
   const playerNameById = new Map(players.map((player) => [player.playerId, player.nickname] as const));
+  const seen = new Set<string>();
+  const timeline: Array<{ time: string; text: string }> = [];
 
-  return picked.map((entry) => ({
-    time: formatTime(entry.ts),
-    text: toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById))
-  }));
+  for (const entry of picked) {
+    const text = toReadableLogText(entry.event, localizePayloadNames(entry.payload, playerNameById));
+    if (seen.has(text)) continue;
+    seen.add(text);
+    timeline.push({
+      time: formatTime(entry.ts),
+      text
+    });
+  }
+
+  return timeline;
 }
 
 function localizePayloadNames(payload: Record<string, unknown> | undefined, playerNameById: Map<string, string>) {

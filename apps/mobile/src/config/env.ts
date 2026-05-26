@@ -30,8 +30,12 @@ function resolveSocketUrl(): string {
   return "http://127.0.0.1:3000";
 }
 
+const explicitClientLogUrl = process.env.EXPO_PUBLIC_CLIENT_LOG_URL?.trim();
+const devDefaultClientLogUrl =
+  typeof __DEV__ !== "undefined" && __DEV__ ? `${resolveSocketUrl()}/client-logs` : null;
+
 export const runtimeEnv = {
   socketUrl: resolveSocketUrl(),
   socketPath: process.env.EXPO_PUBLIC_SOCKET_PATH ?? "/socket.io",
-  clientLogUrl: process.env.EXPO_PUBLIC_CLIENT_LOG_URL?.trim() || `${resolveSocketUrl()}/client-logs`
+  clientLogUrl: explicitClientLogUrl || devDefaultClientLogUrl
 } as const;

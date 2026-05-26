@@ -20,7 +20,9 @@ function safeJson(value: unknown): string {
 function ensureSession(): void {
   if (sessionId) return;
   sessionId = new Date().toISOString().replace(/[:.]/g, "-");
-  console.log(`[GAMELOG] session_started id=${sessionId}`);
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.log(`[GAMELOG] session_started id=${sessionId}`);
+  }
 }
 
 export function getActiveLogPath(): string | null {
@@ -30,10 +32,14 @@ export function getActiveLogPath(): string | null {
 function logByScope(scope: LogScope, event: string, payload?: Record<string, unknown>): void {
   ensureSession();
   const ts = nowIso();
-  const linePayload = payload ? safeJson(payload) : "";
-  console.log(`[GAMELOG] ${event} ${linePayload}`);
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    const linePayload = payload ? safeJson(payload) : "";
+    console.log(`[GAMELOG] ${event} ${linePayload}`);
+  }
   if (isLogScopeMismatch(scope, event)) {
-    console.warn(`[GAMELOG] scope_mismatch scope=${scope} event=${event}`);
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.warn(`[GAMELOG] scope_mismatch scope=${scope} event=${event}`);
+    }
   }
   if (shouldStoreLogEntryInFeed(scope, event)) {
     useLogFeedStore.getState().push({
@@ -44,25 +50,29 @@ function logByScope(scope: LogScope, event: string, payload?: Record<string, unk
     });
   }
 
-  writeQueue = writeQueue
-    .then(async () => {
-      await fetch(runtimeEnv.clientLogUrl, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          sessionId,
-          timestamp: ts,
-          event,
-          payload: payload ?? {},
-          scope
-        })
+  if (runtimeEnv.clientLogUrl) {
+    writeQueue = writeQueue
+      .then(async () => {
+        await fetch(runtimeEnv.clientLogUrl, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            sessionId,
+            timestamp: ts,
+            event,
+            payload: payload ?? {},
+            scope
+          })
+        });
+      })
+      .catch((error) => {
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+          console.warn("[GAMELOG] remote_logger_error", error);
+        }
       });
-    })
-    .catch((error) => {
-      console.warn("[GAMELOG] remote_logger_error", error);
-    });
+  }
 }
 
 export function logGameEvent(event: string, payload?: Record<string, unknown>): void {
