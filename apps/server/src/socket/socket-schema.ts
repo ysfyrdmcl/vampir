@@ -28,8 +28,8 @@ const ruleSettingsSchema = z.object({
 });
 
 export const identitySchema = z.object({
-  deviceId: z.string().min(6),
-  playerSessionToken: z.string().optional()
+  deviceId: z.string().min(6).max(128),
+  playerSessionToken: z.string().max(128).optional()
 });
 
 export const createRoomSchema = z.object({

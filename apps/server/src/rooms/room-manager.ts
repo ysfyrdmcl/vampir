@@ -16,6 +16,8 @@ export class RoomManager {
     rolePreset?: RolePresetId,
     rules?: Partial<RuleSettings>
   ): { room: RoomState; player: PlayerState } {
+    this.assertSocketAvailable(socketId);
+    if (this.rooms.size >= env.ROOM_MAX_COUNT) throw new Error("SERVER_FULL");
     const roomCode = this.generateRoomCode();
     const player = this.createPlayer(nickname, deviceId, socketId);
     const now = Date.now();
@@ -62,22 +64,26 @@ export class RoomManager {
     playerSessionToken?: string
   ): { room: RoomState; player: PlayerState; replacedSocketId: string | null } {
     const room = this.requireRoom(roomCode);
-    room.lastActivityAt = Date.now();
-    room.cleanupAt = null;
+    this.assertSocketAvailable(socketId, roomCode);
+    if (room.players.some((p) => p.socketId === socketId && p.deviceId !== deviceId)) {
+      throw new Error("ALREADY_IN_ROOM");
+    }
 
     const existing = room.players.find((p) => p.deviceId === deviceId);
     if (existing) {
-      if (playerSessionToken && existing.sessionToken !== playerSessionToken) {
+      if (!playerSessionToken || existing.sessionToken !== playerSessionToken) {
         throw new Error("SESSION_TOKEN_MISMATCH");
       }
       const replacedSocketId = existing.socketId || null;
       existing.socketId = socketId;
       existing.isConnected = true;
-      existing.isReady = false;
       if (nickname && room.status === "Lobby") {
         existing.nickname = nickname;
       }
-      existing.sessionToken = randomToken("ps");
+      // Keep the credential stable so a lost join response cannot lock out the device.
+      room.lastActivityAt = Date.now();
+      room.cleanupAt = null;
+      this.transferHostIfNeeded(room);
       return { room, player: existing, replacedSocketId };
     }
 
@@ -90,6 +96,9 @@ export class RoomManager {
 
     const player = this.createPlayer(nickname ?? "Oyuncu", deviceId, socketId);
     room.players.push(player);
+    room.lastActivityAt = Date.now();
+    room.cleanupAt = null;
+    this.transferHostIfNeeded(room);
     return { room, player, replacedSocketId: null };
   }
 
@@ -99,7 +108,12 @@ export class RoomManager {
     if (player) {
       player.isConnected = false;
       player.socketId = "";
+      player.isReady = false;
+      if (room.status !== "InGame") {
+        room.players = room.players.filter((p) => p !== player);
+      }
     }
+    this.transferHostIfNeeded(room);
     room.lastActivityAt = Date.now();
     this.scheduleCleanup(room);
     return room;
@@ -111,6 +125,7 @@ export class RoomManager {
       if (!player) continue;
       player.isConnected = false;
       player.socketId = "";
+      this.transferHostIfNeeded(room);
       room.lastActivityAt = Date.now();
       this.scheduleCleanup(room);
       return room;
@@ -120,6 +135,27 @@ export class RoomManager {
 
   getRoom(roomCode: string): RoomState | null {
     return this.rooms.get(roomCode) ?? null;
+  }
+
+  private assertSocketAvailable(socketId: string, roomCode?: string): void {
+    for (const room of this.rooms.values()) {
+      if (room.players.some((p) => p.socketId === socketId) && room.roomCode !== roomCode) {
+        throw new Error("ALREADY_IN_ROOM");
+      }
+    }
+  }
+
+  private transferHostIfNeeded(room: RoomState): void {
+    if (room.players.some((p) => p.playerId === room.hostPlayerId && p.isConnected && !p.isBot)) return;
+    const next = room.players.find((p) => p.isConnected && !p.isBot);
+    if (next) room.hostPlayerId = next.playerId;
+  }
+
+  assertSession(roomCode: string, deviceId: string, token: string | undefined, socketId: string): void {
+    const player = this.requireRoom(roomCode).players.find((p) => p.deviceId === deviceId && !p.isBot);
+    if (!player) throw new Error("PLAYER_NOT_FOUND");
+    if (!token || player.sessionToken !== token) throw new Error("SESSION_TOKEN_MISMATCH");
+    if (!player.isConnected || player.socketId !== socketId) throw new Error("SOCKET_MISMATCH");
   }
 
   listRoomCodes(): string[] {
@@ -212,6 +248,9 @@ export class RoomManager {
     room.game.revoteCandidateIds = [];
     room.game.loverLinks = {};
     room.game.detectiveInspectedTargets = {};
+    room.game.detectiveResultHistory = [];
+
+    room.players = room.players.filter((p) => p.isBot || p.isConnected);
 
     for (const player of room.players) {
       player.role = null;
@@ -280,12 +319,12 @@ export class RoomManager {
   }
 
   private scheduleCleanup(room: RoomState): void {
-    if (room.players.every((p) => p.isBot || !p.isConnected)) {
-      room.cleanupAt = Date.now();
+    if (room.players.some((p) => !p.isBot && p.isConnected)) {
+      room.cleanupAt = null;
       return;
     }
     const ttl = room.status === "GameOver" ? env.ROOM_AFTER_GAME_TTL_SECONDS : env.ROOM_IDLE_TTL_SECONDS;
-    room.cleanupAt = Date.now() + ttl * 1000;
+    room.cleanupAt ??= Date.now() + ttl * 1000;
   }
 
   private generateRoomCode(): string {

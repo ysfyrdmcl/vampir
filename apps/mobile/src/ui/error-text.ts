@@ -3,7 +3,7 @@ const OTHER_OUTER_MENU_ROUTES = new Set(["RoleGuide", "RoleCard"]);
 
 const GAMEPLAY_STACK_ROUTES = new Set(["RoleReveal", "Night", "Vote", "GameLog", "GameSettings"]);
 
-const CONNECTION_CODES = new Set(["SOCKET_CONNECT_ERROR", "BOOTSTRAP_FAILED", "CONNECTION_ERROR"]);
+const CONNECTION_CODES = new Set(["SOCKET_CONNECT_ERROR", "BOOTSTRAP_FAILED", "CONNECTION_ERROR", "RATE_LIMITED", "SERVER_FULL", "ALREADY_IN_ROOM", "INVALID_REQUEST", "SESSION_TOKEN_MISMATCH"]);
 
 export function isGlobalCriticalErrorCode(code: string | null): boolean {
   return Boolean(code && CONNECTION_CODES.has(code));
@@ -137,6 +137,11 @@ export function toFriendlyErrorText(code: string | null): string | null {
 
   const table: Record<string, string> = {
     ROOM_NOT_FOUND: "Oda bulunamadı. Kod yanlış olabilir veya oda kapanmış olabilir.",
+    RATE_LIMITED: "Çok hızlı işlem yapıldı. Birkaç saniye sonra tekrar dene.",
+    SERVER_FULL: "Sunucu dolu. Birazdan tekrar dene.",
+    ALREADY_IN_ROOM: "Önce mevcut odadan ayrılmalısın.",
+    INVALID_REQUEST: "İşlem uygulanamadı. Tekrar dene.",
+    SESSION_TOKEN_MISMATCH: "Oturum doğrulanamadı. Odaya tekrar katılmayı dene.",
     ROOM_FULL: "Oda dolu.",
     GAME_ALREADY_STARTED: "Oyun başlamış. Aynı cihazla yeniden bağlanmayı deneyin.",
     NICKNAME_TOO_SHORT: "Oyuncu adı en az 2 karakter olmalı.",
@@ -183,6 +188,11 @@ export function toFriendlyToastText(code: string | null): string | null {
   if (code === "ROOM_NOT_FOUND") return null;
 
   const table: Record<string, string> = {
+    RATE_LIMITED: "Çok hızlı işlem yapıldı. Birkaç saniye sonra tekrar dene.",
+    SERVER_FULL: "Sunucu dolu. Birazdan tekrar dene.",
+    ALREADY_IN_ROOM: "Önce mevcut odadan ayrılmalısın.",
+    INVALID_REQUEST: "İşlem uygulanamadı. Tekrar dene.",
+    SESSION_TOKEN_MISMATCH: "Oturum doğrulanamadı. Odaya tekrar katılmayı dene.",
     ROOM_FULL: "Oda dolu",
     GAME_ALREADY_STARTED: "Oyun başlamış",
     NICKNAME_TOO_SHORT: "Oyuncu adını kontrol et",

@@ -6,7 +6,8 @@ import { env } from "./config/env.js";
 
 export async function createApp() {
   const app = Fastify({
-    logger: true
+    logger: true,
+    bodyLimit: 64 * 1024
   });
 
   await app.register(cors, {
@@ -14,7 +15,9 @@ export async function createApp() {
   });
 
   await app.register(healthRoutes);
-  await app.register(clientLogRoutes);
+  if (env.NODE_ENV !== "production" || env.CLIENT_LOGS_ENABLED) {
+    await app.register(clientLogRoutes);
+  }
 
   return app;
 }

@@ -72,6 +72,7 @@ export interface GameState {
   rules: RuleSettings;
   loverLinks: Record<string, string>;
   detectiveInspectedTargets: Record<string, string[]>;
+  detectiveResultHistory?: GameState["privateResults"];
   phaseDurations: {
     roleReveal: number;
     nightStart: number;

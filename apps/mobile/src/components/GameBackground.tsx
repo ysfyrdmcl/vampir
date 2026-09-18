@@ -24,21 +24,21 @@ export type GameBackgroundVariant =
   | "splash";
 
 const sceneBackgrounds: Record<GameBackgroundVariant, ImageSourcePropType> = {
-  home: require("../assets/references/home.png"),
-  create: require("../assets/references/create_room.png"),
-  join: require("../assets/references/join_room.png"),
-  lobby: require("../assets/references/lobby.png"),
-  role: require("../assets/references/role_reveal.png"),
-  night: require("../assets/references/night_phase.png"),
-  vampire: require("../assets/references/vampire_action.png"),
-  detective: require("../assets/references/detective_action.png"),
-  doctor: require("../assets/references/doctor_action.png"),
-  day: require("../assets/references/day_phase.png"),
-  vote: require("../assets/references/voting.png"),
-  tie: require("../assets/references/tie_discussion.png"),
-  result: require("../assets/references/execution_result.png"),
-  gameover: require("../assets/references/game_over.png"),
-  splash: require("../assets/references/splash.png")
+  home: require("../assets/backgrounds/bg_menu_village_moon.png"),
+  create: require("../assets/backgrounds/bg_lobby_tavern_dark.png"),
+  join: require("../assets/backgrounds/bg_lobby_tavern_dark.png"),
+  lobby: require("../assets/backgrounds/bg_lobby_tavern_dark.png"),
+  role: require("../assets/backgrounds/bg_menu_village_moon.png"),
+  night: require("../assets/backgrounds/bg_night_forest_fog.png"),
+  vampire: require("../assets/backgrounds/bg_night_forest_fog.png"),
+  detective: require("../assets/backgrounds/bg_night_forest_fog.png"),
+  doctor: require("../assets/backgrounds/bg_night_forest_fog.png"),
+  day: require("../assets/backgrounds/bg_day_village_square.png"),
+  vote: require("../assets/backgrounds/bg_vote_council.png"),
+  tie: require("../assets/backgrounds/bg_vote_council.png"),
+  result: require("../assets/backgrounds/bg_vote_council.png"),
+  gameover: require("../assets/backgrounds/bg_gameover_village.png"),
+  splash: require("../assets/backgrounds/bg_menu_village_moon.png")
 };
 
 interface GameBackgroundProps {

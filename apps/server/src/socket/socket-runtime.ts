@@ -58,6 +58,7 @@ import { buildGameResultEvents, captureResultEventBaseline } from "../game/game-
 export class SocketRuntime {
   private readonly roomManager = new RoomManager();
   private readonly gameEngine = new GameEngine();
+  private readonly rateLimits = new Map<string, { windowStartedAt: number; count: number }>();
   private readonly botMemoryStore = new BotMemoryStore();
   private readonly botShortTermMemoryStore: BotShortTermMemoryStore;
   private readonly botLongTermMemory?: BotLongTermMemory;
@@ -113,21 +114,22 @@ export class SocketRuntime {
 
     socket.on(SOCKET_EVENTS.ROOM_CREATE, (payload) => this.safe(socket, () => this.onCreate(socket, payload)));
     socket.on(SOCKET_EVENTS.ROOM_JOIN, (payload) => this.safe(socket, () => this.onJoin(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_LEAVE, (payload) => this.safe(socket, () => this.onLeave(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_READY_TOGGLE, (payload) => this.safe(socket, () => this.onReadyToggle(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, (payload) => this.safe(socket, () => this.onConfigUpdate(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_START, (payload) => this.safe(socket, () => this.onStart(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, (payload) => this.safe(socket, () => this.onResetToLobby(payload)));
-    socket.on(SOCKET_EVENTS.GAME_PAUSE, (payload) => this.safe(socket, () => this.onPause(socket, payload)));
-    socket.on(SOCKET_EVENTS.GAME_RESUME, (payload) => this.safe(socket, () => this.onResume(socket, payload)));
-    socket.on(SOCKET_EVENTS.GAME_PHASE_ADVANCE, (payload) => this.safe(socket, () => this.onPhaseAdvance(socket, payload)));
-    socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload)));
-    socket.on(SOCKET_EVENTS.ROOM_BOT_ADD, (payload) => this.safe(socket, () => this.onBotAdd(payload)));
-    socket.on(SOCKET_EVENTS.ROOM_BOT_REMOVE, (payload) => this.safe(socket, () => this.onBotRemove(payload)));
-    socket.on(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, (payload) => this.safe(socket, () => this.onBotSetIntelligence(payload)));
-    socket.on(SOCKET_EVENTS.ROOM_BOT_FILL_MINIMUM, (payload) => this.safe(socket, () => this.onBotFillMinimum(payload)));
+    socket.on(SOCKET_EVENTS.ROOM_LEAVE, (payload) => this.safe(socket, () => this.onLeave(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_READY_TOGGLE, (payload) => this.safe(socket, () => this.onReadyToggle(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_CONFIG_UPDATE, (payload) => this.safe(socket, () => this.onConfigUpdate(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_START, (payload) => this.safe(socket, () => this.onStart(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, (payload) => this.safe(socket, () => this.onResetToLobby(payload), payload));
+    socket.on(SOCKET_EVENTS.GAME_PAUSE, (payload) => this.safe(socket, () => this.onPause(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.GAME_RESUME, (payload) => this.safe(socket, () => this.onResume(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.GAME_PHASE_ADVANCE, (payload) => this.safe(socket, () => this.onPhaseAdvance(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_BOT_ADD, (payload) => this.safe(socket, () => this.onBotAdd(payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_BOT_REMOVE, (payload) => this.safe(socket, () => this.onBotRemove(payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, (payload) => this.safe(socket, () => this.onBotSetIntelligence(payload), payload));
+    socket.on(SOCKET_EVENTS.ROOM_BOT_FILL_MINIMUM, (payload) => this.safe(socket, () => this.onBotFillMinimum(payload), payload));
 
     socket.on("disconnect", () => {
+      this.rateLimits.delete(socket.id);
       const room = this.roomManager.removeBySocket(socket.id);
       if (room) {
         this.log.info({ socketId: socket.id, roomCode: room.roomCode }, "socket disconnected");
@@ -139,6 +141,10 @@ export class SocketRuntime {
   }
 
   tick(): void {
+    const now = Date.now();
+    for (const [key, limit] of this.rateLimits) {
+      if (now - limit.windowStartedAt >= env.SOCKET_RATE_LIMIT_WINDOW_MS) this.rateLimits.delete(key);
+    }
     for (const roomCode of this.roomManager.listRoomCodes()) {
       try {
         this.tickRoom(roomCode);
@@ -230,6 +236,9 @@ export class SocketRuntime {
     this.broadcastRoomState(room);
     if (room.status !== "Lobby") {
       this.broadcastGamePhase(room);
+      for (const result of room.game.detectiveResultHistory ?? []) {
+        if (result.playerId === player.playerId) socket.emit(SOCKET_EVENTS.GAME_PRIVATE_RESULT, result);
+      }
       if (room.status === "GameOver" && room.game.winner) {
         socket.emit(SOCKET_EVENTS.GAME_OVER, {
           winner: room.game.winner,
@@ -257,6 +266,7 @@ export class SocketRuntime {
     const payload = roomConfigSchema.parse(raw);
     const room = this.roomManager.requireRoom(payload.roomCode);
     this.roomManager.assertHost(room, payload.identity.deviceId);
+    if (room.status !== "Lobby") throw new Error("GAME_ALREADY_STARTED");
     const updated = this.roomManager.updateGameConfig(payload.roomCode, {
       phaseDurations: payload.phaseDurations,
       gameMode: payload.gameMode,
@@ -490,6 +500,7 @@ export class SocketRuntime {
   ): void {
     for (const pr of privateResults) {
       if (!("detectiveResult" in pr) || !pr.detectiveTargetPlayerId) continue;
+      (room.game.detectiveResultHistory ??= []).push(pr);
       const detective = room.players.find((p) => p.playerId === pr.playerId);
       if (!detective?.isBot) continue;
       this.botMemoryStore.applyDetectivePrivateResult(
@@ -527,8 +538,13 @@ export class SocketRuntime {
     }
   }
 
-  private safe(socket: Socket, run: () => void): void {
+  private safe(socket: Socket, run: () => void, rawIdentity?: unknown): void {
     try {
+      this.assertWithinRateLimit(socket);
+      if (rawIdentity !== undefined) {
+        const { roomCode, identity } = leaveRoomSchema.parse(rawIdentity);
+        this.roomManager.assertSession(roomCode, identity.deviceId, identity.playerSessionToken, socket.id);
+      }
       run();
     } catch (error) {
       const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -538,7 +554,23 @@ export class SocketRuntime {
       } else {
         this.log.error({ socketId: socket.id, err: error }, "socket handler crashed");
       }
-      socket.emit(SOCKET_EVENTS.ERROR_EVENT, { code: message });
+      socket.emit(SOCKET_EVENTS.ERROR_EVENT, { code: isExpected ? message : "INVALID_REQUEST" });
+    }
+  }
+
+  private assertWithinRateLimit(socket: Socket): void {
+    const now = Date.now();
+    // The address bucket survives reconnects. Do not trust client-supplied forwarded headers.
+    for (const [key, max] of [
+      [socket.id, env.SOCKET_RATE_LIMIT_MAX_EVENTS],
+      [`ip:${socket.handshake.address}`, env.SOCKET_IP_MAX_EVENTS]
+    ] as const) {
+      const existing = this.rateLimits.get(key);
+      if (!existing || now - existing.windowStartedAt >= env.SOCKET_RATE_LIMIT_WINDOW_MS) {
+        this.rateLimits.set(key, { windowStartedAt: now, count: 1 });
+      } else if (++existing.count > max) {
+        throw new Error("RATE_LIMITED");
+      }
     }
   }
 }

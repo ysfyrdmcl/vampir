@@ -22,9 +22,12 @@ export class GameEngine {
     if (room.status !== "Lobby") {
       throw new Error("GAME_ALREADY_STARTED");
     }
-    if (room.players.length < env.ROOM_MIN_PLAYERS) {
+    const activePlayers = room.players.filter((p) => p.isBot || p.isConnected);
+    if (activePlayers.length < env.ROOM_MIN_PLAYERS) {
       throw new Error("NOT_ENOUGH_PLAYERS");
     }
+
+    room.players = activePlayers;
 
     room.status = "InGame";
     room.game.phase = "RoleReveal";
@@ -42,11 +45,10 @@ export class GameEngine {
     room.game.revoteCandidateIds = [];
     room.game.loverLinks = {};
     room.game.detectiveInspectedTargets = {};
+    room.game.detectiveResultHistory = [];
     room.game.phaseEndsAt = this.phaseEndsAt(room, "RoleReveal");
 
     const assignments = assignRoles(room.players.map((p) => p.playerId), room.game.rolePreset);
-    // TEMP TEST: force host to Vampire so the mobile vampire teammate UI can be checked quickly.
-    this.forceHostVampireForLocalTest(room, assignments);
     for (const player of room.players) {
       player.role = assignments[player.playerId] ?? "Villager";
       player.isAlive = true;
@@ -74,15 +76,6 @@ export class GameEngine {
       }
       return delta;
     });
-  }
-
-  private forceHostVampireForLocalTest(room: RoomState, assignments: Record<string, Role>): void {
-    const hostId = room.hostPlayerId;
-    if (!hostId || assignments[hostId] === "Vampire") return;
-    const currentVampireId = room.players.find((p) => assignments[p.playerId] === "Vampire")?.playerId;
-    if (!currentVampireId) return;
-    assignments[currentVampireId] = assignments[hostId] ?? "Villager";
-    assignments[hostId] = "Vampire";
   }
 
   submitAction(room: RoomState, actorPlayerId: string, submission: ActionSubmission): void {
@@ -189,6 +182,10 @@ export class GameEngine {
           }
         }
         if (result.detectiveResult) {
+          const { detectivePlayerId, targetPlayerId } = result.detectiveResult;
+          room.game.detectiveInspectedTargets[detectivePlayerId] = [
+            ...(room.game.detectiveInspectedTargets[detectivePlayerId] ?? []), targetPlayerId
+          ];
           room.game.privateResults.push({
             playerId: result.detectiveResult.detectivePlayerId,
             detectiveResult: result.detectiveResult.result,
@@ -447,13 +444,6 @@ export class GameEngine {
       }
     } else {
       throw new Error("TARGET_REQUIRED");
-    }
-
-    if (submission.actionType === "detective-inspect" && submission.targetPlayerId) {
-      room.game.detectiveInspectedTargets[actor.playerId] = [
-        ...(room.game.detectiveInspectedTargets[actor.playerId] ?? []),
-        submission.targetPlayerId
-      ];
     }
   }
 

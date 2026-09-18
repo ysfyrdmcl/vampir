@@ -123,7 +123,7 @@ export function GameSettingsScreen({ navigation }: Props) {
         onConfirm={() => {
           setLeaveConfirmOpen(false);
           emitLeaveRoom();
-          navigation.navigate("Welcome");
+          navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
         }}
         onCancel={() => setLeaveConfirmOpen(false)}
       />

@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveRuleSettings, type GameMode, type Role, type RolePresetId } from "@vampir-koylu/shared";
 import { GameEngine } from "../src/game/game-engine.js";
 import type { PlayerState, RoomState } from "../src/game/game-types.js";
+import { RoomManager } from "../src/rooms/room-manager.js";
 
 function makePlayer(id: string, role: Role, overrides: Partial<PlayerState> = {}): PlayerState {
   return {
@@ -79,6 +80,24 @@ function makeRoom(opts: {
 
 describe("phase skip when role absent or dead", () => {
   const engine = new GameEngine();
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("does not force the host to Vampire when starting a game", () => {
+    const manager = new RoomManager();
+    const { room, player: host } = manager.createRoom("Host", "device-host", "socket-host");
+    manager.joinRoom(room.roomCode, "P2", "device-2", "socket-2");
+    manager.joinRoom(room.roomCode, "P3", "device-3", "socket-3");
+    manager.joinRoom(room.roomCode, "P4", "device-4", "socket-4");
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+
+    engine.startGame(room);
+
+    expect(room.players.find((p) => p.playerId === host.playerId)?.role).not.toBe("Vampire");
+    expect(room.players.filter((p) => p.role === "Vampire")).toHaveLength(1);
+  });
 
   it("VampireVote -> NightResolve when no alive Detective or Doctor (4p beginner)", () => {
     const room = makeRoom({

@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export function randomRoomCode(length: number): string {
@@ -16,6 +18,5 @@ export function pickRandom<T>(items: T[]): T | null {
 }
 
 export function randomToken(prefix: string): string {
-  return `${prefix}_${Math.random().toString(36).slice(2, 12)}_${Date.now().toString(36)}`;
+  return `${prefix}_${randomBytes(24).toString("hex")}`;
 }
-

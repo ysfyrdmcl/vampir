@@ -4,6 +4,7 @@ import { useLogFeedStore } from "./log-feed-store";
 
 let sessionId: string | null = null;
 let writeQueue: Promise<void> = Promise.resolve();
+let pendingWrites = 0;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -50,28 +51,37 @@ function logByScope(scope: LogScope, event: string, payload?: Record<string, unk
     });
   }
 
-  if (runtimeEnv.clientLogUrl) {
+  if (runtimeEnv.clientLogUrl && pendingWrites < 50) {
+    pendingWrites += 1;
     writeQueue = writeQueue
       .then(async () => {
-        await fetch(runtimeEnv.clientLogUrl, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json"
-          },
-          body: JSON.stringify({
-            sessionId,
-            timestamp: ts,
-            event,
-            payload: payload ?? {},
-            scope
-          })
-        });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
+          await fetch(runtimeEnv.clientLogUrl!, {
+            signal: controller.signal,
+            method: "POST",
+            headers: {
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              sessionId,
+              timestamp: ts,
+              event,
+              payload: payload ?? {},
+              scope
+            })
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
       })
       .catch((error) => {
         if (typeof __DEV__ !== "undefined" && __DEV__) {
           console.warn("[GAMELOG] remote_logger_error", error);
         }
-      });
+      })
+      .finally(() => { pendingWrites -= 1; });
   }
 }
 

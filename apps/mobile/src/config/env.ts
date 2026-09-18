@@ -15,6 +15,10 @@ function resolveSocketUrl(): string {
     return explicitUrl;
   }
 
+  if (typeof __DEV__ === "undefined" || !__DEV__) {
+    throw new Error("EXPO_PUBLIC_SOCKET_URL is required for release builds.");
+  }
+
   const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoGo?.debuggerHost;
   const expoHost = hostFromUrl(hostUri ? `exp://${hostUri}` : null);
   if (expoHost) {

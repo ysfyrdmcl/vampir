@@ -352,3 +352,7 @@ commercialUseAllowed: project owner to confirm
 originalExportPath: apps/mobile/src/assets/svg/ui/target-reticle.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/ui/target-reticle.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
+
+## App icon exports — 2026-09-17
+
+`app/icon.png` ve `app/adaptive-icon.png`, mevcut `svg/brand/vampir-logo-mark.svg` vektörünün PNG çıktılarıdır. Yeni dış kaynak kullanılmadı. Ana ikon 1024×1024 ve opak; adaptive foreground saydam zemin üzerinde güvenli alan payı içerir. Kaynak vektör için mevcut lisans/onay durumu geçerlidir.

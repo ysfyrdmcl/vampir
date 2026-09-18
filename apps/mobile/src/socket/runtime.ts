@@ -14,7 +14,7 @@ import {
 import { navigationRef } from "../app/navigation/navigation-ref";
 import { getSocket } from "./client";
 import { useGameStore } from "../store/game-store";
-import { clearRoomSession, saveLastRoomCode, saveSessionToken } from "../storage/session-storage";
+import { clearRoomSession, loadRoomToken, saveRoomSession } from "../storage/session-storage";
 import { socketErrorAllowedForRoute } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 import { logGameEvent, logPersonalEvent } from "../logging/game-logger";
@@ -30,7 +30,7 @@ let lastVoteTieRoundLogged: number | null = null;
 let lastExecutionRoundLogged: number | null = null;
 let lastEliminationKeyLogged: string | null = null;
 let lastVampireVotePreviewLogKey: string | null = null;
-let pendingReadyResync = false;
+let roomResyncPending = false;
 /** After a real disconnect, reconnect should re-emit join; first cold `connect` must not duplicate bootstrap join. */
 let joinAfterNextSocketConnect = false;
 /** Last emit path for ROOM_NOT_FOUND handling (manual join vs silent restore). */
@@ -77,7 +77,7 @@ function resyncRoomAfterReconnect(): void {
   const state = useGameStore.getState();
   if (!state.deviceId || !state.roomCode || !state.playerSessionToken) return;
   const me = state.roomState?.players.find((player) => player.playerId === state.playerId);
-  pendingReadyResync = Boolean(state.roomState?.status === "Lobby" && me?.isReady);
+  roomResyncPending = true;
   markJoinEmitIntent("resync");
   getSocket().emit(SOCKET_EVENTS.ROOM_JOIN, {
     identity: identityPayload(),
@@ -86,7 +86,7 @@ function resyncRoomAfterReconnect(): void {
   });
   logGameEvent("emit.room_rejoin_silent", {
     roomCode: state.roomCode,
-    restoreReady: pendingReadyResync
+    restoringSession: true
   });
 }
 
@@ -108,6 +108,8 @@ export function initSocketRuntime(): void {
   });
 
   socket.on("disconnect", () => {
+    roomResyncPending = true;
+    socket.sendBuffer = [];
     joinAfterNextSocketConnect = true;
     store.getState().setConnectionStatus("connecting");
     logGameEvent("socket.disconnected");
@@ -136,16 +138,17 @@ export function initSocketRuntime(): void {
       playerSessionToken: payload.playerSessionToken,
       roomCode: payload.roomCode
     });
-    await saveSessionToken(payload.playerSessionToken);
-    await saveLastRoomCode(payload.roomCode);
+    roomResyncPending = false;
+    try {
+      await saveRoomSession(payload.roomCode, payload.playerSessionToken);
+    } catch {
+      showToast("Oturum cihaza kaydedilemedi. Uygulamayı kapatırsan geri dönemeyebilirsin.", "danger", 4000);
+    }
     logGameEvent("room.joined", {
       roomCode: payload.roomCode,
       playerId: payload.playerId
     });
-    if (pendingReadyResync) {
-      pendingReadyResync = false;
-      emitReadyToggle(true);
-    }
+
   });
 
   socket.on(SOCKET_EVENTS.ROOM_STATE, (payload) => {
@@ -198,6 +201,11 @@ export function initSocketRuntime(): void {
 
   socket.on(SOCKET_EVENTS.GAME_PHASE, (payload) => {
     if (payload.phase === "RoleReveal" && payload.round === 1) {
+      if (lastPhase !== "RoleReveal") {
+        useLogFeedStore.getState().clear();
+        const role = store.getState().privateRole;
+        if (role) logPersonalEvent("game.role.assigned", { role });
+      }
       lastVoteStartRoundLogged = null;
       lastMayorVoteStartRoundLogged = null;
       lastVoteTieRoundLogged = null;
@@ -346,6 +354,9 @@ export function initSocketRuntime(): void {
     }) => {
     if (payload.role) {
       store.getState().setPrivateRole(payload.role);
+      store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId ?? null);
+      store.getState().setKnownVampirePlayerIds(payload.vampirePlayerIds ?? []);
+      store.getState().setDetectiveInspectedPlayerIds(payload.detectiveInspectedPlayerIds ?? []);
       logPersonalEvent("game.role.assigned", { role: payload.role });
     }
     if (payload.detectiveInspectedPlayerIds) {
@@ -418,6 +429,10 @@ export function initSocketRuntime(): void {
           ? `${targetName}: Vampir`
           : `${targetName}: Vampir değil`;
       store.getState().setPrivateResultText(text, "detective");
+      const alreadyLogged = useLogFeedStore.getState().entries.some((entry) =>
+        entry.event === "personal.detective.inspect_result" && entry.payload?.detectiveTargetPlayerId === tid
+      );
+      if (alreadyLogged) return;
       logPersonalEvent("personal.detective.inspect_result", {
         detectiveResult: payload.detectiveResult,
         detectiveTargetPlayerId: payload.detectiveTargetPlayerId ?? null,
@@ -440,12 +455,15 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.ERROR_EVENT, (payload: { code: string }) => {
-    if (payload.code === "ROOM_NOT_FOUND") {
+    const failedRestore = lastJoinEmitIntent !== "manual" &&
+      ["SESSION_TOKEN_MISMATCH", "GAME_ALREADY_STARTED", "PLAYER_NOT_FOUND"].includes(payload.code);
+    if (payload.code === "ROOM_NOT_FOUND" || failedRestore) {
       const intent = lastJoinEmitIntent;
       lastJoinEmitIntent = "manual";
       void clearRoomSession();
       clearPendingRoomConfigEmit();
-      store.getState().restoreSession({ playerSessionToken: null, roomCode: null });
+      store.getState().resetRoom();
+      roomResyncPending = false;
       if (intent === "manual") {
         const route = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : undefined;
         if (!route || !socketErrorAllowedForRoute("ROOM_NOT_FOUND", route)) {
@@ -495,6 +513,18 @@ export function connectSocket(): void {
   const store = useGameStore.getState();
   store.setConnectionStatus("connecting");
   ensureConnected();
+}
+
+export function resumeSocket(): void {
+  if (getSocket().connected) resyncRoomAfterReconnect();
+  else connectSocket();
+}
+
+function ensureRoomConnected(): boolean {
+  if (getSocket().connected && !roomResyncPending) return true;
+  ensureConnected();
+  showToast("Bağlantı yenileniyor. Birazdan tekrar dene.", "gold", 2000);
+  return false;
 }
 
 function identityPayload() {
@@ -595,12 +625,20 @@ export function emitCreateRoom(nickname: string): void {
   });
 }
 
-export function emitJoinRoom(roomCode: string, nickname: string, intent: JoinEmitIntent = "manual"): void {
+export async function emitJoinRoom(roomCode: string, nickname: string, intent: JoinEmitIntent = "manual"): Promise<void> {
   ensureConnected();
   useGameStore.getState().setNickname(nickname);
   markJoinEmitIntent(intent);
+  const state = useGameStore.getState();
+  let token = state.roomCode === roomCode ? state.playerSessionToken : null;
+  try {
+    token ??= await loadRoomToken(roomCode);
+  } catch {
+    state.setErrorCode("BOOTSTRAP_FAILED");
+    return;
+  }
   getSocket().emit(SOCKET_EVENTS.ROOM_JOIN, {
-    identity: identityPayload(),
+    identity: { ...identityPayload(), playerSessionToken: token ?? undefined },
     roomCode,
     nickname
   });
@@ -612,11 +650,15 @@ export function emitLeaveRoom(): void {
   if (!state.roomCode) return;
   resetSocketErrorDedup();
   clearPendingRoomConfigEmit();
-  ensureConnected();
-  getSocket().emit(SOCKET_EVENTS.ROOM_LEAVE, {
-    identity: identityPayload(),
-    roomCode: state.roomCode
-  });
+  const socket = getSocket();
+  if (socket.connected && !roomResyncPending) {
+    socket.emit(SOCKET_EVENTS.ROOM_LEAVE, { identity: identityPayload(), roomCode: state.roomCode });
+  } else {
+    socket.disconnect();
+    socket.sendBuffer = [];
+  }
+  joinAfterNextSocketConnect = false;
+  roomResyncPending = false;
   void clearRoomSession();
   state.resetRoom();
   logGameEvent("emit.room_leave", { roomCode: state.roomCode });
@@ -633,7 +675,7 @@ export function emitResetRoomToLobby(): void {
     return;
   }
   clearPendingRoomConfigEmit();
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   state.setErrorCode(null);
   getSocket().emit(SOCKET_EVENTS.ROOM_RESET_TO_LOBBY, {
     identity: identityPayload(),
@@ -653,7 +695,7 @@ export function emitStartRoom(): void {
     return;
   }
   useLogFeedStore.getState().clear();
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   const phaseDurations = buildPhaseDurationsPayload();
   const config = buildGameConfigPayload();
   getSocket().emit(SOCKET_EVENTS.ROOM_START, {
@@ -675,14 +717,14 @@ export function emitStartRoom(): void {
 export function emitRoomConfigUpdate(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   if (roomConfigEmitTimer) {
     clearTimeout(roomConfigEmitTimer);
   }
   roomConfigEmitTimer = setTimeout(() => {
     roomConfigEmitTimer = null;
     const s = useGameStore.getState();
-    if (!s.roomCode) return;
+    if (!s.roomCode || !ensureRoomConnected()) return;
     const phaseDurations = buildPhaseDurationsPayload();
     const config = buildGameConfigPayload();
     const dedupeKey = computeRoomConfigEmitKey();
@@ -710,7 +752,7 @@ export function emitRoomConfigUpdate(): void {
 export function emitGamePause(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.GAME_PAUSE, {
     identity: identityPayload(),
     roomCode: state.roomCode
@@ -721,7 +763,7 @@ export function emitGamePause(): void {
 export function emitGameResume(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.GAME_RESUME, {
     identity: identityPayload(),
     roomCode: state.roomCode
@@ -732,7 +774,7 @@ export function emitGameResume(): void {
 export function emitGamePhaseAdvance(): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.GAME_PHASE_ADVANCE, {
     identity: identityPayload(),
     roomCode: state.roomCode
@@ -747,7 +789,7 @@ export function emitGamePhaseAdvance(): void {
 export function emitReadyToggle(isReady: boolean): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.ROOM_READY_TOGGLE, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -760,7 +802,7 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
   const state = useGameStore.getState();
   if (!state.roomCode || !state.gameState) return;
   if (state.gameState.isPaused) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.GAME_ACTION_SUBMIT, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -814,7 +856,7 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
 export function emitAddBot(intelligence: BotIntelligence, count = 1): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_ADD, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -827,7 +869,7 @@ export function emitAddBot(intelligence: BotIntelligence, count = 1): void {
 export function emitRemoveBot(botPlayerId: string): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_REMOVE, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -839,7 +881,7 @@ export function emitRemoveBot(botPlayerId: string): void {
 export function emitSetBotIntelligence(botPlayerId: string, intelligence: BotIntelligence): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, {
     identity: identityPayload(),
     roomCode: state.roomCode,
@@ -852,7 +894,7 @@ export function emitSetBotIntelligence(botPlayerId: string, intelligence: BotInt
 export function emitFillBotsToMinimum(intelligence: BotIntelligence): void {
   const state = useGameStore.getState();
   if (!state.roomCode) return;
-  ensureConnected();
+  if (!ensureRoomConnected()) return;
   getSocket().emit(SOCKET_EVENTS.ROOM_BOT_FILL_MINIMUM, {
     identity: identityPayload(),
     roomCode: state.roomCode,

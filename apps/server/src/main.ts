@@ -8,12 +8,23 @@ await app.ready();
 
 const io = new Server(app.server, {
   path: env.SOCKET_PATH,
+  maxHttpBufferSize: 64 * 1024,
   cors: {
     origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN
   }
 });
 
 const runtime = new SocketRuntime(io, app.log);
+
+io.use((socket, next) => {
+  const peers = [...io.sockets.sockets.values()];
+  if (peers.length >= env.SOCKET_MAX_CONNECTIONS ||
+      peers.filter((peer) => peer.handshake.address === socket.handshake.address).length >= env.SOCKET_MAX_CONNECTIONS_PER_IP) {
+    next(new Error("SERVER_FULL"));
+    return;
+  }
+  next();
+});
 
 io.on("connection", (socket) => {
   app.log.info({ socketId: socket.id }, "socket connected");

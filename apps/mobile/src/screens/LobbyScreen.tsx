@@ -185,7 +185,7 @@ export function LobbyScreen({ navigation }: Props) {
 
   const leaveRoom = () => {
     emitLeaveRoom();
-    navigation.navigate("Welcome");
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
   };
 
   const copyRoomCode = async () => {

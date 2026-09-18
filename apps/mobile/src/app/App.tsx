@@ -1,23 +1,19 @@
-import {
-  Manrope_400Regular,
-  Manrope_500Medium,
-  Manrope_700Bold
-} from "@expo-google-fonts/manrope";
-import {
-  Newsreader_400Regular,
-  Newsreader_600SemiBold,
-  Newsreader_700Bold
-} from "@expo-google-fonts/newsreader";
+import { Manrope_400Regular } from "@expo-google-fonts/manrope/400Regular";
+import { Manrope_500Medium } from "@expo-google-fonts/manrope/500Medium";
+import { Manrope_700Bold } from "@expo-google-fonts/manrope/700Bold";
+import { Newsreader_400Regular } from "@expo-google-fonts/newsreader/400Regular";
+import { Newsreader_600SemiBold } from "@expo-google-fonts/newsreader/600SemiBold";
+import { Newsreader_700Bold } from "@expo-google-fonts/newsreader/700Bold";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps } from "react-native";
+import { AppState, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BootSplash } from "../components/BootSplash";
 import { PhaseTransitionOverlay } from "../components/PhaseTransitionOverlay";
 import { PrivateInfoNudge } from "../components/PrivateInfoNudge";
 import { logGameEvent } from "../logging/game-logger";
-import { connectSocket, emitJoinRoom, initSocketRuntime } from "../socket/runtime";
+import { connectSocket, emitJoinRoom, initSocketRuntime, resumeSocket } from "../socket/runtime";
 import { loadDeviceId, loadLastRoomCode, loadNickname, loadSessionToken, saveDeviceId } from "../storage/session-storage";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
 import { createDeviceId } from "../utils/device-id";
@@ -40,7 +36,8 @@ export default function App() {
   const hasActiveResultEvent = useGameStore((s) => Boolean(s.activeResultEvent));
   const [bootstrapDone, setBootstrapDone] = useState(false);
 
-  const [fontsLoaded] = useFonts({
+  const [navigationReady, setNavigationReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
     Newsreader_400Regular,
     Newsreader_600SemiBold,
     Newsreader_700Bold,
@@ -94,9 +91,13 @@ export default function App() {
     };
 
     void bootstrap();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && useGameStore.getState().deviceId) resumeSocket();
+    });
 
     return () => {
       isMounted = false;
+      subscription.remove();
     };
   }, []);
 
@@ -115,7 +116,7 @@ export default function App() {
   }, [gameWinner, phase, roomStatus]);
 
   useEffect(() => {
-    if (!targetRoute || !navigationRef.isReady()) {
+    if (!targetRoute || !navigationReady || !navigationRef.isReady()) {
       return;
     }
     const current = navigationRef.getCurrentRoute()?.name;
@@ -134,13 +135,13 @@ export default function App() {
     const timer = setTimeout(() => {
       const latest = navigationRef.getCurrentRoute()?.name;
       if (latest !== targetRoute) {
-        navigationRef.navigate(targetRoute);
+        navigationRef.reset({ index: 0, routes: [{ name: targetRoute }] });
       }
     }, delayMs);
     return () => clearTimeout(timer);
-  }, [hasActiveResultEvent, targetRoute]);
+  }, [hasActiveResultEvent, targetRoute, navigationReady]);
 
-  if (!fontsLoaded || !bootstrapDone) {
+  if ((!fontsLoaded && !fontError) || !bootstrapDone) {
     return (
       <SafeAreaProvider>
         <BootSplash />
@@ -152,7 +153,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" translucent backgroundColor="transparent" />
       <View style={styles.appRoot}>
-        <RootNavigator />
+        <RootNavigator onReady={() => setNavigationReady(true)} />
         <PhaseTransitionOverlay phase={phase} />
         <PrivateInfoNudge />
       </View>

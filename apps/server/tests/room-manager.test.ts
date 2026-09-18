@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { env } from "../src/config/env.js";
+import { GameEngine } from "../src/game/game-engine.js";
 import { RoomManager } from "../src/rooms/room-manager.js";
 
 describe("RoomManager reconnect & cleanup", () => {
   it("returns the same player when same deviceId rejoins", () => {
     const manager = new RoomManager();
     const { room, player } = manager.createRoom("Ali", "device-1", "socket-1");
-    const rejoin = manager.joinRoom(room.roomCode, "Ali", "device-1", "socket-2", player.sessionToken);
+    const token = player.sessionToken;
+    const rejoin = manager.joinRoom(room.roomCode, "Ali", "device-1", "socket-2", token);
+    expect(rejoin.player.sessionToken).toBe(token);
     expect(rejoin.player.playerId).toBe(player.playerId);
     expect(rejoin.replacedSocketId).toBe("socket-1");
     expect(rejoin.player.socketId).toBe("socket-2");
@@ -15,6 +19,7 @@ describe("RoomManager reconnect & cleanup", () => {
   it("rejects rejoin with mismatched session token", () => {
     const manager = new RoomManager();
     const { room } = manager.createRoom("Ali", "device-1", "socket-1");
+    expect(() => manager.joinRoom(room.roomCode, "Ali", "device-1", "socket-2")).toThrow("SESSION_TOKEN_MISMATCH");
     expect(() => manager.joinRoom(room.roomCode, "Ali", "device-1", "socket-2", "ps_wrong")).toThrow(
       "SESSION_TOKEN_MISMATCH"
     );
@@ -45,12 +50,16 @@ describe("RoomManager reconnect & cleanup", () => {
     expect(updated?.players.find((p) => p.playerId === player.playerId)?.isConnected).toBe(false);
   });
 
-  it("cleans up a room once all human players are disconnected", () => {
+  it("keeps disconnected rooms until TTL and cancels cleanup on rejoin", () => {
     const manager = new RoomManager();
-    const { room } = manager.createRoom("Ali", "device-1", "socket-1");
+    const { room, player } = manager.createRoom("Ali", "device-1", "socket-1");
+    manager.addBot(room.roomCode, "device-1", "random", 3);
     manager.removeBySocket("socket-1");
-    const removed = manager.cleanupRooms();
-    expect(removed).toContain(room.roomCode);
+    expect(manager.cleanupRooms(Date.now() + 30_000)).toEqual([]);
+    manager.joinRoom(room.roomCode, "Ali", "device-1", "socket-2", player.sessionToken);
+    expect(room.cleanupAt).toBeNull();
+    manager.removeBySocket("socket-2");
+    expect(manager.cleanupRooms(Date.now() + env.ROOM_IDLE_TTL_SECONDS * 1000 + 1)).toContain(room.roomCode);
     expect(manager.getRoom(room.roomCode)).toBeNull();
   });
 
@@ -111,4 +120,43 @@ describe("RoomManager reconnect & cleanup", () => {
     const { room } = manager.createRoom("Host", "device-host", "socket-host");
     expect(() => manager.resetToLobbyAfterGameOver(room.roomCode, "device-host")).toThrow("ROOM_NOT_IN_GAME_OVER");
   });
+  it("removes explicit lobby departures, transfers host, and excludes disconnected seats from start", () => {
+    const manager = new RoomManager();
+    const { room, player: host } = manager.createRoom("Host", "device-host", "socket-host");
+    const { player: guest } = manager.joinRoom(room.roomCode, "Guest", "device-guest", "socket-guest");
+    manager.addBot(room.roomCode, "device-host", "random", 2);
+    manager.leaveRoom(room.roomCode, "device-host");
+    expect(room.hostPlayerId).toBe(guest.playerId);
+    expect(room.players).not.toContain(host);
+    expect(() => new GameEngine().startGame(room)).toThrow("NOT_ENOUGH_PLAYERS");
+    manager.joinRoom(room.roomCode, "Offline", "device-offline", "socket-offline");
+    manager.removeBySocket("socket-offline");
+    expect(() => new GameEngine().startGame(room)).toThrow("NOT_ENOUGH_PLAYERS");
+    manager.fillBotsToMinimum(room.roomCode, "device-guest", "random");
+    new GameEngine().startGame(room);
+    expect(room.players).toHaveLength(4);
+    expect(room.players.every((p) => p.isConnected && p.role !== null)).toBe(true);
+  });
+
+  it("transfers disconnected host without giving host back on reconnect", () => {
+    const manager = new RoomManager();
+    const { room, player: host } = manager.createRoom("Host", "device-host", "socket-host");
+    const { player: guest } = manager.joinRoom(room.roomCode, "Guest", "device-guest", "socket-guest");
+    manager.removeBySocket("socket-host");
+    expect(room.hostPlayerId).toBe(guest.playerId);
+    manager.joinRoom(room.roomCode, "Host", "device-host", "socket-new", host.sessionToken);
+    expect(room.hostPlayerId).toBe(guest.playerId);
+  });
+
+  it("rejects multiple room memberships and a second identity on the same socket", () => {
+    const manager = new RoomManager();
+    const { room } = manager.createRoom("Host", "device-host", "socket-host");
+    const other = manager.createRoom("Other", "device-other", "socket-other").room;
+    expect(() => manager.createRoom("Host", "device-host", "socket-host")).toThrow("ALREADY_IN_ROOM");
+    expect(() => manager.joinRoom(other.roomCode, "Host", "device-host", "socket-host")).toThrow("ALREADY_IN_ROOM");
+    expect(() => manager.joinRoom(room.roomCode, "Fake", "device-fake", "socket-host")).toThrow("ALREADY_IN_ROOM");
+    manager.leaveRoom(room.roomCode, "device-host");
+    expect(() => manager.joinRoom(other.roomCode, "Host", "device-host", "socket-host")).not.toThrow();
+  });
+
 });

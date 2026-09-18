@@ -30,9 +30,9 @@ const navTheme = {
   }
 };
 
-export function RootNavigator() {
+export function RootNavigator({ onReady }: { onReady: () => void }) {
   return (
-    <NavigationContainer ref={navigationRef} theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} onReady={onReady}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
