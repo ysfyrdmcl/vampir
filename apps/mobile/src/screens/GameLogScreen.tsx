@@ -182,7 +182,12 @@ export function GameLogScreen({ route }: Props) {
           ]}
         />
         {tab === "general" ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroll}
+            contentContainerStyle={styles.filterRow}
+          >
             {GENERAL_FILTERS.map((filter) => (
               <LiquidGlassChip
                 key={filter.value}
@@ -416,6 +421,7 @@ function GlassSegmented({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    minHeight: 0,
     gap: 8
   },
   content: { gap: 8 },
@@ -440,6 +446,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     paddingRight: spacing.safe
+  },
+  filterScroll: {
+    flexGrow: 0,
+    flexShrink: 0
   },
   filterChip: {
     minWidth: 78
@@ -558,9 +568,12 @@ const styles = StyleSheet.create({
     gap: 10
   },
   logList: {
-    flex: 1
+    flex: 1,
+    minHeight: 0
   },
   logListContent: {
+    flexGrow: 0,
+    justifyContent: "flex-start",
     gap: 8,
     paddingBottom: spacing.xl
   },
