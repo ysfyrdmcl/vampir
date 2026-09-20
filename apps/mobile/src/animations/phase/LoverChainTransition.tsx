@@ -62,7 +62,7 @@ export const LoverChainTransition = memo(LoverChainTransitionBase);
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   },

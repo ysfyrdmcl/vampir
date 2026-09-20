@@ -3,7 +3,7 @@ import { SOCKET_EVENTS as E } from "@vampir-koylu/shared";
 
 const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (payload?: any) => any>(),
-  socket: { connected: true, id: "socket", sendBuffer: [] as unknown[], on: vi.fn(), emit: vi.fn(), connect: vi.fn(), disconnect: vi.fn() },
+  socket: { connected: true, id: "socket", sendBuffer: [] as unknown[], on: vi.fn(), emit: vi.fn(), timeout: vi.fn(), connect: vi.fn(), disconnect: vi.fn() },
   reset: vi.fn(),
   loadRoomToken: vi.fn(),
   saveRoomSession: vi.fn(),
@@ -25,9 +25,80 @@ beforeEach(() => {
   mocks.socket.connected = true;
   mocks.socket.sendBuffer = [];
   mocks.socket.on.mockImplementation((event, handler) => mocks.handlers.set(event, handler));
+  mocks.socket.timeout.mockReturnValue(mocks.socket);
   mocks.saveRoomSession.mockResolvedValue(undefined);
   mocks.clearRoomSession.mockResolvedValue(undefined);
   mocks.loadRoomToken.mockResolvedValue("cached-token");
+});
+
+describe("mobile action acknowledgements", () => {
+  const phase = { phase: "DoctorProtect" as const, round: 1, phaseEndsAt: null, tieCountInRound: 0 };
+  const latestAcknowledgement = () => mocks.socket.emit.mock.calls.at(-1)![2] as (error: Error | null, result?: { accepted: boolean; code?: string }) => void;
+
+  it("keeps rejected actions retryable and accepts only a confirmed submission", async () => {
+    const { runtime, store } = await setup();
+    store.getState().setGameState(phase);
+    const rejected = runtime.emitGameAction("doctor-protect", "host");
+    expect(mocks.socket.emit).toHaveBeenCalledWith(E.GAME_ACTION_SUBMIT, expect.objectContaining({ tieCountInRound: 0 }), expect.any(Function));
+    expect(store.getState().gameActionPending).toBe(true);
+    expect(await runtime.emitGameAction("doctor-protect", "other")).toBe(false);
+    expect(mocks.socket.emit).toHaveBeenCalledTimes(1);
+    latestAcknowledgement()(null, { accepted: false, code: "SELF_PROTECT_BLOCKED" });
+    expect(await rejected).toBe(false);
+    expect(store.getState().gameActionPending).toBe(false);
+    expect(store.getState().acceptedGameAction).toBeNull();
+    expect(store.getState().errorCode).toBe("SELF_PROTECT_BLOCKED");
+
+    const accepted = runtime.emitGameAction("doctor-protect", "other");
+    expect(store.getState().errorCode).toBeNull();
+    latestAcknowledgement()(null, { accepted: true });
+    expect(await accepted).toBe(true);
+    expect(store.getState().acceptedGameAction?.targetPlayerId).toBe("other");
+    expect(store.getState().gameActionPending).toBe(false);
+  });
+
+  it("ignores stale replies after phase changes and preserves selection during pause broadcasts", async () => {
+    const { runtime, store } = await setup();
+    store.getState().setGameState(phase);
+    store.getState().setSelectedTargetPlayerId("other");
+    mocks.handlers.get(E.GAME_PHASE)!({ ...phase, isPaused: true });
+    expect(store.getState().selectedTargetPlayerId).toBe("other");
+    expect(await runtime.emitGameAction("doctor-protect", "other")).toBe(false);
+    expect(mocks.socket.emit).not.toHaveBeenCalled();
+    mocks.handlers.get(E.GAME_PHASE)!(phase);
+    const oldAction = runtime.emitGameAction("doctor-protect", "other");
+    const oldAcknowledgement = latestAcknowledgement();
+    mocks.handlers.get(E.GAME_PHASE)!({ ...phase, round: 2 });
+    expect(await oldAction).toBe(false);
+    expect(store.getState().selectedTargetPlayerId).toBeNull();
+    const newAction = runtime.emitGameAction("doctor-protect", "host");
+    const newAcknowledgement = latestAcknowledgement();
+    oldAcknowledgement(null, { accepted: true });
+    expect(store.getState().gameActionPending).toBe(true);
+    expect(store.getState().acceptedGameAction).toBeNull();
+    newAcknowledgement(null, { accepted: true });
+    expect(await newAction).toBe(true);
+    expect(store.getState().acceptedGameAction).toMatchObject({ round: 2, targetPlayerId: "host" });
+  });
+
+  it("releases pending actions on timeout or disconnect without reporting success", async () => {
+    const { runtime, store } = await setup();
+    store.getState().setGameState(phase);
+    const timedOut = runtime.emitGameAction("doctor-protect", "other");
+    latestAcknowledgement()(new Error("operation has timed out"));
+    expect(await timedOut).toBe(false);
+    expect(store.getState().gameActionPending).toBe(false);
+    const disconnected = runtime.emitGameAction("doctor-protect", "other");
+    const lateAcknowledgement = latestAcknowledgement();
+    mocks.socket.connected = false;
+    mocks.handlers.get("disconnect")!();
+    expect(await disconnected).toBe(false);
+    lateAcknowledgement(null, { accepted: true });
+    expect(store.getState().acceptedGameAction).toBeNull();
+    mocks.socket.emit.mockClear();
+    expect(await runtime.emitGameAction("doctor-protect", "other")).toBe(false);
+    expect(mocks.socket.emit).not.toHaveBeenCalled();
+  });
 });
 
 async function setup() {

@@ -8,6 +8,7 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
 import { useGameStore } from "../store/game-store";
+import { useMotionActive, useMotionEnabled } from "../motion/MotionPreferences";
 
 interface PhaseCountdownProps {
   phaseEndsAt: number | null;
@@ -19,6 +20,8 @@ interface PhaseCountdownProps {
 function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "default" }: PhaseCountdownProps) {
   const { width } = useWindowDimensions();
   const isPaused = useGameStore((s) => Boolean(s.gameState?.isPaused));
+  const isActive = useMotionActive();
+  const motionEnabled = useMotionEnabled();
   const [now, setNow] = useState(Date.now());
   const [maxSeconds, setMaxSeconds] = useState<number | null>(null);
   const pulse = useState(new Animated.Value(0))[0];
@@ -30,13 +33,15 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
   }, [phaseEndsAt]);
 
   useEffect(() => {
-    if (!phaseEndsAt || isPaused) return;
+    if (!phaseEndsAt || isPaused || !isActive) return;
     setNow(Date.now());
     const timer = setInterval(() => {
-      setNow(Date.now());
+      const timestamp = Date.now();
+      setNow(timestamp);
+      if (timestamp >= phaseEndsAt) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [isPaused, phaseEndsAt]);
+  }, [isPaused, phaseEndsAt, isActive]);
 
   const seconds = useMemo(() => {
     if (!phaseEndsAt) return null;
@@ -48,21 +53,22 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
     return Math.max(0, Math.min(1, seconds / maxSeconds));
   }, [maxSeconds, seconds]);
 
+  const warningActive = seconds !== null && seconds > 0 && seconds <= 10 && !isPaused && motionEnabled;
   useEffect(() => {
-    if (seconds === null || seconds > 10 || seconds === 0) {
+    if (!warningActive) {
       pulse.stopAnimation();
       pulse.setValue(0);
       return;
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 420, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 420, useNativeDriver: true })
+        Animated.timing(pulse, { toValue: 1, duration: 420, useNativeDriver: true, isInteraction: false }),
+        Animated.timing(pulse, { toValue: 0, duration: 420, useNativeDriver: true, isInteraction: false })
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [pulse, seconds]);
+  }, [pulse, warningActive]);
 
   const isEndless = seconds === null;
   const tone = isEndless || seconds >= 45 ? "green" : seconds >= 20 ? "yellow" : seconds > 10 ? "orange" : "red";
@@ -92,7 +98,7 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
       : isEndless
         ? "Manuel geçiş"
         : seconds === 0
-          ? "Kilitlendi"
+          ? "Sonuç bekleniyor"
           : isPhaseSummary
             ? tone === "red"
               ? "Son saniyeler"
@@ -104,12 +110,12 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
               : tone === "orange"
                 ? "Süre azalıyor, hızlı karar ver."
               : "Süre dolmadan seçimini tamamla.";
-  const pulseStyle = usePulseProgress({ active: isTopBar, warning: tone === "red", paused: isPaused });
+  const pulseStyle = usePulseProgress({ active: isTopBar && seconds !== 0, warning: tone === "red", paused: isPaused });
 
   if (isTopBar) {
     return (
       <LiquidGlassSurface
-        animatedSheen={!isPaused}
+        animatedSheen={!isPaused && seconds !== 0}
         depth="floating"
         glow={!isPaused}
         intensity={tone === "red" ? "strong" : "medium"}
@@ -122,10 +128,10 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
         <Reanimated.View pointerEvents="none" style={[styles.topBarPulse, { borderColor: accent, backgroundColor: accent }, pulseStyle]} />
         <Animated.View style={[styles.topBarDot, { backgroundColor: accent, shadowColor: accent, shadowOpacity: warningGlow }]} />
         <Text style={[styles.topBarValue, compactTopBar ? styles.topBarValueCompact : null, isPaused ? styles.topBarValuePaused : null]} numberOfLines={1}>
-          {isEndless ? "∞" : seconds}
+          {isPaused ? "Ⅱ" : isEndless ? "∞" : seconds}
         </Text>
         <Text style={[styles.topBarUnit, compactTopBar ? styles.topBarUnitCompact : null, isPaused ? styles.topBarUnitPaused : null]} numberOfLines={1}>
-          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SN"}
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "BİTTİ" : "SN"}
         </Text>
       </LiquidGlassSurface>
     );
@@ -136,10 +142,10 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
       <View style={styles.roleBadge}>
         <Ionicons name="hourglass-outline" size={17} color={colors.secondary} />
         <Text style={styles.roleBadgeValue} numberOfLines={1}>
-          {isEndless ? "∞" : seconds}
+          {isPaused ? "Ⅱ" : isEndless ? "∞" : seconds}
         </Text>
         <Text style={styles.roleBadgeUnit} numberOfLines={1}>
-          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SN"}
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "BİTTİ" : "SN"}
         </Text>
       </View>
     );
@@ -171,7 +177,7 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
             isPhaseSummary ? styles.valuePhaseSummary : null
           ]}
         >
-          {isEndless ? "∞" : seconds}
+          {isPaused ? "Ⅱ" : isEndless ? "∞" : seconds}
         </Text>
         <Text
           style={[
@@ -181,7 +187,7 @@ function PhaseCountdownBase({ phaseEndsAt, mode = "dramatic", presentation = "de
             isPhaseSummary ? styles.unitPhaseSummary : null
           ]}
         >
-          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "KİLİTLİ" : "SANİYE"}
+          {isPaused ? "DURDU" : isEndless ? "SÜRESİZ" : seconds === 0 ? "BİTTİ" : "SANİYE"}
         </Text>
       </Animated.View>
       <View style={[effectiveMode === "compact" ? styles.compactCopy : null, isRoleFooter ? styles.compactCopyRoleFooter : null, isPhaseSummary ? styles.compactCopyPhaseSummary : null]}>

@@ -1,12 +1,14 @@
 import { useEffect } from "react";
-import { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import { useMotionEnabled } from "./MotionPreferences";
 import { motionTokens } from "./motion-tokens";
 
 export function useAmbientShine(enabled = true) {
+  const motionEnabled = useMotionEnabled();
   const shine = useSharedValue(0);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !motionEnabled) {
       shine.value = 0;
       return;
     }
@@ -15,7 +17,8 @@ export function useAmbientShine(enabled = true) {
       -1,
       true
     );
-  }, [enabled, shine]);
+    return () => cancelAnimation(shine);
+  }, [enabled, motionEnabled, shine]);
 
   return useAnimatedStyle(() => ({
     opacity: enabled ? 0.1 + shine.value * 0.16 : 0,

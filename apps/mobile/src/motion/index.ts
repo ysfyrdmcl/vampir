@@ -1,4 +1,5 @@
 export { MotionHealthBadge } from "./MotionHealthBadge";
+export { MotionActivityProvider, MotionPreferencesProvider, useAppActive, useMotionActive, useMotionEnabled } from "./MotionPreferences";
 export { ReanimatedPressable } from "./ReanimatedPressable";
 export { motionTokens } from "./motion-tokens";
 export { useAmbientShine } from "./useAmbientShine";

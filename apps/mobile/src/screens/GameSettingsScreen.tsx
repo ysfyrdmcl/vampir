@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -47,9 +47,9 @@ export function GameSettingsScreen({ navigation }: Props) {
       suppressTransientBotSpeech
       opaqueBackground
     >
-      <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.root} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Oyun Ayarları</Text>
-        <Text style={styles.subtitle}>{canPauseControl ? "Host oyun akışını buradan yönetebilir." : "Bu fazda yalnızca güvenli çıkış kullanılabilir."}</Text>
+        <Text style={styles.subtitle}>{canPauseControl ? "Oyunu duraklat veya sıradaki faza geç." : "Oyun akışını oda sahibi yönetir."}</Text>
         {showPhaseAdvanceWarning ? (
           <View style={styles.inlineWarning}>
             <View style={styles.warningIcon}>
@@ -99,7 +99,7 @@ export function GameSettingsScreen({ navigation }: Props) {
           onPress={() => setLeaveConfirmOpen(true)}
           style={styles.leaveButton}
         />
-      </View>
+      </ScrollView>
       <ConfirmActionSheet
         visible={pauseConfirmOpen}
         title="Oyunu durdur?"
@@ -133,8 +133,9 @@ export function GameSettingsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
-    gap: 12,
+    flexGrow: 1,
+    paddingVertical: spacing.xl,
+    gap: 16,
     justifyContent: "center"
   },
   title: {
@@ -200,14 +201,13 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     alignSelf: "center",
-    minWidth: 188,
-    maxWidth: 236,
-    width: "64%"
+    maxWidth: 360,
+    width: "100%"
   },
   leaveButton: {
     alignSelf: "center",
-    minWidth: 176,
-    maxWidth: 220,
-    width: "58%"
+    marginTop: spacing.lg,
+    maxWidth: 360,
+    width: "100%"
   }
 });

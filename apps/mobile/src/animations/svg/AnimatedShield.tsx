@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { ShieldGlowSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -25,15 +27,21 @@ function AnimatedShieldBase({
   durationMs = svgMotion.shieldPulseMs,
   style
 }: AnimatedShieldProps) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = 1;
+      return;
+    }
     const animation = withSequence(
       withTiming(1, { duration: Math.round(durationMs * 0.5), easing: Easing.out(Easing.cubic) }),
       withTiming(0, { duration: Math.round(durationMs * 0.5), easing: Easing.in(Easing.quad) })
     );
     progress.value = pulse ? withRepeat(animation, -1, false) : animation;
-  }, [durationMs, progress, pulse]);
+    return () => cancelAnimation(progress);
+  }, [durationMs, motionEnabled, progress, pulse]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.value * 0.7,

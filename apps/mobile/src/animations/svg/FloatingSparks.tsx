@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -10,6 +11,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { GoldSparkSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -68,9 +70,14 @@ function Spark({
   opacity: number;
   index: number;
 }) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = 0.5;
+      return;
+    }
     const animation = withSequence(
       withTiming(1, { duration: svgMotion.sparkTwinkleMs, easing: Easing.out(Easing.cubic) }),
       withTiming(0, { duration: svgMotion.sparkTwinkleMs, easing: Easing.in(Easing.quad) })
@@ -79,7 +86,8 @@ function Spark({
       plan.delay,
       loop ? withRepeat(animation, -1, false) : animation
     );
-  }, [loop, plan.delay, progress]);
+    return () => cancelAnimation(progress);
+  }, [loop, motionEnabled, plan.delay, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.value * opacity,

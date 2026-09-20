@@ -4,9 +4,12 @@ import {
   buildRoleDeck,
   resolveRuleSettings,
   type ActionType,
+  type ActionSubmission,
   type BotIntelligence,
   type BotSpeechEvent,
   type GamePrivateResultPayload,
+  type GameActionAcknowledgement,
+  type GameStatePrivateDelta,
   type GameResultEvent,
   type RolePresetId,
   type RuleSettings
@@ -37,6 +40,7 @@ let joinAfterNextSocketConnect = false;
 export type JoinEmitIntent = "manual" | "bootstrap" | "resync";
 let lastJoinEmitIntent: JoinEmitIntent = "manual";
 let roomConfigEmitTimer: ReturnType<typeof setTimeout> | null = null;
+let cancelPendingGameAction: (() => void) | null = null;
 
 const SOCKET_ERROR_DEDUP_MS = 2800;
 let lastSocketErrorDedup: { code: string; at: number } | null = null;
@@ -74,6 +78,7 @@ function ensureConnected() {
 }
 
 function resyncRoomAfterReconnect(): void {
+  cancelPendingGameAction?.();
   const state = useGameStore.getState();
   if (!state.deviceId || !state.roomCode || !state.playerSessionToken) return;
   const me = state.roomState?.players.find((player) => player.playerId === state.playerId);
@@ -108,6 +113,7 @@ export function initSocketRuntime(): void {
   });
 
   socket.on("disconnect", () => {
+    cancelPendingGameAction?.();
     roomResyncPending = true;
     socket.sendBuffer = [];
     joinAfterNextSocketConnect = true;
@@ -152,6 +158,7 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.ROOM_STATE, (payload) => {
+    if (payload.status !== "InGame") cancelPendingGameAction?.();
     const prevAliveMap = lastKnownAlive;
     const newlyDead: string[] = [];
     for (const player of payload.players) {
@@ -200,6 +207,10 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.GAME_PHASE, (payload) => {
+    const previous = store.getState().gameState;
+    if (previous?.phase !== payload.phase || previous?.round !== payload.round || previous?.tieCountInRound !== payload.tieCountInRound) {
+      cancelPendingGameAction?.();
+    }
     if (payload.phase === "RoleReveal" && payload.round === 1) {
       if (lastPhase !== "RoleReveal") {
         useLogFeedStore.getState().clear();
@@ -219,7 +230,6 @@ export function initSocketRuntime(): void {
     store.getState().clearBotSpeech();
     store.getState().setErrorCode(null);
     store.getState().setGameState(payload);
-    store.getState().setSelectedTargetPlayerId(null);
     if (payload.phase !== "VampireVote") {
       store.getState().setVampireVotePreview(null);
     }
@@ -346,21 +356,20 @@ export function initSocketRuntime(): void {
 
   socket.on(
     SOCKET_EVENTS.GAME_PRIVATE_ROLE,
-    (payload: {
-      role?: "Vampire" | "Detective" | "Doctor" | "Villager" | "Hunter" | "Guard";
-      loverPartnerPlayerId?: string;
-      detectiveInspectedPlayerIds?: string[];
-      vampirePlayerIds?: string[];
-    }) => {
+    (payload: GameStatePrivateDelta) => {
     if (payload.role) {
       store.getState().setPrivateRole(payload.role);
       store.getState().setLoverPartnerPlayerId(payload.loverPartnerPlayerId ?? null);
       store.getState().setKnownVampirePlayerIds(payload.vampirePlayerIds ?? []);
       store.getState().setDetectiveInspectedPlayerIds(payload.detectiveInspectedPlayerIds ?? []);
+      store.getState().setDoctorLastProtection(payload.doctorLastProtection ?? null);
       logPersonalEvent("game.role.assigned", { role: payload.role });
     }
     if (payload.detectiveInspectedPlayerIds) {
       store.getState().setDetectiveInspectedPlayerIds(payload.detectiveInspectedPlayerIds);
+    }
+    if (payload.doctorLastProtection !== undefined) {
+      store.getState().setDoctorLastProtection(payload.doctorLastProtection);
     }
     if (payload.vampirePlayerIds) {
       store.getState().setKnownVampirePlayerIds(payload.vampirePlayerIds);
@@ -447,6 +456,7 @@ export function initSocketRuntime(): void {
   });
 
   socket.on(SOCKET_EVENTS.GAME_OVER, (payload: { winner: "Vampires" | "Villagers" }) => {
+    cancelPendingGameAction?.();
     clearPendingRoomConfigEmit();
     store.getState().setGameWinner(payload.winner);
     store.getState().setErrorCode(null);
@@ -458,6 +468,7 @@ export function initSocketRuntime(): void {
     const failedRestore = lastJoinEmitIntent !== "manual" &&
       ["SESSION_TOKEN_MISMATCH", "GAME_ALREADY_STARTED", "PLAYER_NOT_FOUND"].includes(payload.code);
     if (payload.code === "ROOM_NOT_FOUND" || failedRestore) {
+      cancelPendingGameAction?.();
       const intent = lastJoinEmitIntent;
       lastJoinEmitIntent = "manual";
       void clearRoomSession();
@@ -646,6 +657,7 @@ export async function emitJoinRoom(roomCode: string, nickname: string, intent: J
 }
 
 export function emitLeaveRoom(): void {
+  cancelPendingGameAction?.();
   const state = useGameStore.getState();
   if (!state.roomCode) return;
   resetSocketErrorDedup();
@@ -798,25 +810,65 @@ export function emitReadyToggle(isReady: boolean): void {
   logGameEvent("emit.room_ready_toggle", { roomCode: state.roomCode, isReady });
 }
 
-export function emitGameAction(actionType: ActionType, targetPlayerId?: string): void {
+export async function emitGameAction(actionType: ActionType, targetPlayerId?: string): Promise<boolean> {
   const state = useGameStore.getState();
-  if (!state.roomCode || !state.gameState) return;
-  if (state.gameState.isPaused) return;
-  if (!ensureRoomConnected()) return;
-  getSocket().emit(SOCKET_EVENTS.GAME_ACTION_SUBMIT, {
-    identity: identityPayload(),
+  if (!state.roomCode || !state.gameState || !state.deviceId || cancelPendingGameAction) return false;
+  if (state.gameState.isPaused) {
+    state.setErrorCode("GAME_PAUSED");
+    return false;
+  }
+  if (!ensureRoomConnected()) return false;
+  const tieCountInRound = state.gameState.tieCountInRound;
+  const submission: ActionSubmission = {
     roomCode: state.roomCode,
     actionType,
     targetPlayerId,
     phase: state.gameState.phase,
     round: state.gameState.round
-  });
+  };
+  state.setErrorCode(null);
+  state.setGameActionPending(true);
   logGameEvent("emit.game_action", {
     actionType,
     targetPlayerId: targetPlayerId ?? null,
     phase: state.gameState.phase,
     round: state.gameState.round
   });
+  const accepted = await new Promise<boolean>((resolve) => {
+    const finish = (success: boolean) => {
+      if (cancelPendingGameAction !== cancel) return;
+      cancelPendingGameAction = null;
+      useGameStore.getState().setGameActionPending(false);
+      resolve(success);
+    };
+    const cancel = () => finish(false);
+    cancelPendingGameAction = cancel;
+    getSocket().timeout(8000).emit(
+      SOCKET_EVENTS.GAME_ACTION_SUBMIT,
+      { identity: identityPayload(), ...submission, tieCountInRound },
+      (error: Error | null, response?: GameActionAcknowledgement) => {
+        if (cancelPendingGameAction !== cancel) return;
+        const current = useGameStore.getState();
+        const samePhase = current.roomCode === submission.roomCode &&
+          current.playerId === state.playerId &&
+          current.gameState?.phase === submission.phase &&
+          current.gameState?.round === submission.round &&
+          current.gameState?.tieCountInRound === tieCountInRound;
+        if (!samePhase) return finish(false);
+        if (error || !response) {
+          showToast("Sunucu onayı alınamadı. Seçimini tekrar gönderebilirsin.", "danger", 3500);
+          return finish(false);
+        }
+        if (!response.accepted) {
+          current.setErrorCode(response.code);
+          return finish(false);
+        }
+        current.setAcceptedGameAction(submission);
+        finish(true);
+      }
+    );
+  });
+  if (!accepted) return false;
   const targetName =
     targetPlayerId === "__NO_LYNCH__"
       ? "Kimseyi gönderme"
@@ -851,6 +903,8 @@ export function emitGameAction(actionType: ActionType, targetPlayerId?: string):
       round: state.gameState.round
     });
   }
+  showToast("Seçimin gönderildi. Faz bitene kadar değiştirebilirsin.", "gold", 2400);
+  return true;
 }
 
 export function emitAddBot(intelligence: BotIntelligence, count = 1): void {

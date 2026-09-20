@@ -17,7 +17,6 @@ import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
-import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Night">;
@@ -118,13 +117,13 @@ function phaseVisualAccent(phase: GamePhase): "none" | "candle" | "blood-candle"
 }
 
 function actionSummaryText(phase: GamePhase, canAct: boolean, meAlive: boolean): { label: string; value: string; icon: keyof typeof Ionicons.glyphMap } {
-  if (!meAlive) {
+  if (!meAlive && !canAct) {
     return { label: "Durum", value: "Elendin, bu fazı izliyorsun.", icon: "skull-outline" };
   }
   if (!canAct) {
     return { label: "Sıradaki karar", value: "Bu fazda aksiyon sende değil.", icon: "time-outline" };
   }
-  if (phase === "VampireVote") return { label: "Sıradaki karar", value: "Vampir hedefini seç ve kilitle.", icon: "moon-outline" };
+  if (phase === "VampireVote") return { label: "Sıradaki karar", value: "Vampir hedefini seç ve gönder.", icon: "moon-outline" };
   if (phase === "DetectiveInspect") return { label: "Sıradaki karar", value: "Bir oyuncuyu sorgula.", icon: "search-outline" };
   if (phase === "DoctorProtect") return { label: "Sıradaki karar", value: "Bu gece korunacak kişiyi seç.", icon: "medkit-outline" };
   if (phase === "HunterLastBreath") return { label: "Sıradaki karar", value: "Son nefes hedefini seç.", icon: "locate-outline" };
@@ -143,7 +142,6 @@ function initialsFromName(name: string): string {
 
 export function NightScreen(_: Props) {
   const { width, height } = useWindowDimensions();
-  const submittedActionKeyRef = useRef<string | null>(null);
   const bannerEntry = useRef(new Animated.Value(0)).current;
   const listEntry = useRef(new Animated.Value(0)).current;
   const actionEntry = useRef(new Animated.Value(0)).current;
@@ -159,6 +157,11 @@ export function NightScreen(_: Props) {
   const vampireVotePreview = useGameStore((s) => s.vampireVotePreview);
   const detectiveInspectedPlayerIds = useGameStore((s) => s.detectiveInspectedPlayerIds);
   const knownVampirePlayerIds = useGameStore((s) => s.knownVampirePlayerIds);
+  const roomRules = useGameStore((s) => s.roomRules);
+  const doctorLastProtection = useGameStore((s) => s.doctorLastProtection);
+  const gameActionPending = useGameStore((s) => s.gameActionPending);
+  const acceptedGameAction = useGameStore((s) => s.acceptedGameAction);
+  const connectionStatus = useGameStore((s) => s.connectionStatus);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Night"));
 
@@ -166,21 +169,13 @@ export function NightScreen(_: Props) {
   const round = gameState?.round ?? 0;
   const tieCount = gameState?.tieCountInRound ?? 0;
   const actionConfig = useMemo(() => (phase ? getActionConfig(phase) : null), [phase]);
-  const actionKey = actionConfig ? `${phase}:${round}:${actionConfig.actionType}` : null;
-  const alreadySubmittedThisPhase = actionKey !== null && submittedActionKeyRef.current === actionKey;
-
-  useEffect(() => {
-    if (!actionKey || submittedActionKeyRef.current !== actionKey) {
-      submittedActionKeyRef.current = null;
-    }
-  }, [actionKey]);
 
   useEffect(() => {
     bannerEntry.setValue(0);
     listEntry.setValue(0);
     actionEntry.setValue(0);
     const initialDelay = phase === "NightStart" ? 1250 : 0;
-    Animated.sequence([
+    const animation = Animated.sequence([
       Animated.delay(initialDelay),
       Animated.timing(bannerEntry, {
         toValue: 1,
@@ -202,7 +197,9 @@ export function NightScreen(_: Props) {
           })
         ])
       ])
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [actionEntry, bannerEntry, listEntry, phase, round]);
 
   const players = roomState?.players ?? [];
@@ -214,7 +211,7 @@ export function NightScreen(_: Props) {
     ? { label: "Sonuç", value: "Sonuç açıklanıyor.", icon: "hourglass-outline" as const }
     : actionSummaryText(phase ?? "NightStart", canAct, meAlive);
   const actionDetailText = canAct
-    ? "Hedefini seçip alttan kilitle."
+    ? "Hedefini gönder; faz bitene kadar değiştirebilirsin."
     : ownEliminationResultActive
       ? "Sonuç gösterildikten sonra izleyici durumuna geçeceksin."
     : meAlive
@@ -231,11 +228,17 @@ export function NightScreen(_: Props) {
           actionConfig?.actionType === "detective-inspect" &&
           role === "Detective" &&
           inspectedSet.has(player.playerId);
+        const selfProtectBlocked = actionConfig?.actionType === "doctor-protect" &&
+          player.playerId === playerId && !roomRules.allowDoctorSelfProtect;
+        const consecutiveProtectBlocked = actionConfig?.actionType === "doctor-protect" &&
+          !roomRules.allowDoctorConsecutiveProtectSameTarget &&
+          doctorLastProtection?.round === round - 1 && doctorLastProtection.targetPlayerId === player.playerId;
         const isSelectable =
           !!actionConfig &&
           canAct &&
           player.isAlive &&
           !alreadyInspectedByDetective &&
+          !selfProtectBlocked && !consecutiveProtectBlocked && !gameActionPending &&
           (actionConfig.actionType === "doctor-protect" ? true : player.playerId !== playerId) &&
           !(actionConfig.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId));
         const disabledReason = !player.isAlive
@@ -244,11 +247,15 @@ export function NightScreen(_: Props) {
             ? meAlive ? "Bu fazda aksiyon hakkın yok" : "Elendin"
             : alreadyInspectedByDetective
               ? "Daha önce sorgulandı"
-              : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
-                ? "Kendini seçemezsin"
-                : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
-                  ? "Vampir baska vampiri hedefleyemez"
-                  : null;
+              : selfProtectBlocked
+                ? "Kendini koruma kapalı"
+                : consecutiveProtectBlocked
+                  ? "Geçen gece korundu"
+                  : player.playerId === playerId && actionConfig?.actionType !== "doctor-protect"
+                    ? "Kendini seçemezsin"
+                    : actionConfig?.actionType === "vampire-target" && role === "Vampire" && vampireSet.has(player.playerId)
+                      ? "Vampir başka vampiri hedefleyemez"
+                      : null;
         return {
           id: player.playerId,
           label: player.nickname,
@@ -262,11 +269,17 @@ export function NightScreen(_: Props) {
           selectionAccent: actionConfig?.actionType === "vampire-target" ? "blood" : undefined
         };
       }),
-    [actionConfig, canAct, inspectedSet, meAlive, playerId, players, role, selectedTargetPlayerId, vampireSet]
+    [actionConfig, canAct, doctorLastProtection, gameActionPending, inspectedSet, meAlive, playerId, players, role, roomRules, round, selectedTargetPlayerId, vampireSet]
   );
   const selectedActionTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
-  const actionDisabledReason = alreadySubmittedThisPhase
-    ? "Bu fazdaki seçimin kilitlendi"
+  const actionDisabledReason = gameActionPending
+    ? "Sunucudan onay bekleniyor"
+    : gameState?.isPaused
+      ? "Oyun duraklatıldı"
+    : connectionStatus !== "connected"
+      ? "Bağlantı bekleniyor"
+    : acceptedGameAction?.targetPlayerId === selectedTargetPlayerId && selectedTargetPlayerId
+      ? "Seçimin gönderildi; hedefini değiştirebilirsin"
     : !selectedTargetPlayerId
       ? "Bir hedef seç"
       : !selectedActionTarget?.isSelectable
@@ -297,12 +310,10 @@ export function NightScreen(_: Props) {
   };
 
   const submitAction = () => {
-    if (!actionConfig || !selectedTargetPlayerId || !actionKey || alreadySubmittedThisPhase) {
+    if (!actionConfig || !selectedTargetPlayerId || actionDisabledReason) {
       return;
     }
-    emitGameAction(actionConfig.actionType, selectedTargetPlayerId);
-    submittedActionKeyRef.current = actionKey;
-    showToast("Kararın kilitlendi", "gold", 1500);
+    void emitGameAction(actionConfig.actionType, selectedTargetPlayerId);
   };
 
   if (!phase) {
@@ -352,7 +363,10 @@ export function NightScreen(_: Props) {
             />
 
             {role === "Doctor" && phase === "DoctorProtect" ? (
-              <Text style={styles.tip}>Kural: Kendini art arda iki gece koruyamazsın.</Text>
+              <Text style={styles.tip}>
+                {roomRules.allowDoctorSelfProtect ? "Kendini koruyabilirsin." : "Kendini koruma bu odada kapalı."}{" "}
+                {roomRules.allowDoctorConsecutiveProtectSameTarget ? "Aynı kişiyi art arda koruyabilirsin." : "Aynı kişiyi art arda iki gece koruyamazsın."}
+              </Text>
             ) : null}
 
             {role === "Vampire" && phase === "VampireVote" && vampireVotePreview ? (
@@ -384,8 +398,8 @@ export function NightScreen(_: Props) {
             {actionDisabledReason ? <Text style={styles.actionDisabledHint} numberOfLines={1}>{actionDisabledReason}</Text> : null}
           </View>
           <PrimaryButton
-            label="Seçimi Kilitle"
-            iconName="lock-closed-outline"
+            label={gameActionPending ? "Gönderiliyor…" : acceptedGameAction ? "Seçimi Güncelle" : "Seçimi Gönder"}
+            iconName={gameActionPending ? "hourglass-outline" : "checkmark-done-outline"}
             variant={actionConfig.actionType === "doctor-protect" || actionConfig.actionType === "detective-inspect" ? "gold" : "blood"}
             onPress={submitAction}
             disabled={Boolean(actionDisabledReason)}

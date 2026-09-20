@@ -1,4 +1,6 @@
-import { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useEffect } from "react";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useMotionEnabled } from "./MotionPreferences";
 import { motionTokens } from "./motion-tokens";
 
 interface UseGlassPressStateOptions {
@@ -6,7 +8,13 @@ interface UseGlassPressStateOptions {
 }
 
 export function useGlassPressState({ disabled = false }: UseGlassPressStateOptions = {}) {
+  const motionEnabled = useMotionEnabled();
   const pressed = useSharedValue(0);
+
+  useEffect(() => {
+    pressed.value = 0;
+    return () => cancelAnimation(pressed);
+  }, [disabled, motionEnabled, pressed]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: disabled ? 0.62 : 1,
@@ -22,13 +30,12 @@ export function useGlassPressState({ disabled = false }: UseGlassPressStateOptio
   }));
 
   const pressIn = () => {
-    if (disabled) return;
+    if (disabled || !motionEnabled) return;
     pressed.value = withSpring(1, motionTokens.spring.glass);
   };
 
   const pressOut = () => {
-    if (disabled) return;
-    pressed.value = withSpring(0, motionTokens.spring.glass);
+    pressed.value = disabled || !motionEnabled ? 0 : withSpring(0, motionTokens.spring.glass);
   };
 
   return {

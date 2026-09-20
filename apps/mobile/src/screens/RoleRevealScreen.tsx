@@ -69,8 +69,8 @@ export function RoleRevealScreen(_: Props) {
     ]
   };
 
-  const titleSize = compact ? 38 : 46;
-  const titleLineHeight = compact ? 43 : 52;
+  const titleSize = compact ? 28 : 32;
+  const titleLineHeight = compact ? 34 : 38;
 
   return (
     <ScreenShell
@@ -102,8 +102,6 @@ export function RoleRevealScreen(_: Props) {
                 <Text
                   style={[styles.title, { fontSize: titleSize, lineHeight: titleLineHeight }]}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.72}
                 >
                   ROLÜN
                 </Text>
@@ -191,12 +189,12 @@ const styles = StyleSheet.create({
     gap: 8
   },
   headerSideLeft: {
-    width: 96,
+    width: 80,
     alignItems: "flex-start",
     justifyContent: "center"
   },
   headerSideRight: {
-    width: 96,
+    width: 48,
     alignItems: "flex-end",
     justifyContent: "center"
   },
@@ -220,6 +218,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(233,195,73,0.24)"
   },
   title: {
+    flexShrink: 1,
     color: "#f4dfad",
     fontFamily: typography.serif,
     textAlign: "center",
@@ -236,7 +235,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(233,195,73,0.42)",
     borderRadius: 999,
-    paddingHorizontal: 17,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: "rgba(5,6,8,0.72)",
     alignSelf: "center",
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansBold,
     fontSize: 11,
     lineHeight: 14,
-    letterSpacing: 2,
+    letterSpacing: 1,
     textTransform: "uppercase"
   },
   moonBadge: {

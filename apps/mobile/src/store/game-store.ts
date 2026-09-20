@@ -1,4 +1,5 @@
 import type {
+  ActionSubmission,
   BotIntelligence,
   BotSpeechEvent,
   DayVoteSummary,
@@ -6,6 +7,7 @@ import type {
   GameMode,
   GamePhase,
   GameStateSnapshotPublic,
+  GameStatePrivateDelta,
   Role,
   RolePresetId,
   RoomStateSnapshot,
@@ -77,8 +79,11 @@ interface GameStoreState {
   roomRules: RuleSettings;
   /** Dedektif: bu oyunda sorgulanmış hedefler (sunucu `game:private-role` ile senkron). */
   detectiveInspectedPlayerIds: string[];
+  doctorLastProtection: GameStatePrivateDelta["doctorLastProtection"];
   knownVampirePlayerIds: string[];
   selectedTargetPlayerId: string | null;
+  gameActionPending: boolean;
+  acceptedGameAction: ActionSubmission | null;
   botIntelligence: BotIntelligence;
   /** Tek aktif popup + bekleyen söylentiler (BOT-F; server üretir). */
   activeBotSpeech: BotSpeechEvent | null;
@@ -103,6 +108,7 @@ interface GameStoreState {
   setGameState: (gameState: GameStateSnapshotPublic) => void;
   setPrivateRole: (role: Role | null) => void;
   setDetectiveInspectedPlayerIds: (ids: string[]) => void;
+  setDoctorLastProtection: (protection: GameStatePrivateDelta["doctorLastProtection"]) => void;
   setKnownVampirePlayerIds: (ids: string[]) => void;
   setLoverPartnerPlayerId: (playerId: string | null) => void;
   setPrivateResultText: (value: string | null, kind?: PrivateResultKind | null) => void;
@@ -114,6 +120,8 @@ interface GameStoreState {
   showPrivateInfoNudge: (nudge: { key: string; title: string; body: string }) => void;
   dismissPrivateInfoNudge: () => void;
   setSelectedTargetPlayerId: (playerId: string | null) => void;
+  setGameActionPending: (pending: boolean) => void;
+  setAcceptedGameAction: (action: ActionSubmission | null) => void;
   setPhaseDurations: (updater: Partial<PhaseDurationSettings>) => void;
   setGameMode: (mode: GameMode) => void;
   setRolePreset: (preset: RolePresetId) => void;
@@ -172,8 +180,11 @@ export const useGameStore = create<GameStoreState>((set) => ({
     loversEnabled: false
   },
   detectiveInspectedPlayerIds: [],
+  doctorLastProtection: null,
   knownVampirePlayerIds: [],
   selectedTargetPlayerId: null,
+  gameActionPending: false,
+  acceptedGameAction: null,
   botIntelligence: "balanced",
   activeBotSpeech: null,
   botSpeechQueue: [],
@@ -273,8 +284,11 @@ export const useGameStore = create<GameStoreState>((set) => ({
               seenPrivateInfoNudgeKeys: [],
               vampireVotePreview: null,
               detectiveInspectedPlayerIds: [],
+              doctorLastProtection: null,
               knownVampirePlayerIds: [],
               selectedTargetPlayerId: null,
+              gameActionPending: false,
+              acceptedGameAction: null,
               errorCode: null
             }
           : {})
@@ -294,15 +308,18 @@ export const useGameStore = create<GameStoreState>((set) => ({
     set((state) => {
       const prev = state.gameState;
       const newRound = prev != null && gameState.round > prev.round;
+      const phaseChanged = prev?.phase !== gameState.phase || prev?.round !== gameState.round || prev?.tieCountInRound !== gameState.tieCountInRound;
       const clearDetectiveBanner = newRound && state.privateResultKind === "detective";
       return {
         gameState,
         lastDayVoteSummary: gameState.lastDayVoteSummary ?? null,
+        ...(phaseChanged ? { selectedTargetPlayerId: null, acceptedGameAction: null } : {}),
         ...(clearDetectiveBanner ? { privateResultText: null, privateResultKind: null } : {})
       };
     }),
   setPrivateRole: (role) => set({ privateRole: role }),
   setDetectiveInspectedPlayerIds: (detectiveInspectedPlayerIds) => set({ detectiveInspectedPlayerIds }),
+  setDoctorLastProtection: (doctorLastProtection) => set({ doctorLastProtection }),
   setKnownVampirePlayerIds: (knownVampirePlayerIds) => set({ knownVampirePlayerIds }),
   setLoverPartnerPlayerId: (loverPartnerPlayerId) => set({ loverPartnerPlayerId }),
   setPrivateResultText: (privateResultText, kind) =>
@@ -338,6 +355,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
   dismissPrivateInfoNudge: () => set({ privateInfoNudge: null }),
   setSelectedTargetPlayerId: (selectedTargetPlayerId) => set({ selectedTargetPlayerId }),
+  setGameActionPending: (gameActionPending) => set({ gameActionPending }),
+  setAcceptedGameAction: (acceptedGameAction) => set({ acceptedGameAction }),
   setPhaseDurations: (updater) =>
     set((state) => ({
       phaseDurations: {
@@ -368,6 +387,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       privateResultKind: null,
       vampireVotePreview: null,
       detectiveInspectedPlayerIds: [],
+      doctorLastProtection: null,
       knownVampirePlayerIds: [],
       lastDayVoteSummary: null,
       gameWinner: null,
@@ -376,6 +396,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
       privateInfoNudge: null,
       seenPrivateInfoNudgeKeys: [],
       selectedTargetPlayerId: null,
+      gameActionPending: false,
+      acceptedGameAction: null,
       activeBotSpeech: null,
       botSpeechQueue: [],
       botSpeechHistory: [],

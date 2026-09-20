@@ -123,5 +123,6 @@ function resultEvent(
 }
 
 function playerName(players: PlayerState[], playerId: string): string {
+  if (playerId === "__NO_LYNCH__") return "Kimseyi gönderme";
   return players.find((p) => p.playerId === playerId)?.nickname ?? playerId;
 }

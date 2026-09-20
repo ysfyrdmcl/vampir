@@ -20,6 +20,7 @@ import Reanimated, {
   withTiming
 } from "react-native-reanimated";
 import { RoleAuraAnimation } from "../animations";
+import { useMotionEnabled } from "../motion";
 import {
   ROLE_REVEAL_ART,
   ROLE_REVEAL_FRAME
@@ -62,6 +63,7 @@ export function RoleRevealCard({
   maxColumnWidth = 400,
   maxCardHeight
 }: RoleRevealCardProps) {
+  const motionEnabled = useMotionEnabled();
   const [revealed, setRevealed] = useState(false);
   const closeContentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { width, height } = useWindowDimensions();
@@ -132,16 +134,20 @@ export function RoleRevealCard({
   }, []);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      idle.setValue(0);
+      return;
+    }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(idle, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(idle, { toValue: -1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(idle, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+        Animated.timing(idle, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true, isInteraction: false }),
+        Animated.timing(idle, { toValue: -1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true, isInteraction: false }),
+        Animated.timing(idle, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true, isInteraction: false })
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [idle]);
+  }, [idle, motionEnabled]);
 
   const reveal = useCallback(() => {
     if (revealed) return;
@@ -457,7 +463,7 @@ export function RoleRevealCard({
                   >
                     <LinearGradient
                       colors={["rgba(255,232,160,0.16)", "rgba(15,11,6,0.82)", "rgba(233,195,73,0.12)"]}
-                      style={StyleSheet.absoluteFillObject}
+                      style={StyleSheet.absoluteFill}
                     />
                     <View style={styles.closedSealInner}>
                       <Ionicons name="moon" size={52} color={colors.secondary} />
@@ -492,7 +498,7 @@ export function RoleRevealCard({
                           "rgba(0,0,0,0.46)"
                         ]}
                         locations={[0, 0.48, 1]}
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                       />
                       <LinearGradient
                         pointerEvents="none"
@@ -502,7 +508,7 @@ export function RoleRevealCard({
                           "rgba(0,0,0,0.62)"
                         ]}
                         locations={[0, 0.55, 1]}
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                       />
                     </Animated.View>
                   ) : (
@@ -625,7 +631,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.015 }]
   },
   particleLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 3
   },
   spark: {
@@ -655,14 +661,14 @@ const styles = StyleSheet.create({
     zIndex: 1
   },
   edgeGlow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 23,
     borderWidth: 1,
     opacity: 0.75,
     zIndex: 2
   },
   face: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 23,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
@@ -808,18 +814,18 @@ const styles = StyleSheet.create({
     opacity: 0.55
   },
   artParallaxWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(4,4,5,0.92)"
   },
   artImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: "100%",
     height: "100%",
     borderRadius: 17,
     transform: [{ scale: 1.02 }]
   },
   fallbackArt: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(10,10,12,0.76)"

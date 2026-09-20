@@ -1,14 +1,14 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import type { PropsWithChildren } from "react";
-import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import type { ComponentProps, PropsWithChildren } from "react";
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSpecularSweep } from "../motion";
 import { glassTokens, type GlassDepth, type GlassIntensity, type GlassTone, type GlassVariant } from "./glass-tokens";
 
 interface LiquidGlassSurfaceProps extends PropsWithChildren {
   animatedSheen?: boolean;
-  animatedHighlightStyle?: StyleProp<ViewStyle>;
+  animatedHighlightStyle?: ComponentProps<typeof Animated.View>["style"];
   ambientSweep?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
   danger?: boolean;
@@ -72,7 +72,9 @@ export function LiquidGlassSurface({
         style
       ]}
     >
-      <BlurView intensity={Math.max(12, token.blur + intensityToken.blurBoost)} tint={token.tint} style={StyleSheet.absoluteFill} />
+      {Platform.OS === "ios" && (variant === "hero" || variant === "nav" || depth === "floating") ? (
+        <BlurView pointerEvents="none" intensity={Math.max(12, token.blur + intensityToken.blurBoost)} tint={token.tint} style={StyleSheet.absoluteFill} />
+      ) : null}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: fill }]} />
       <LinearGradient
         colors={[sheen, toneToken.tint, danger ? "rgba(255,70,80,0.09)" : "rgba(255,70,80,0.035)", "rgba(0,0,0,0.20)"]}
@@ -130,12 +132,12 @@ const styles = StyleSheet.create({
     opacity: 0.2
   },
   selectedRing: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     opacity: 0.55
   },
   innerStroke: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: StyleSheet.hairlineWidth,
     opacity: 0.35
   }

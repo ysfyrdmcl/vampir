@@ -63,12 +63,12 @@ export function CreateRoomScreen({ navigation }: Props) {
         <View style={styles.introIcon}>
           <Ionicons name="git-network-outline" size={26} color={colors.secondary} />
         </View>
-        <Text style={styles.kicker}>HOST ODASI</Text>
-        <Text style={styles.title}>Karanlık meclisi sen başlat.</Text>
-        <Text style={styles.introText}>Oyuncu adını seç, oda kodunu oluştur ve masadaki herkesi aynı lobiye al.</Text>
+        <Text style={styles.kicker}>YENİ ODA</Text>
+        <Text style={styles.title}>Masayı sen kur.</Text>
+        <Text style={styles.introText}>Adını yaz. Oda kodunu arkadaşlarınla paylaş.</Text>
         <View style={styles.introChips}>
           <LiquidGlassChip iconName="people-outline" label="4+ oyuncu" style={styles.introChip} textStyle={styles.introChipText} />
-          <LiquidGlassChip iconName="shield-outline" label="Host kontrolü" style={styles.introChip} textStyle={styles.introChipText} />
+          <LiquidGlassChip iconName="shield-outline" label="Oda sahibi sensin" style={styles.introChip} textStyle={styles.introChipText} />
         </View>
       </LiquidGlassSurface>
 
@@ -77,10 +77,13 @@ export function CreateRoomScreen({ navigation }: Props) {
         <TextInput
           style={[styles.input, isInputFocused ? styles.inputFocused : null]}
           placeholder="Lakabını yaz"
-          placeholderTextColor="rgba(55,47,35,0.58)"
+          placeholderTextColor={colors.textDim}
           value={nickname}
           onChangeText={setNickname}
           autoCapitalize="words"
+          accessibilityLabel="Oyuncu adın"
+          returnKeyType="go"
+          onSubmitEditing={createRoom}
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
         />
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 }
   },
   fieldLabel: {
-    color: colors.parchmentText,
+    color: colors.text,
     fontFamily: typography.sansBold,
     fontSize: uiStandard.text.sectionLabelSize,
     letterSpacing: uiStandard.text.labelSpacing
@@ -190,16 +193,16 @@ const styles = StyleSheet.create({
     height: uiStandard.screen.compactInputHeight + 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(87,69,0,0.42)",
-    backgroundColor: "rgba(255,248,232,0.48)",
-    color: colors.parchmentText,
+    borderColor: "rgba(234,194,86,0.30)",
+    backgroundColor: "rgba(8,8,12,0.56)",
+    color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 18,
     paddingHorizontal: 13
   },
   inputFocused: {
-    borderColor: "rgba(127,90,9,0.82)",
-    backgroundColor: "rgba(255,251,240,0.78)"
+    borderColor: colors.secondary,
+    backgroundColor: "rgba(20,17,16,0.90)"
   },
   codeCard: {
     marginTop: 2,

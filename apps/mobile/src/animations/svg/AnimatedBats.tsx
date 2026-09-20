@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle, useWindowDimensions } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { BatSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -62,12 +64,18 @@ function Bat({
   durationMs: number;
   loop: boolean;
 }) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = 0;
+      return;
+    }
     const animation = withTiming(1, { duration: durationMs, easing: Easing.inOut(Easing.cubic) });
     progress.value = withDelay(flight.delay, loop ? withRepeat(animation, -1, false) : animation);
-  }, [durationMs, flight.delay, loop, progress]);
+    return () => cancelAnimation(progress);
+  }, [durationMs, flight.delay, loop, motionEnabled, progress]);
 
   const fromX = typeof flight.from === "number" && flight.from < 0 ? flight.from : width * flight.from;
   const toX = width * flight.to;

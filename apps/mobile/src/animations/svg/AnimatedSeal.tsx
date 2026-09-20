@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { ExecutionSealSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -24,9 +26,14 @@ function AnimatedSealBase({
   delayMs = 0,
   style
 }: AnimatedSealProps) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = 1;
+      return;
+    }
     progress.value = withDelay(
       delayMs,
       withSequence(
@@ -34,7 +41,8 @@ function AnimatedSealBase({
         withTiming(1, { duration: Math.round(svgMotion.sealStampMs * 0.52), easing: Easing.out(Easing.back(1.6)) })
       )
     );
-  }, [delayMs, progress]);
+    return () => cancelAnimation(progress);
+  }, [delayMs, motionEnabled, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: 0.35 + progress.value * 0.65,

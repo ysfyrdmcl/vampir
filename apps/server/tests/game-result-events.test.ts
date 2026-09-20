@@ -120,7 +120,7 @@ describe("buildGameResultEvents", () => {
     const before = captureResultEventBaseline(r);
     r.game.phase = "DayDiscussion";
     r.game.tieCountInRound = 1;
-    r.game.revoteCandidateIds = ["b", "c"];
+    r.game.revoteCandidateIds = ["b", "__NO_LYNCH__"];
     r.game.lastDayVoteSummary = {
       entries: [{ playerId: "b", votes: 2 }, { playerId: "c", votes: 2 }],
       executedPlayerId: null,
@@ -128,8 +128,10 @@ describe("buildGameResultEvents", () => {
       revoteCandidateIds: ["b", "c"]
     };
     const events = buildGameResultEvents(before, r);
-    expect(events[0]).toMatchObject({ kind: "tie", playerIds: ["b", "c"] });
+    expect(events[0]).toMatchObject({ kind: "tie", playerIds: ["b", "__NO_LYNCH__"] });
     expect(events[0].message).toContain("Yeni oylama sadece bu adaylar arasında");
+    expect(events[0].message).toContain("Kimseyi gönderme");
+    expect(events[0].message).not.toContain("__NO_LYNCH__");
   });
 
   it("announces mayor selection before guard protection when guard phase follows", () => {

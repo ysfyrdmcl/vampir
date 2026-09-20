@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
@@ -15,7 +15,6 @@ import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
-import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Vote">;
@@ -39,6 +38,9 @@ export function VoteScreen(_: Props) {
   const privateResultText = useGameStore((s) => s.privateResultText);
   const privateResultKind = useGameStore((s) => s.privateResultKind);
   const activeResultEvent = useGameStore((s) => s.activeResultEvent);
+  const gameActionPending = useGameStore((s) => s.gameActionPending);
+  const acceptedGameAction = useGameStore((s) => s.acceptedGameAction);
+  const connectionStatus = useGameStore((s) => s.connectionStatus);
   const errorCode = useGameStore((s) => s.errorCode);
   const errorText = toFriendlyErrorText(socketErrorVisibleOnRoute(errorCode, "Vote"));
   const noLynchEnabled = roomState?.rules?.noLynchEnabled ?? false;
@@ -50,6 +52,9 @@ export function VoteScreen(_: Props) {
   const meAlive = mePlayer?.isAlive ?? true;
   const ownEliminationResultActive = Boolean(playerId && activeResultEvent?.playerIds?.includes(playerId));
   const [confirmOpen, setConfirmOpen] = useState(false);
+  useEffect(() => {
+    setConfirmOpen(false);
+  }, [gameState?.phase, gameState?.round, gameState?.tieCountInRound, gameState?.isPaused]);
   const selectedName = useMemo(
     () =>
       selectedTargetPlayerId === "__NO_LYNCH__"
@@ -69,8 +74,8 @@ export function VoteScreen(_: Props) {
     : !meAlive
     ? "Oy kullanamazsın, sonucu izleyebilirsin."
     : isMayorElection
-      ? "Başkan tercihini süre bitmeden kilitle."
-      : "Oyunu süre bitmeden kilitle.";
+      ? "Başkan tercihini gönder; faz bitene kadar değiştirebilirsin."
+      : "Oyunu gönder; faz bitene kadar değiştirebilirsin.";
   const tiedTopCandidates = gameState?.lastDayVoteSummary?.revoteCandidateIds ?? gameState?.lastDayVoteSummary?.tiedTopCandidates ?? [];
   const hasTieRevote = !isMayorElection && gameState?.tieCountInRound ? tiedTopCandidates.length > 1 : false;
   const tieCandidateSet = useMemo(() => new Set(tiedTopCandidates), [tiedTopCandidates]);
@@ -88,14 +93,14 @@ export function VoteScreen(_: Props) {
   );
   const targetItems: TargetSelectionItem[] = useMemo(
     () => [
-      ...(!isMayorElection && noLynchEnabled && !hasTieRevote
+      ...(!isMayorElection && noLynchEnabled && (!hasTieRevote || tieCandidateSet.has("__NO_LYNCH__"))
         ? [
             {
               id: "__NO_LYNCH__",
               label: "Kimseyi Gönderme",
               initials: "Ø",
               isAlive: true,
-              isSelectable: meAlive,
+              isSelectable: meAlive && !gameActionPending,
               isSelected: selectedTargetPlayerId === "__NO_LYNCH__",
               statusText: "Boş oy",
               disabledReason: meAlive ? null : "Elendin"
@@ -107,18 +112,28 @@ export function VoteScreen(_: Props) {
         label: player.nickname,
         initials: initialsFromName(player.nickname),
         isAlive: player.isAlive,
-        isSelectable: meAlive,
+        isSelectable: meAlive && !gameActionPending,
         isSelected: selectedTargetPlayerId === player.playerId,
         statusText: player.playerId === mayorPlayerId ? "Başkan adayı" : "Aday",
         disabledReason: meAlive ? null : "Elendin",
         badgeText: player.playerId === mayorPlayerId ? "BASKAN" : null
       }))
     ],
-    [candidates, hasTieRevote, isMayorElection, mayorPlayerId, meAlive, noLynchEnabled, selectedTargetPlayerId]
+    [candidates, gameActionPending, hasTieRevote, isMayorElection, mayorPlayerId, meAlive, noLynchEnabled, selectedTargetPlayerId, tieCandidateSet]
   );
   const selectedVoteTarget = targetItems.find((item) => item.id === selectedTargetPlayerId);
   const voteDisabledReason = !meAlive
     ? "Elendin, artık aksiyon alamazsın"
+    : gameActionPending
+      ? "Sunucudan onay bekleniyor"
+    : gameState?.isPaused
+      ? "Oyun duraklatıldı"
+    : connectionStatus !== "connected"
+      ? "Bağlantı bekleniyor"
+    : !targetItems.length
+      ? "Bu tur uygun aday yok; sonucu bekle"
+    : acceptedGameAction?.targetPlayerId === selectedTargetPlayerId && selectedTargetPlayerId
+      ? "Oy tercihin gönderildi; hedefini değiştirebilirsin"
     : !selectedTargetPlayerId
       ? "Bir hedef seç"
       : !selectedVoteTarget?.isSelectable
@@ -130,11 +145,9 @@ export function VoteScreen(_: Props) {
   const actionButtonWidth = scaledSize(150, layout.controlScale, 132, 150);
 
   const submitVote = () => {
-    if (!meAlive) return;
-    if (!selectedTargetPlayerId) return;
-    emitGameAction(isMayorElection ? "mayor-vote" : "day-vote", selectedTargetPlayerId);
+    if (voteDisabledReason || !selectedTargetPlayerId) return;
+    void emitGameAction(isMayorElection ? "mayor-vote" : "day-vote", selectedTargetPlayerId);
     setConfirmOpen(false);
-    showToast("Kararın kilitlendi", "gold", 1500);
   };
 
   return (
@@ -162,7 +175,7 @@ export function VoteScreen(_: Props) {
         {hasTieRevote ? (
           <View style={styles.tieCard}>
             <Text style={styles.tieTitle}>Beraberlikte Son Tur</Text>
-            <Text style={styles.tieText}>Yalnizca beraberlikte kalan adaylar icin tekrar oy kullaniliyor.</Text>
+            <Text style={styles.tieText}>Yalnızca berabere kalan adaylar için tekrar oy kullanılıyor.</Text>
           </View>
         ) : null}
         {mayorPlayerId && !isMayorElection ? (
@@ -199,8 +212,8 @@ export function VoteScreen(_: Props) {
           {voteDisabledReason ? <Text style={styles.actionDisabledHint} numberOfLines={1}>{voteDisabledReason}</Text> : null}
         </View>
         <PrimaryButton
-          label={isMayorElection ? "Başkanı Onayla" : "Oylamayı Tamamla"}
-          iconName="checkmark-done-outline"
+          label={gameActionPending ? "Gönderiliyor…" : acceptedGameAction ? "Oyumu Güncelle" : "Oyumu Gönder"}
+          iconName={gameActionPending ? "hourglass-outline" : "checkmark-done-outline"}
           onPress={() => setConfirmOpen(true)}
           disabled={Boolean(voteDisabledReason)}
           compact
@@ -209,13 +222,13 @@ export function VoteScreen(_: Props) {
       </View>
       <ConfirmActionSheet
         visible={confirmOpen}
-        title={isMayorElection ? "Başkan oyu kilitlensin mi?" : "Oyunu kilitlemek istiyor musun?"}
+        title={isMayorElection ? "Başkan tercihin gönderilsin mi?" : "Oy tercihin gönderilsin mi?"}
         description={
           selectedName
-            ? `${selectedName} icin verdigin oy onaylanacak. Faz bitene kadar degistiremeyebilirsin.`
-            : "Secim onaylanacak."
+            ? `${selectedName} için oy vereceksin. Faz bitene kadar tercihini değiştirebilirsin.`
+            : "Seçimin onaylanacak."
         }
-        confirmLabel={isMayorElection ? "Başkan Oyunu Kilitle" : "Oyumu Kilitle"}
+        confirmLabel={acceptedGameAction ? "Oyumu Güncelle" : "Oyumu Gönder"}
         variant={hasTieRevote ? "danger" : "blood"}
         onConfirm={submitVote}
         onCancel={() => setConfirmOpen(false)}

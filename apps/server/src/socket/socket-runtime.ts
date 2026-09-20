@@ -2,6 +2,7 @@ import {
   SOCKET_EVENTS,
   type ActionSubmission,
   type BotSpeechEvent,
+  type GameActionAcknowledgement,
   type GamePrivateResultPayload,
   type GameStatePrivateDelta,
   type RoomStateSnapshot
@@ -122,7 +123,10 @@ export class SocketRuntime {
     socket.on(SOCKET_EVENTS.GAME_PAUSE, (payload) => this.safe(socket, () => this.onPause(socket, payload), payload));
     socket.on(SOCKET_EVENTS.GAME_RESUME, (payload) => this.safe(socket, () => this.onResume(socket, payload), payload));
     socket.on(SOCKET_EVENTS.GAME_PHASE_ADVANCE, (payload) => this.safe(socket, () => this.onPhaseAdvance(socket, payload), payload));
-    socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload) => this.safe(socket, () => this.onAction(socket, payload), payload));
+    socket.on(SOCKET_EVENTS.GAME_ACTION_SUBMIT, (payload, acknowledge?: (result: GameActionAcknowledgement) => void) => {
+      const result = this.safe(socket, () => this.onAction(socket, payload), payload);
+      if (typeof acknowledge === "function") acknowledge(result);
+    });
     socket.on(SOCKET_EVENTS.ROOM_BOT_ADD, (payload) => this.safe(socket, () => this.onBotAdd(payload), payload));
     socket.on(SOCKET_EVENTS.ROOM_BOT_REMOVE, (payload) => this.safe(socket, () => this.onBotRemove(payload), payload));
     socket.on(SOCKET_EVENTS.ROOM_BOT_SET_INTELLIGENCE, (payload) => this.safe(socket, () => this.onBotSetIntelligence(payload), payload));
@@ -228,6 +232,11 @@ export class SocketRuntime {
       if (player.role === "Detective") {
         rolePayload.detectiveInspectedPlayerIds = room.game.detectiveInspectedTargets[player.playerId] ?? [];
       }
+      if (player.role === "Doctor") {
+        rolePayload.doctorLastProtection = player.lastProtectedTargetPlayerId && player.lastProtectedRound !== null
+          ? { targetPlayerId: player.lastProtectedTargetPlayerId, round: player.lastProtectedRound }
+          : null;
+      }
       if (player.role === "Vampire") {
         rolePayload.vampirePlayerIds = room.players.filter((p) => p.role === "Vampire").map((p) => p.playerId);
       }
@@ -321,6 +330,9 @@ export class SocketRuntime {
   private onAction(socket: Socket, raw: unknown): void {
     const payload = actionSubmitSchema.parse(raw);
     const room = this.roomManager.requireRoom(payload.roomCode);
+    if (payload.actionType === "day-vote" && payload.tieCountInRound !== room.game.tieCountInRound) {
+      throw new Error("STALE_ACTION");
+    }
     const actor = room.players.find((p) => p.deviceId === payload.identity.deviceId);
     if (!actor) {
       throw new Error("PLAYER_NOT_FOUND");
@@ -488,6 +500,16 @@ export class SocketRuntime {
 
   private broadcastGamePhase(room: RoomState): void {
     this.io.to(room.roomCode).emit(SOCKET_EVENTS.GAME_PHASE, this.gameEngine.getPublicSnapshot(room));
+    if (room.status === "InGame" && room.game.phase === "DoctorProtect") {
+      for (const player of room.players) {
+        if (player.role !== "Doctor" || !player.socketId) continue;
+        this.io.to(player.socketId).emit(SOCKET_EVENTS.GAME_PRIVATE_ROLE, {
+          doctorLastProtection: player.lastProtectedTargetPlayerId && player.lastProtectedRound !== null
+            ? { targetPlayerId: player.lastProtectedTargetPlayerId, round: player.lastProtectedRound }
+            : null
+        } satisfies GameStatePrivateDelta);
+      }
+    }
     if (room.status === "InGame" && room.game.phase === "VampireVote") {
       this.emitVampireVotePreviewToVampires(room);
     }
@@ -538,7 +560,7 @@ export class SocketRuntime {
     }
   }
 
-  private safe(socket: Socket, run: () => void, rawIdentity?: unknown): void {
+  private safe(socket: Socket, run: () => void, rawIdentity?: unknown): GameActionAcknowledgement {
     try {
       this.assertWithinRateLimit(socket);
       if (rawIdentity !== undefined) {
@@ -546,6 +568,7 @@ export class SocketRuntime {
         this.roomManager.assertSession(roomCode, identity.deviceId, identity.playerSessionToken, socket.id);
       }
       run();
+      return { accepted: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
       const isExpected = error instanceof Error && /^[A-Z_]+$/.test(error.message);
@@ -554,7 +577,9 @@ export class SocketRuntime {
       } else {
         this.log.error({ socketId: socket.id, err: error }, "socket handler crashed");
       }
-      socket.emit(SOCKET_EVENTS.ERROR_EVENT, { code: isExpected ? message : "INVALID_REQUEST" });
+      const code = isExpected ? message : "INVALID_REQUEST";
+      socket.emit(SOCKET_EVENTS.ERROR_EVENT, { code });
+      return { accepted: false, code };
     }
   }
 

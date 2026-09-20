@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolate,
   useAnimatedStyle,
@@ -11,6 +12,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { CandleFlameSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
 interface AnimatedCandleFlameProps {
@@ -26,10 +28,20 @@ function AnimatedCandleFlameBase({
   delayMs = 0,
   style
 }: AnimatedCandleFlameProps) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(mode === "flicker" ? 0.6 : 1);
   const wind = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = mode === "flicker" ? 0.78 : 0;
+      wind.value = 0.5;
+      return;
+    }
+    const stop = () => {
+      cancelAnimation(progress);
+      cancelAnimation(wind);
+    };
     if (mode === "flicker") {
       progress.value = withDelay(
         delayMs,
@@ -55,14 +67,15 @@ function AnimatedCandleFlameBase({
           true
         )
       );
-      return;
+      return stop;
     }
     progress.value = withDelay(
       delayMs,
       withTiming(0, { duration: 680, easing: Easing.out(Easing.cubic) })
     );
     wind.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.quad) });
-  }, [delayMs, mode, progress, wind]);
+    return stop;
+  }, [delayMs, mode, motionEnabled, progress, wind]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: mode === "extinguish" ? progress.value : interpolate(progress.value, [0.68, 1], [0.78, 1]),

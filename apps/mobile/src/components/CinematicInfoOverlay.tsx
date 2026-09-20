@@ -163,7 +163,7 @@ export const CinematicMinorRibbon = memo(CinematicMinorRibbonBase);
 
 const styles = StyleSheet.create({
   majorRoot: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000"
   },
   visualLayer: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   plaqueWrap: {
     width: "100%",

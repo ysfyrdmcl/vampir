@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useIsFocused } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RoomPlayerView } from "@vampir-koylu/shared";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +41,7 @@ type LogSection = { key: string; title: string; meta: string; data: LogFeedEntry
 const EMPTY_PLAYERS: RoomPlayerView[] = [];
 
 export function GameLogScreen({ route }: Props) {
+  const isFocused = useIsFocused();
   const entries = useLogFeedStore((s) => s.entries);
   const markAllRead = useLogFeedStore((s) => s.markAllRead);
   const role = useGameStore((s) => s.privateRole);
@@ -54,6 +56,10 @@ export function GameLogScreen({ route }: Props) {
   const [personalView, setPersonalView] = useState<PersonalView>("logs");
   const [generalFilter, setGeneralFilter] = useState<GeneralFilter>("all");
   const [playerNotes, setPlayerNotes] = useState<PlayerNotesById>({});
+  const playerNotesRef = useRef<PlayerNotesById>({});
+  const notesRoomRef = useRef<string | null>(null);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
   const [expandedNotePlayerId, setExpandedNotePlayerId] = useState<string | null>(null);
   const [entryToast, setEntryToast] = useState<string | null>(null);
   const toastY = useRef(new Animated.Value(-20)).current;
@@ -102,25 +108,40 @@ export function GameLogScreen({ route }: Props) {
 
   useEffect(() => {
     let mounted = true;
-    if (!roomCode) {
-      setPlayerNotes({});
-      return;
-    }
+    notesRoomRef.current = roomCode;
+    playerNotesRef.current = {};
+    setPlayerNotes({});
+    setNotesLoaded(false);
+    setNotesError(null);
+    if (!roomCode) return;
     void loadPlayerNotes(roomCode).then((notes) => {
-      if (mounted) setPlayerNotes(notes);
+      if (!mounted) return;
+      playerNotesRef.current = notes;
+      setPlayerNotes(notes);
+      setNotesLoaded(true);
+    }).catch(() => {
+      if (!mounted) return;
+      setNotesError("Notlar yüklenemedi. Yeni notlarını tekrar kaydetmeyi deneyebilirsin.");
+      setNotesLoaded(true);
     });
     return () => {
       mounted = false;
+      notesRoomRef.current = null;
     };
   }, [roomCode]);
 
   useEffect(() => {
-    markAllRead();
-  }, [entries.length, markAllRead]);
+    if (isFocused) markAllRead();
+  }, [entries, isFocused, markAllRead]);
 
   useEffect(() => {
     const top = entries[entries.length - 1];
     const currentKey = top ? `${top.ts}:${top.event}` : null;
+    if (!isFocused) {
+      previousTopEntryRef.current = currentKey;
+      setEntryToast(null);
+      return;
+    }
     if (!currentKey) return;
     if (!previousTopEntryRef.current) {
       previousTopEntryRef.current = currentKey;
@@ -129,7 +150,7 @@ export function GameLogScreen({ route }: Props) {
     if (previousTopEntryRef.current === currentKey) return;
     previousTopEntryRef.current = currentKey;
     setEntryToast(`Yeni günlük kaydı: ${eventHeadline(top.event, top.payload)}`);
-    Animated.sequence([
+    const animation = Animated.sequence([
       Animated.parallel([
         Animated.timing(toastOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
         Animated.timing(toastY, { toValue: 0, duration: 180, useNativeDriver: true })
@@ -139,21 +160,30 @@ export function GameLogScreen({ route }: Props) {
         Animated.timing(toastOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
         Animated.timing(toastY, { toValue: -20, duration: 220, useNativeDriver: true })
       ])
-    ]).start(() => setEntryToast(null));
-  }, [entries, toastOpacity, toastY]);
+    ]);
+    animation.start(({ finished }) => {
+      if (finished) setEntryToast(null);
+    });
+    return () => animation.stop();
+  }, [entries, isFocused, toastOpacity, toastY]);
 
   const updatePlayerNote = (playerId: string, patch: { tag?: PlayerNoteTag; note?: string }) => {
-    if (!roomCode) return;
-    const current = getPlayerNote(playerNotes, playerId);
+    if (!roomCode || !notesLoaded) return;
+    const current = getPlayerNote(playerNotesRef.current, playerId);
     const nextNote = {
       tag: patch.tag ?? current.tag,
       note: patch.note ?? current.note
     };
-    setPlayerNotes((currentNotes) => ({
-      ...currentNotes,
+    playerNotesRef.current = {
+      ...playerNotesRef.current,
       [playerId]: nextNote
-    }));
-    void savePlayerNote(roomCode, playerId, nextNote).then(setPlayerNotes);
+    };
+    setPlayerNotes(playerNotesRef.current);
+    void savePlayerNote(roomCode, playerId, nextNote).then(() => {
+      if (notesRoomRef.current === roomCode) setNotesError(null);
+    }).catch(() => {
+      if (notesRoomRef.current === roomCode) setNotesError("Not kaydedilemedi. Yazın bu ekranda korunuyor; yeniden düzenleyerek kaydetmeyi deneyebilirsin.");
+    });
   };
 
   return (
@@ -264,7 +294,7 @@ export function GameLogScreen({ route }: Props) {
               <View>
                 <Text style={styles.notesTitle}>Not Defteri</Text>
                 <Text style={styles.notesSubtitle}>
-                  {hasAnyPlayerNote ? "Oyuncu bazlı yerel notların." : "Henüz not eklenmedi."}
+                  {notesError ?? (!notesLoaded ? "Notların yükleniyor…" : hasAnyPlayerNote ? "Oyuncu bazlı yerel notların." : "Henüz not eklenmedi.")}
                 </Text>
               </View>
               <Text style={styles.notesCount}>{notePlayers.length} kişi</Text>
@@ -288,6 +318,7 @@ export function GameLogScreen({ route }: Props) {
                         key={tag.value}
                         label={tag.label}
                         selected={note.tag === tag.value}
+                        disabled={!notesLoaded}
                         onPress={() => updatePlayerNote(player.playerId, { tag: tag.value })}
                         style={styles.noteTag}
                         textStyle={styles.noteTagText}
@@ -300,6 +331,7 @@ export function GameLogScreen({ route }: Props) {
                       placeholder="Kişisel not..."
                       placeholderTextColor={colors.textDim}
                       value={note.note}
+                      editable={notesLoaded}
                       onChangeText={(value) => updatePlayerNote(player.playerId, { note: value })}
                       multiline
                     />

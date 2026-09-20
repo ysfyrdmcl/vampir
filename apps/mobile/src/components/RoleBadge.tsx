@@ -10,7 +10,7 @@ interface RoleBadgeProps {
 }
 
 function rolePalette(role: Role | null | undefined) {
-  if (role === "Vampire") return { border: "rgba(181,38,25,0.45)", bg: "rgba(63,16,16,0.56)", text: colors.primaryBright };
+  if (role === "Vampire") return { border: "rgba(181,38,25,0.45)", bg: "rgba(63,16,16,0.56)", text: colors.danger };
   if (role === "Detective") return { border: "rgba(233,195,73,0.5)", bg: "rgba(59,48,18,0.56)", text: colors.secondary };
   if (role === "Doctor") return { border: "rgba(67,184,148,0.5)", bg: "rgba(21,56,48,0.56)", text: "#73d8bc" };
   if (role === "Guard") return { border: "rgba(120,168,255,0.5)", bg: "rgba(20,39,68,0.56)", text: "#8cb7ff" };

@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { VoteScaleSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
 interface AnimatedVoteScaleProps {
@@ -24,10 +26,16 @@ function AnimatedVoteScaleBase({
   delayMs = 0,
   style
 }: AnimatedVoteScaleProps) {
+  const motionEnabled = useMotionEnabled();
   const opacity = useSharedValue(0);
   const rotation = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      opacity.value = 1;
+      rotation.value = 0;
+      return;
+    }
     opacity.value = withDelay(delayMs, withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) }));
     if (wobble) {
       rotation.value = withDelay(
@@ -39,8 +47,14 @@ function AnimatedVoteScaleBase({
           withTiming(0, { duration: 150 })
         )
       );
+    } else {
+      rotation.value = 0;
     }
-  }, [delayMs, opacity, rotation, wobble]);
+    return () => {
+      cancelAnimation(opacity);
+      cancelAnimation(rotation);
+    };
+  }, [delayMs, motionEnabled, opacity, rotation, wobble]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: 0.35 + opacity.value * 0.65,

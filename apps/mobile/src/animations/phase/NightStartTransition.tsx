@@ -40,7 +40,7 @@ export const NightStartTransition = memo(NightStartTransitionBase);
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   mist: {
     position: "absolute",

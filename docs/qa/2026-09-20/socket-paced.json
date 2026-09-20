@@ -1,0 +1,80 @@
+[
+  {
+    "kind": "doctor-illegal-self",
+    "reply": {
+      "error": {
+        "code": "SELF_PROTECT_BLOCKED"
+      }
+    }
+  },
+  {
+    "kind": "doctor-corrected-target",
+    "reply": {
+      "accepted": true
+    }
+  },
+  {
+    "kind": "change-confirmed-vote",
+    "first": {
+      "accepted": true
+    },
+    "second": {
+      "accepted": true
+    }
+  },
+  {
+    "kind": "paused-action",
+    "reply": {
+      "error": {
+        "code": "GAME_PAUSED"
+      }
+    }
+  },
+  {
+    "kind": "host-transfer",
+    "transferred": true
+  },
+  {
+    "kind": "reconnect",
+    "samePlayer": true,
+    "restoredRole": "Vampire",
+    "phase": "DayVote"
+  },
+  {
+    "kind": "bot-match",
+    "intelligence": "random",
+    "status": "GameOver",
+    "winner": "Vampires",
+    "round": 4,
+    "steps": 45,
+    "roles": [
+      "Vampire",
+      "Villager",
+      "Guard",
+      "Villager",
+      "Hunter",
+      "Doctor",
+      "Detective",
+      "Vampire",
+      "Villager"
+    ],
+    "phases": [
+      "RoleReveal",
+      "NightStart",
+      "VampireVote",
+      "DetectiveInspect",
+      "DoctorProtect",
+      "NightResolve",
+      "DayStart",
+      "MayorElection",
+      "GuardProtect",
+      "DayDiscussion",
+      "DayVote",
+      "WinCheck",
+      "ExecutionResolve"
+    ],
+    "errors": [],
+    "speechCount": 0,
+    "speechSample": []
+  }
+]

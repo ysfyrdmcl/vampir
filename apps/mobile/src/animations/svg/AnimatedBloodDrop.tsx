@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolate,
   useAnimatedStyle,
@@ -11,6 +12,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { BloodDropSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -33,9 +35,14 @@ function AnimatedBloodDropBase({
   y = 0,
   style
 }: AnimatedBloodDropProps) {
+  const motionEnabled = useMotionEnabled();
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = 0;
+      return;
+    }
     const animation = withSequence(
       withTiming(1, { duration: Math.round(durationMs * 0.72), easing: Easing.in(Easing.cubic) }),
       withTiming(0, { duration: Math.round(durationMs * 0.28), easing: Easing.out(Easing.quad) })
@@ -44,7 +51,8 @@ function AnimatedBloodDropBase({
       delayMs,
       loop ? withRepeat(animation, -1, false) : animation
     );
-  }, [delayMs, durationMs, loop, progress]);
+    return () => cancelAnimation(progress);
+  }, [delayMs, durationMs, loop, motionEnabled, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.14, 0.78, 1], [0, 0.74, 0.68, 0]),

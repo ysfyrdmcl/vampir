@@ -17,7 +17,7 @@ export const NoDeathTransition = memo(NoDeathTransitionBase);
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   },

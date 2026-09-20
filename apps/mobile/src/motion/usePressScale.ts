@@ -1,4 +1,6 @@
-import { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useEffect } from "react";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useMotionEnabled } from "./MotionPreferences";
 import { motionTokens } from "./motion-tokens";
 
 interface UsePressScaleOptions {
@@ -12,20 +14,25 @@ export function usePressScale({
   pressedScale = motionTokens.scale.press,
   restingScale = 1
 }: UsePressScaleOptions = {}) {
+  const motionEnabled = useMotionEnabled();
   const scale = useSharedValue(restingScale);
+
+  useEffect(() => {
+    scale.value = restingScale;
+    return () => cancelAnimation(scale);
+  }, [disabled, motionEnabled, restingScale, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }]
   }));
 
   const pressIn = () => {
-    if (disabled) return;
+    if (disabled || !motionEnabled) return;
     scale.value = withSpring(pressedScale, motionTokens.spring.press);
   };
 
   const pressOut = () => {
-    if (disabled) return;
-    scale.value = withSpring(restingScale, motionTokens.spring.settle);
+    scale.value = disabled || !motionEnabled ? restingScale : withSpring(restingScale, motionTokens.spring.settle);
   };
 
   return {

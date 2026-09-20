@@ -6,13 +6,14 @@ import { Newsreader_600SemiBold } from "@expo-google-fonts/newsreader/600SemiBol
 import { Newsreader_700Bold } from "@expo-google-fonts/newsreader/700Bold";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BootSplash } from "../components/BootSplash";
 import { PhaseTransitionOverlay } from "../components/PhaseTransitionOverlay";
 import { PrivateInfoNudge } from "../components/PrivateInfoNudge";
 import { logGameEvent } from "../logging/game-logger";
+import { MotionPreferencesProvider } from "../motion/MotionPreferences";
 import { connectSocket, emitJoinRoom, initSocketRuntime, resumeSocket } from "../socket/runtime";
 import { loadDeviceId, loadLastRoomCode, loadNickname, loadSessionToken, saveDeviceId } from "../storage/session-storage";
 import { getRouteForCurrentPhase, useGameStore } from "../store/game-store";
@@ -30,6 +31,10 @@ function configureStableTextScale() {
 configureStableTextScale();
 
 export default function App() {
+  return <MotionPreferencesProvider><AppContent /></MotionPreferencesProvider>;
+}
+
+function AppContent() {
   const roomStatus = useGameStore((s) => s.roomState?.status ?? null);
   const phase = useGameStore((s) => s.gameState?.phase ?? null);
   const gameWinner = useGameStore((s) => s.gameWinner);
@@ -37,6 +42,10 @@ export default function App() {
   const [bootstrapDone, setBootstrapDone] = useState(false);
 
   const [navigationReady, setNavigationReady] = useState(false);
+  const [currentRouteName, setCurrentRouteName] = useState<string>();
+  const updateCurrentRoute = useCallback(() => {
+    setCurrentRouteName(navigationRef.getCurrentRoute()?.name);
+  }, []);
   const [fontsLoaded, fontError] = useFonts({
     Newsreader_400Regular,
     Newsreader_600SemiBold,
@@ -54,13 +63,13 @@ export default function App() {
 
     const bootstrap = async () => {
       try {
-        const currentDeviceId = (await loadDeviceId()) ?? createDeviceId();
-        await saveDeviceId(currentDeviceId);
+        const [storedDeviceId, token, roomCode, savedNickname] = await Promise.all([
+          loadDeviceId(), loadSessionToken(), loadLastRoomCode(), loadNickname()
+        ]);
+        const currentDeviceId = storedDeviceId ?? createDeviceId();
+        if (!storedDeviceId) await saveDeviceId(currentDeviceId);
+        if (!isMounted) return;
         useGameStore.getState().setDeviceId(currentDeviceId);
-
-        const token = await loadSessionToken();
-        const roomCode = await loadLastRoomCode();
-        const savedNickname = await loadNickname();
 
         useGameStore.getState().restoreSession({
           playerSessionToken: token,
@@ -83,7 +92,6 @@ export default function App() {
         useGameStore.getState().setErrorCode("BOOTSTRAP_FAILED");
         logGameEvent("app.bootstrap.error");
       } finally {
-        await new Promise((resolve) => setTimeout(resolve, 2050));
         if (isMounted) {
           setBootstrapDone(true);
         }
@@ -139,7 +147,7 @@ export default function App() {
       }
     }, delayMs);
     return () => clearTimeout(timer);
-  }, [hasActiveResultEvent, targetRoute, navigationReady]);
+  }, [hasActiveResultEvent, targetRoute, navigationReady, currentRouteName]);
 
   if ((!fontsLoaded && !fontError) || !bootstrapDone) {
     return (
@@ -151,9 +159,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
       <View style={styles.appRoot}>
-        <RootNavigator onReady={() => setNavigationReady(true)} />
+        <RootNavigator onReady={() => { setNavigationReady(true); updateCurrentRoute(); }} onStateChange={updateCurrentRoute} />
         <PhaseTransitionOverlay phase={phase} />
         <PrivateInfoNudge />
       </View>

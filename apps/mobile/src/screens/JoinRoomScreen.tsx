@@ -15,11 +15,15 @@ import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { socketErrorVisibleOnRoute, toFriendlyErrorText } from "../ui/error-text";
 import { uiStandard } from "../ui/ui-standard";
+import { showToast } from "../ui/toast-store";
+import { roomCodeFromClipboard } from "../utils/room-code";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JoinRoom">;
 
 export function JoinRoomScreen({ navigation }: Props) {
   const codeInputRef = useRef<TextInput>(null);
+  const nicknameInputRef = useRef<TextInput>(null);
+  const [codeFocused, setCodeFocused] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [nickname, setNickname] = useState("");
   const [lastRoomCode, setLastRoomCode] = useState<string | null>(null);
@@ -36,7 +40,6 @@ export function JoinRoomScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
-    codeInputRef.current?.focus();
     void Promise.all([loadLastRoomCode(), loadNickname()]).then(([storedRoomCode, storedNickname]) => {
       if (storedRoomCode) setLastRoomCode(storedRoomCode);
       if (storedNickname) setNickname(storedNickname);
@@ -48,9 +51,13 @@ export function JoinRoomScreen({ navigation }: Props) {
   };
 
   const pasteRoomCode = async () => {
-    const text = await Clipboard.getStringAsync();
-    const match = text.toUpperCase().match(/[A-Z0-9]{6}/);
-    if (match) normalizeRoomCode(match[0]);
+    try {
+      const code = roomCodeFromClipboard(await Clipboard.getStringAsync());
+      if (code) normalizeRoomCode(code);
+      else showToast("Panoda 6 haneli oda kodu bulunamadı.", "danger", 2500);
+    } catch {
+      showToast("Panoya erişilemedi. Oda kodunu elle yazabilirsin.", "danger", 2500);
+    }
   };
 
   const joinRoom = () => {
@@ -85,8 +92,8 @@ export function JoinRoomScreen({ navigation }: Props) {
           <Ionicons name="people-outline" size={26} color={colors.secondary} />
         </View>
         <Text style={styles.kicker}>DAVET ODASI</Text>
-        <Text style={styles.title}>Karanlık meclise davet edildin.</Text>
-        <Text style={styles.introText}>Oda kodunu gir, lakabını doğrula ve aynı masadaki oyuna katıl.</Text>
+        <Text style={styles.title}>Masada yerini al.</Text>
+        <Text style={styles.introText}>Arkadaşından aldığın 6 haneli kodu ve adını yaz.</Text>
         <View style={styles.introChips}>
           <LiquidGlassChip iconName="clipboard-outline" label="Yapıştır" onPress={pasteRoomCode} style={styles.introChip} textStyle={styles.introChipText} />
           {lastRoomCode ? (
@@ -100,15 +107,20 @@ export function JoinRoomScreen({ navigation }: Props) {
           <Text style={styles.label}>ODA KODU</Text>
         </View>
         <View style={styles.codeEntry}>
-          <Pressable style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
+          <Pressable accessible={false} style={styles.codeSlots} onPress={() => codeInputRef.current?.focus()}>
             {roomCodeSlots.map((char, index) => (
-              <View key={`${char}-${index}`} style={[styles.slot, safeRoomCode.length === index ? styles.slotActive : null, char !== "•" ? styles.slotFilled : null]}>
+              <View key={`${char}-${index}`} style={[styles.slot, codeFocused && Math.min(safeRoomCode.length, 5) === index ? styles.slotActive : null, char !== "•" ? styles.slotFilled : null]}>
                 <Text style={[styles.slotChar, char === "•" ? styles.slotPlaceholder : null]}>{char}</Text>
               </View>
             ))}
           </Pressable>
           <TextInput
             ref={codeInputRef}
+            accessibilityLabel="6 haneli oda kodu"
+            onFocus={() => setCodeFocused(true)}
+            onBlur={() => setCodeFocused(false)}
+            returnKeyType="next"
+            onSubmitEditing={() => nicknameInputRef.current?.focus()}
             style={styles.hiddenCodeInput}
             autoCapitalize="characters"
             autoCorrect={false}
@@ -123,6 +135,9 @@ export function JoinRoomScreen({ navigation }: Props) {
 
         <Text style={[styles.label, styles.playerLabel]}>OYUNCU ADIN</Text>
         <TextInput
+          ref={nicknameInputRef}
+          accessibilityLabel="Oyuncu adın"
+          autoCapitalize="words"
           style={styles.nameInput}
           placeholder="Lakabını yaz"
           placeholderTextColor="rgba(203,194,188,0.44)"
@@ -269,7 +284,7 @@ const styles = StyleSheet.create({
     color: "rgba(203,194,188,0.34)"
   },
   hiddenCodeInput: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0,
     color: "transparent"
   },

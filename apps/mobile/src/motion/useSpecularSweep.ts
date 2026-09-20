@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import { useMotionEnabled } from "./MotionPreferences";
 import { motionTokens } from "./motion-tokens";
 
 interface UseSpecularSweepOptions {
@@ -15,19 +16,21 @@ export function useSpecularSweep({
   loop = true,
   intensity = 0.18
 }: UseSpecularSweepOptions = {}) {
+  const motionEnabled = useMotionEnabled();
   const sweep = useSharedValue(0);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !motionEnabled) {
       sweep.value = 0;
       return;
     }
     const animation = withTiming(1, { duration: durationMs, easing: motionTokens.easing.standard });
     sweep.value = loop ? withRepeat(animation, -1, false) : animation;
-  }, [durationMs, enabled, intensity, loop, sweep]);
+    return () => cancelAnimation(sweep);
+  }, [durationMs, enabled, motionEnabled, loop, sweep]);
 
   return useAnimatedStyle(() => ({
-    opacity: enabled ? intensity * (0.35 + sweep.value * 0.65) : 0,
+    opacity: enabled && motionEnabled ? intensity * (0.35 + sweep.value * 0.65) : 0,
     transform: [{ translateX: -120 + sweep.value * 420 }, { rotate: "13deg" }]
   }));
 }

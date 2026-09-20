@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     fontSize: 9
   },
   vampireText: {
-    color: colors.primaryBright
+    color: colors.danger
   },
   villageText: {
     color: colors.secondary

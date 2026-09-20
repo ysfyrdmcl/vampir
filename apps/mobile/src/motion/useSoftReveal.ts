@@ -1,12 +1,14 @@
 import { useEffect } from "react";
-import { useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { useMotionEnabled } from "./MotionPreferences";
 import { motionTokens } from "./motion-tokens";
 
 export function useSoftReveal(enabled = true, delayMs = 0, durationMs = motionTokens.duration.screenEntranceMax) {
-  const progress = useSharedValue(enabled ? 0 : 1);
+  const motionEnabled = useMotionEnabled();
+  const progress = useSharedValue(enabled && motionEnabled ? 0 : 1);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !motionEnabled) {
       progress.value = 1;
       return;
     }
@@ -15,7 +17,8 @@ export function useSoftReveal(enabled = true, delayMs = 0, durationMs = motionTo
       delayMs,
       withTiming(1, { duration: durationMs, easing: motionTokens.easing.entrance })
     );
-  }, [delayMs, durationMs, enabled, progress]);
+    return () => cancelAnimation(progress);
+  }, [delayMs, durationMs, enabled, motionEnabled, progress]);
 
   return useAnimatedStyle(() => ({
     opacity: progress.value,

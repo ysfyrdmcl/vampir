@@ -25,7 +25,7 @@ export const ExecutionTransition = memo(ExecutionTransitionBase);
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   },

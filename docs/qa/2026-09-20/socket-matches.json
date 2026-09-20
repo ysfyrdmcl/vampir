@@ -1,0 +1,172 @@
+[
+  {
+    "kind": "tie-result",
+    "phase": "DayDiscussion",
+    "summary": {
+      "entries": [
+        {
+          "playerId": "__NO_LYNCH__",
+          "votes": 2
+        },
+        {
+          "playerId": "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe",
+          "votes": 2
+        }
+      ],
+      "executedPlayerId": null,
+      "tiedTopCandidates": [
+        "__NO_LYNCH__",
+        "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe"
+      ],
+      "revoteCandidateIds": [
+        "__NO_LYNCH__",
+        "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe"
+      ],
+      "noLynchWon": false
+    },
+    "event": {
+      "id": "result:LA4XPB:1:tie:__NO_LYNCH__-p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe:DayDiscussion",
+      "kind": "tie",
+      "title": "Oylar Eşitlendi",
+      "message": "Oylar eşitlendi: Kimseyi gönderme, QA Host. Yeni oylama sadece bu adaylar arasında yapılacak.",
+      "phase": "DayDiscussion",
+      "round": 1,
+      "playerIds": [
+        "__NO_LYNCH__",
+        "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe"
+      ]
+    }
+  },
+  {
+    "kind": "no-lynch-revote",
+    "reply": {
+      "accepted": true
+    }
+  },
+  {
+    "kind": "self-revote",
+    "reply": {
+      "error": {
+        "code": "INVALID_TARGET"
+      }
+    }
+  },
+  {
+    "kind": "manual-deadlock",
+    "reply": {
+      "phase": "ExecutionResolve",
+      "round": 1,
+      "phaseEndsAt": null,
+      "isPaused": false,
+      "tieCountInRound": 0,
+      "mayorPlayerId": null,
+      "guardProtectedPlayerId": null,
+      "lastDayVoteSummary": {
+        "entries": [
+          {
+            "playerId": "__NO_LYNCH__",
+            "votes": 1
+          },
+          {
+            "playerId": "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe",
+            "votes": 3
+          }
+        ],
+        "executedPlayerId": "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe",
+        "tiedTopCandidates": [],
+        "revoteCandidateIds": [
+          "__NO_LYNCH__",
+          "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe"
+        ],
+        "noLynchWon": false
+      },
+      "lastEliminationSummary": {
+        "source": "Day",
+        "playerId": "p_d4aa8b368e20d00365910945ab44c2db44a19122bce452fe",
+        "revealedRole": null
+      }
+    },
+    "phase": "ExecutionResolve",
+    "phaseEndsAt": null
+  },
+  {
+    "kind": "complete-match",
+    "expected": "Villagers",
+    "status": "GameOver",
+    "phase": "GameOver",
+    "winner": "Villagers",
+    "players": [
+      {
+        "name": "QA Host",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 1",
+        "role": "Villager",
+        "alive": true
+      },
+      {
+        "name": "QA Player 2",
+        "role": "Villager",
+        "alive": true
+      },
+      {
+        "name": "QA Player 3",
+        "role": "Vampire",
+        "alive": false
+      }
+    ]
+  },
+  {
+    "kind": "rematch-reset",
+    "status": "Lobby",
+    "allUnready": true,
+    "rolesCleared": true
+  },
+  {
+    "kind": "rematch-start",
+    "phase": "RoleReveal",
+    "round": 1
+  },
+  {
+    "kind": "complete-match",
+    "expected": "Vampires",
+    "status": "GameOver",
+    "phase": "GameOver",
+    "winner": "Vampires",
+    "players": [
+      {
+        "name": "QA Host",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 1",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 2",
+        "role": "Villager",
+        "alive": true
+      },
+      {
+        "name": "QA Player 3",
+        "role": "Vampire",
+        "alive": true
+      }
+    ]
+  },
+  {
+    "kind": "rematch-reset",
+    "status": "Lobby",
+    "allUnready": true,
+    "rolesCleared": true
+  },
+  {
+    "kind": "rematch-start",
+    "phase": "RoleReveal",
+    "round": 1
+  }
+]

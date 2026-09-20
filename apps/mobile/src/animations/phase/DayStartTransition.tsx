@@ -41,7 +41,7 @@ export const DayStartTransition = memo(DayStartTransitionBase);
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   village: {
     position: "absolute",

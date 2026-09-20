@@ -11,11 +11,17 @@ import Animated, {
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { motionTokens } from "./motion-tokens";
+import { useMotionEnabled } from "./MotionPreferences";
 
 export function MotionHealthBadge() {
+  const motionEnabled = useMotionEnabled();
   const pulse = useSharedValue(0);
 
   useEffect(() => {
+    if (!__DEV__ || !motionEnabled) {
+      pulse.value = 0;
+      return;
+    }
     pulse.value = withRepeat(
       withSequence(
         withTiming(1, { duration: motionTokens.duration.slow, easing: motionTokens.easing.entrance }),
@@ -28,7 +34,7 @@ export function MotionHealthBadge() {
     return () => {
       cancelAnimation(pulse);
     };
-  }, [pulse]);
+  }, [motionEnabled, pulse]);
 
   const dotStyle = useAnimatedStyle(() => ({
     opacity: 0.42 + pulse.value * 0.58,

@@ -81,7 +81,7 @@ export const ROLE_GUIDE: RoleGuideDefinition[] = [
     description:
       "Sorgu sonucu sadece sana görünür. Bu bilgiyi gündüz açıklamak, saklamak veya blöflemek tamamen senin kararındır.",
     winCondition: "Köy takımı kazanırsa sen de kazanırsın.",
-    specialRules: ["Sorgu sonucu özeldir.", "Aynı kişiyi tekrar sorgulama kuralı oda ayarına bağlıdır."],
+    specialRules: ["Sorgu sonucu yalnız sana görünür.", "Kendini ve daha önce sorguladığın oyuncuları seçemezsin."],
     strategyTip: "Bilgiyi tek seferde açmak yerine doğru zamanda paylaşmak oyunu çevirebilir.",
     inCurrentBuild: true
   },
@@ -112,7 +112,7 @@ export const ROLE_GUIDE: RoleGuideDefinition[] = [
     description:
       "Dramatik bir roldür. Doğru hedef vampiri düşürür; yanlış hedef köyün dengesini bozabilir.",
     winCondition: "Köy takımı kazanırsa sen de kazanırsın.",
-    specialRules: ["Önerilen kural: yalnızca gündüz infazında tetiklenir.", "Ölüm sonrası zincir çözümü uygulanmalıdır."],
+    specialRules: ["Yalnız gündüz infazında son nefes hakkı doğar.", "Son nefesinde hayattaki başka bir oyuncuyu seçersin."],
     strategyTip: "Rolünü erken açmak seni koruyabilir ama vampirler tarafından da işaretlenebilirsin.",
     inCurrentBuild: true
   },
@@ -126,7 +126,7 @@ export const ROLE_GUIDE: RoleGuideDefinition[] = [
     description:
       "Köyün seçtiği başkanın oyu daha etkilidir. Başkan köylü de olabilir vampir de olabilir; güvenmek oyuncuların kararıdır.",
     winCondition: "Başkanın ayrı bir kazanma koşulu yoktur, asıl takımına göre kazanır.",
-    specialRules: ["Önerilen: başkan ölürse ertesi gün yeni seçim.", "Başkan kendine oy verebilir."],
+    specialRules: ["Başkan ölürse sonraki gündüz yeniden seçim yapılır.", "Başkan seçiminde ve gündüz oylamasında kendine oy veremezsin."],
     strategyTip: "Yanlış başkan seçimi bütün oy akışını yanlış yöne çekebilir.",
     inCurrentBuild: true
   },
@@ -140,7 +140,7 @@ export const ROLE_GUIDE: RoleGuideDefinition[] = [
     description:
       "Korunan oyuncu o gün hedef alınamaz veya elenemez. Bu rol doğru kullanıldığında dedektif gibi kritik rolleri hayatta tutar.",
     winCondition: "Köy takımı kazanırsa sen de kazanırsın.",
-    specialRules: ["Önerilen: kendini koruyamaz.", "Önerilen: kullanım hakkı oyun başına 1 kez."],
+    specialRules: ["Kendini koruyamazsın.", "Koruma hakkın oyun boyunca bir kez kullanılabilir."],
     strategyTip: "En yüksek sesli oyuncuyu değil, oyunu taşıyan bilgiyi korumayı hedefle.",
     inCurrentBuild: true
   },
@@ -152,7 +152,7 @@ export const ROLE_GUIDE: RoleGuideDefinition[] = [
     minPlayers: 9,
     shortDescription: "Bağlı olduğun oyuncu ölürse sen de ölürsün.",
     description:
-      "Aşıklar bir mekaniktir. İlk sürümde önerilen kural sadece ölüm bağıdır; özel kazanma koşulu daha sonra açılmalıdır.",
+      "Gizli bağ, asıl rolünü değiştirmez. Bağlı oyuncu elenirse sen de elenirsin; ayrı bir aşıklar galibiyeti yoktur.",
     winCondition: "Varsayılan kurulumda kendi asıl takımına göre kazanırsın.",
     specialRules: ["Aşık bağı gizlidir.", "Bağlı oyuncu ölünce zincir ölüm tetiklenir."],
     strategyTip: "Bağını çok görünür savunursan ikiniz birden şüphe çekebilirsiniz.",

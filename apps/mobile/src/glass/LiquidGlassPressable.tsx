@@ -58,6 +58,8 @@ export function LiquidGlassPressable({
   return (
     <Pressable
       {...props}
+      accessibilityRole={props.accessibilityRole ?? "button"}
+      accessibilityState={{ ...props.accessibilityState, disabled }}
       disabled={disabled}
       onPressIn={(event) => {
         pressHandlers.onPressIn();

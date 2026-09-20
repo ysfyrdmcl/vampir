@@ -13,12 +13,18 @@ const defaultNote: PlayerNote = {
   tag: "none",
   note: ""
 };
+const pendingWrites = new Map<string, Promise<PlayerNotesById>>();
 
 function keyForRoom(roomCode: string): string {
   return `@vk/player-notes/${roomCode}`;
 }
 
 export async function loadPlayerNotes(roomCode: string): Promise<PlayerNotesById> {
+  await pendingWrites.get(roomCode)?.catch(() => undefined);
+  return readStoredPlayerNotes(roomCode);
+}
+
+async function readStoredPlayerNotes(roomCode: string): Promise<PlayerNotesById> {
   const raw = await AsyncStorage.getItem(keyForRoom(roomCode));
   if (!raw) return {};
   try {
@@ -30,16 +36,22 @@ export async function loadPlayerNotes(roomCode: string): Promise<PlayerNotesById
 }
 
 export async function savePlayerNote(roomCode: string, playerId: string, note: PlayerNote): Promise<PlayerNotesById> {
-  const existing = await loadPlayerNotes(roomCode);
-  const next = {
-    ...existing,
-    [playerId]: {
-      tag: note.tag,
-      note: note.note
-    }
+  const previous = pendingWrites.get(roomCode);
+  const existing = previous
+    ? previous.catch(() => readStoredPlayerNotes(roomCode))
+    : readStoredPlayerNotes(roomCode);
+  const noteSnapshot = { tag: note.tag, note: note.note };
+  const write = existing.then(async (notes) => {
+    const next = { ...notes, [playerId]: noteSnapshot };
+    await AsyncStorage.setItem(keyForRoom(roomCode), JSON.stringify(next));
+    return next;
+  });
+  pendingWrites.set(roomCode, write);
+  const clearPending = () => {
+    if (pendingWrites.get(roomCode) === write) pendingWrites.delete(roomCode);
   };
-  await AsyncStorage.setItem(keyForRoom(roomCode), JSON.stringify(next));
-  return next;
+  void write.then(clearPending, clearPending);
+  return write;
 }
 
 export function getPlayerNote(notes: PlayerNotesById, playerId: string): PlayerNote {

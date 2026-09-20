@@ -49,7 +49,7 @@ function TargetSelectionListBase({ items, onSelect, disabledSummary }: TargetSel
       </View>
       {deadItems.length ? (
         <View style={styles.graveyard}>
-          <Pressable style={styles.graveyardHeader} onPress={() => setGraveyardOpen((value) => !value)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Elenen oyuncular" accessibilityState={{ expanded: graveyardOpen }} style={styles.graveyardHeader} onPress={() => setGraveyardOpen((value) => !value)}>
             <Text style={styles.graveyardTitle}>{`🪦 Mezarlık (${deadItems.length})`}</Text>
             <Ionicons name={graveyardOpen ? "chevron-up-outline" : "chevron-down-outline"} size={16} color={colors.textDim} />
           </Pressable>
@@ -79,13 +79,15 @@ interface TargetCardProps {
 const TargetCard = memo(function TargetCard({ item, onSelect }: TargetCardProps) {
   return (
     <LiquidGlassPressable
+      accessibilityLabel={`${item.label}, ${item.isSelectable ? item.isSelected ? "seçildi" : "seçilebilir" : item.disabledReason ?? "kilitli"}`}
+      accessibilityState={{ selected: item.isSelected }}
       disabled={!item.isSelectable}
       onPress={() => onSelect(item.id)}
       style={styles.cardWrap}
       surfaceStyle={styles.card}
       contentStyle={styles.cardContent}
       selected={item.isSelected}
-      glow={item.isSelected || item.isSelectable}
+      glow={item.isSelected}
       variant={item.isSelected ? "selected" : item.isSelectable ? "panel" : "low"}
       animatedSheen={item.isSelected}
       depth={item.isSelected ? "floating" : item.isSelectable ? "raised" : "flat"}
@@ -128,7 +130,11 @@ const TargetCard = memo(function TargetCard({ item, onSelect }: TargetCardProps)
       </View>
     </LiquidGlassPressable>
   );
-});
+}, (previous, next) => previous.onSelect === next.onSelect &&
+  previous.item.id === next.item.id && previous.item.label === next.item.label &&
+  previous.item.initials === next.item.initials && previous.item.isSelectable === next.item.isSelectable &&
+  previous.item.isSelected === next.item.isSelected && previous.item.disabledReason === next.item.disabledReason &&
+  previous.item.badgeText === next.item.badgeText && previous.item.selectionAccent === next.item.selectionAccent);
 
 const styles = StyleSheet.create({
   section: {

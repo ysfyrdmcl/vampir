@@ -4,6 +4,7 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { CinematicMinorRibbon, type CinematicOverlayTone } from "./CinematicInfoOverlay";
+import { useMotionEnabled } from "../motion";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -49,17 +50,23 @@ function ribbonTone(displayTone: BotSpeechDisplayTone): CinematicOverlayTone {
 }
 
 function SuspiciousPulse({ children }: PropsWithChildren) {
+  const motionEnabled = useMotionEnabled();
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (!motionEnabled) {
+      pulse.setValue(1);
+      return;
+    }
+    pulse.setValue(0);
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1400, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1400, useNativeDriver: true })
+        Animated.timing(pulse, { toValue: 1, duration: 1400, useNativeDriver: true, isInteraction: false }),
+        Animated.timing(pulse, { toValue: 0, duration: 1400, useNativeDriver: true, isInteraction: false })
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [pulse]);
+  }, [motionEnabled, pulse]);
   const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
   return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }

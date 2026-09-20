@@ -1,10 +1,12 @@
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { uiStandard } from "../ui/ui-standard";
 import { LiquidGlassSurface } from "../glass";
 import { PrimaryButton } from "./PrimaryButton";
+import { useMotionEnabled } from "../motion/MotionPreferences";
 
 interface ConfirmActionSheetProps {
   visible: boolean;
@@ -27,17 +29,22 @@ export function ConfirmActionSheet({
   onConfirm,
   onCancel
 }: ConfirmActionSheetProps) {
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const motionEnabled = useMotionEnabled();
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType={motionEnabled ? "fade" : "none"} onRequestClose={onCancel}>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onCancel} />
-        <LiquidGlassSurface variant="panel" radius={20} glow style={styles.sheet} contentStyle={styles.sheetContent}>
-          <Text style={styles.title}>{title}</Text>
+        <Pressable accessible={false} style={styles.backdrop} onPress={onCancel} />
+        <LiquidGlassSurface variant="panel" radius={20} glow style={[styles.sheet, { maxHeight: height - insets.top - spacing.md }]} contentStyle={styles.sheetScroll}>
+          <ScrollView bounces={false} contentContainerStyle={[styles.sheetContent, { paddingBottom: spacing.lg + insets.bottom }]} accessibilityViewIsModal>
+          <Text accessibilityRole="header" style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
           <View style={styles.actions}>
             <PrimaryButton label={confirmLabel} variant={variant} onPress={onConfirm} />
             <PrimaryButton label={cancelLabel} variant="ghost" compact onPress={onCancel} />
           </View>
+          </ScrollView>
         </LiquidGlassSurface>
       </View>
     </Modal>
@@ -51,7 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: `rgba(0,0,0,${uiStandard.fx.overlayDark})`
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   sheet: {
     borderTopLeftRadius: 20,
@@ -67,6 +74,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
     gap: spacing.md
+  },
+  sheetScroll: {
+    flex: 0,
+    flexShrink: 1
   },
   title: {
     color: colors.text,

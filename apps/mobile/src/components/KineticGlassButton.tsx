@@ -38,12 +38,14 @@ export function KineticGlassButton({
 
   return (
     <LiquidGlassPressable
-      animatedSheen={!locked && (visualVariant === "primary" || visualVariant === "gold" || visualVariant === "danger")}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: locked }}
       danger={visualVariant === "danger" || visualVariant === "danger-outline"}
-      depth={locked ? "flat" : visualVariant === "ghost" ? "raised" : "floating"}
+      depth={visualVariant === "primary" || visualVariant === "danger" ? "raised" : "flat"}
       disabled={locked}
       feedback={visualVariant === "primary" || visualVariant === "danger" ? "strong" : "soft"}
-      glow={!locked && visualVariant !== "ghost"}
+      glow={!locked && (visualVariant === "primary" || visualVariant === "danger")}
       intensity={visualVariant === "ghost" ? "subtle" : visualVariant === "secondary" ? "medium" : "strong"}
       onPress={onPress}
       radius={uiStandard.button.radius}

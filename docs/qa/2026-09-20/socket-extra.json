@@ -1,0 +1,161 @@
+[
+  {
+    "kind": "doctor-illegal-self",
+    "reply": {
+      "error": {
+        "code": "SELF_PROTECT_BLOCKED"
+      }
+    }
+  },
+  {
+    "kind": "doctor-corrected-target",
+    "reply": {
+      "accepted": true
+    }
+  },
+  {
+    "kind": "change-confirmed-vote",
+    "first": {
+      "accepted": true
+    },
+    "second": {
+      "accepted": true
+    }
+  },
+  {
+    "kind": "paused-action",
+    "reply": {
+      "error": {
+        "code": "GAME_PAUSED"
+      }
+    }
+  },
+  {
+    "kind": "host-transfer",
+    "transferred": true
+  },
+  {
+    "kind": "reconnect",
+    "samePlayer": true,
+    "restoredRole": "Vampire",
+    "phase": "DayVote"
+  },
+  {
+    "kind": "bot-match",
+    "intelligence": "random",
+    "status": "InGame",
+    "round": 3,
+    "steps": 29,
+    "roles": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "phases": [
+      "RoleReveal",
+      "NightStart",
+      "VampireVote",
+      "DetectiveInspect",
+      "DoctorProtect",
+      "NightResolve",
+      "DayStart",
+      "MayorElection",
+      "GuardProtect",
+      "DayDiscussion",
+      "DayVote",
+      "ExecutionResolve",
+      "WinCheck"
+    ],
+    "errors": [
+      {
+        "code": "RATE_LIMITED"
+      },
+      {
+        "code": "RATE_LIMITED"
+      }
+    ],
+    "speechCount": 0,
+    "speechSample": []
+  },
+  {
+    "kind": "bot-match",
+    "intelligence": "balanced",
+    "status": "GameOver",
+    "winner": "Vampires",
+    "round": 3,
+    "steps": 28,
+    "roles": [
+      "Vampire",
+      "Detective",
+      "Villager",
+      "Guard",
+      "Vampire",
+      "Villager",
+      "Villager",
+      "Doctor",
+      "Hunter"
+    ],
+    "phases": [
+      "RoleReveal",
+      "NightStart",
+      "VampireVote",
+      "DetectiveInspect",
+      "DoctorProtect",
+      "NightResolve",
+      "DayStart",
+      "MayorElection",
+      "GuardProtect",
+      "DayDiscussion",
+      "DayVote",
+      "ExecutionResolve",
+      "HunterLastBreath",
+      "WinCheck"
+    ],
+    "errors": [],
+    "speechCount": 0,
+    "speechSample": []
+  },
+  {
+    "kind": "bot-match",
+    "intelligence": "deceptive",
+    "status": "GameOver",
+    "winner": "Vampires",
+    "round": 4,
+    "steps": 41,
+    "roles": [
+      "Vampire",
+      "Villager",
+      "Villager",
+      "Guard",
+      "Detective",
+      "Villager",
+      "Hunter",
+      "Vampire",
+      "Doctor"
+    ],
+    "phases": [
+      "RoleReveal",
+      "NightStart",
+      "VampireVote",
+      "DetectiveInspect",
+      "DoctorProtect",
+      "NightResolve",
+      "DayStart",
+      "MayorElection",
+      "GuardProtect",
+      "DayDiscussion",
+      "DayVote",
+      "WinCheck",
+      "ExecutionResolve"
+    ],
+    "errors": [],
+    "speechCount": 0,
+    "speechSample": []
+  }
+]

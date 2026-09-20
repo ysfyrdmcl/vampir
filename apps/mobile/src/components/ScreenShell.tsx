@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { GamePhase } from "@vampir-koylu/shared";
+import { CommonActions, NavigationContext, useIsFocused } from "@react-navigation/native";
 import type { PropsWithChildren } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   KeyboardAvoidingView,
@@ -32,6 +33,7 @@ import { typography } from "../theme/typography";
 import { isGlobalCriticalErrorCode, socketErrorAllowedForRoute, toFriendlyToastText } from "../ui/error-text";
 import { showToast } from "../ui/toast-store";
 import { uiStandard } from "../ui/ui-standard";
+import { MotionActivityProvider, useMotionEnabled } from "../motion/MotionPreferences";
 
 type SceneType = GameBackgroundVariant;
 
@@ -71,7 +73,17 @@ function activeNavIndex(scene: SceneType): number {
   return 0;
 }
 
-export function ScreenShell({
+export function ScreenShell(props: ScreenShellProps) {
+  const navigation = useContext(NavigationContext);
+  return navigation ? <FocusedScreenShell {...props} /> : <ScreenShellContent {...props} />;
+}
+
+function FocusedScreenShell(props: ScreenShellProps) {
+  const isFocused = useIsFocused();
+  return <MotionActivityProvider active={isFocused}><ScreenShellContent {...props} /></MotionActivityProvider>;
+}
+
+function ScreenShellContent({
   children,
   scene = "night",
   backgroundMode,
@@ -89,9 +101,9 @@ export function ScreenShell({
   keyboardAwareContentContainerStyle,
   suppressTransientBotSpeech = false
 }: ScreenShellProps) {
-  const roomState = useGameStore((s) => s.roomState);
-  const gameState = useGameStore((s) => s.gameState);
-  const phase = gameState?.phase ?? null;
+  const roomStatus = useGameStore((s) => s.roomState?.status ?? null);
+  const phase = useGameStore((s) => s.gameState?.phase ?? null);
+  const phaseEndsAt = useGameStore((s) => s.gameState?.phaseEndsAt ?? null);
   const privateRole = useGameStore((s) => s.privateRole);
   const errorCode = useGameStore((s) => s.errorCode);
   const connectionStatus = useGameStore((s) => s.connectionStatus);
@@ -100,13 +112,13 @@ export function ScreenShell({
   const activeBotSpeech = useGameStore((s) => s.activeBotSpeech);
   const markBotSpeechInboxRead = useGameStore((s) => s.markBotSpeechInboxRead);
   const unreadLogCount = useLogFeedStore((s) => s.unreadCount);
-  const mePlayerId = useGameStore((s) => s.playerId);
+  const meAlive = useGameStore((s) => s.roomState?.players.find((player) => player.playerId === s.playerId)?.isAlive ?? true);
+  const isHost = useGameStore((s) => Boolean(s.playerId && s.roomState?.hostPlayerId === s.playerId));
+  const isPaused = useGameStore((s) => Boolean(s.gameState?.isPaused && s.roomState?.status === "InGame"));
+  const motionEnabled = useMotionEnabled();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const label = headerTitle ?? phaseLabelFromState(phase);
-  const meAlive = roomState?.players.find((player) => player.playerId === mePlayerId)?.isAlive ?? true;
-  const isHost = Boolean(roomState?.hostPlayerId && roomState.hostPlayerId === mePlayerId);
-  const isPaused = Boolean(gameState?.isPaused && roomState?.status === "InGame");
   const statusAttention = Boolean(
     meAlive &&
       ((phase === "VampireVote" && privateRole === "Vampire") ||
@@ -125,26 +137,32 @@ export function ScreenShell({
   const contentY = useRef(new Animated.Value(uiStandard.motion.contentRiseDistance)).current;
   const backdropScale = useRef(new Animated.Value(1)).current;
   const connectionPulse = useRef(new Animated.Value(0)).current;
-  const showConnectionBanner = Boolean(roomState) && connectionStatus !== "connected" && connectionStatus !== "idle";
+  const showConnectionBanner = Boolean(roomStatus) && connectionStatus !== "connected" && connectionStatus !== "idle";
+  const resolvedBackgroundMode = backgroundMode ?? "solid";
 
   useEffect(() => {
-    if (!showConnectionBanner) {
+    if (!showConnectionBanner || !motionEnabled) {
       connectionPulse.stopAnimation();
       connectionPulse.setValue(0);
       return;
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(connectionPulse, { toValue: 1, duration: 720, useNativeDriver: true }),
-        Animated.timing(connectionPulse, { toValue: 0, duration: 720, useNativeDriver: true })
+        Animated.timing(connectionPulse, { toValue: 1, duration: 720, useNativeDriver: true, isInteraction: false }),
+        Animated.timing(connectionPulse, { toValue: 0, duration: 720, useNativeDriver: true, isInteraction: false })
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [connectionPulse, showConnectionBanner]);
+  }, [connectionPulse, showConnectionBanner, motionEnabled]);
 
   useEffect(() => {
-    Animated.parallel([
+    if (!motionEnabled) {
+      contentOpacity.setValue(1);
+      contentY.setValue(0);
+      return;
+    }
+    const entrance = Animated.parallel([
       Animated.timing(contentOpacity, {
         toValue: 1,
         duration: uiStandard.motion.contentFadeMs,
@@ -155,20 +173,28 @@ export function ScreenShell({
         duration: uiStandard.motion.contentRiseMs,
         useNativeDriver: true
       })
-    ]).start();
-  }, [contentOpacity, contentY]);
+    ]);
+    entrance.start();
+    return () => entrance.stop();
+  }, [contentOpacity, contentY, motionEnabled]);
 
   useEffect(() => {
+    if (!motionEnabled || resolvedBackgroundMode !== "game") {
+      backdropScale.setValue(1);
+      return;
+    }
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(backdropScale, {
           toValue: uiStandard.motion.backdropLoopScale,
           duration: uiStandard.motion.backdropLoopMs,
+          isInteraction: false,
           useNativeDriver: true
         }),
         Animated.timing(backdropScale, {
           toValue: 1,
           duration: uiStandard.motion.backdropLoopMs,
+          isInteraction: false,
           useNativeDriver: true
         })
       ])
@@ -177,7 +203,7 @@ export function ScreenShell({
     return () => {
       loop.stop();
     };
-  }, [backdropScale]);
+  }, [backdropScale, motionEnabled, resolvedBackgroundMode]);
 
   useEffect(() => {
     if (!errorCode) return;
@@ -201,8 +227,8 @@ export function ScreenShell({
   const navFromScene = useMemo(() => activeNavIndex(scene), [scene]);
   const navActive = bottomNavActiveIndex ?? navFromScene;
   const shouldShowTopBar = showTopBar && scene !== "home";
-  const shouldShowBottomNav = showBottomNav && (roomState?.status === "InGame" || roomState?.status === "GameOver");
-  const isGameTopBar = shouldShowTopBar && contentDensity === "game" && roomState?.status === "InGame";
+  const shouldShowBottomNav = showBottomNav && (roomStatus === "InGame" || roomStatus === "GameOver");
+  const isGameTopBar = shouldShowTopBar && contentDensity === "game" && roomStatus === "InGame";
   const hasRumorAttention = botSpeechUnreadCount > 0 || Boolean(activeBotSpeech);
   const layout = useMemo(() => getResponsiveMetrics(width, height), [height, width]);
   const horizontalPadding = layout.pagePadding + Math.max(insets.left, insets.right);
@@ -210,7 +236,7 @@ export function ScreenShell({
   const topBarHeight = layout.topBarBaseHeight + insets.top;
   const bottomNavHeight = layout.bottomNavBaseHeight + insets.bottom;
   const shouldShowTransientBotSpeech =
-    roomState?.status === "InGame" &&
+    roomStatus === "InGame" &&
     shouldShowBottomNav &&
     !suppressTransientBotSpeech &&
     !rumorsOpen &&
@@ -221,24 +247,24 @@ export function ScreenShell({
   const navSettingsIconSize = scaledSize(22, layout.controlScale, 20, 24);
   const navigateIfReady = useCallback((route: "GameOver" | "GameLog" | "GameSettings" | "RoleReveal" | "Night" | "Vote" | "Lobby") => {
     if (!navigationRef.isReady()) return;
-    navigationRef.navigate(route);
+    if (navigationRef.getCurrentRoute()?.name === route) return;
+    navigationRef.dispatch(CommonActions.navigate({ name: route, pop: true }));
   }, []);
   const goStatus = useCallback(() => {
     if (isPaused) return;
-    if (roomState?.status === "GameOver") {
+    if (roomStatus === "GameOver") {
       navigateIfReady("GameOver");
       return;
     }
     const route = getRouteForCurrentPhase(phase);
     navigateIfReady(route);
-  }, [isPaused, navigateIfReady, phase, roomState?.status]);
+  }, [isPaused, navigateIfReady, phase, roomStatus]);
   const openRumors = useCallback(() => {
     markBotSpeechInboxRead();
     setRumorsOpen(true);
   }, [markBotSpeechInboxRead]);
   const phaseType = scene === "vote" || scene === "day" ? "day" : scene === "night" || scene === "vampire" || scene === "detective" || scene === "doctor" ? "night" : "other";
   const phaseVisual = phase === "VampireVote" || phase === "HunterLastBreath" ? "blood-candle" : phaseType === "night" ? "candle" : "bar";
-  const resolvedBackgroundMode = backgroundMode ?? "solid";
 
   return (
     <View style={styles.safe}>
@@ -254,7 +280,7 @@ export function ScreenShell({
                 {
                   maxWidth: contentMaxWidth,
                   paddingLeft: horizontalPadding,
-                  paddingRight: isGameTopBar ? horizontalPadding : Math.max(horizontalPadding, insets.right) + 108
+                  paddingRight: horizontalPadding
                 }
               ]}
             >
@@ -263,7 +289,7 @@ export function ScreenShell({
                   phaseLabel={label}
                   phaseType={phaseType}
                   phaseVisual={phaseVisual}
-                  phaseEndsAt={gameState?.phaseEndsAt ?? null}
+                  phaseEndsAt={phaseEndsAt}
                   rumorCount={botSpeechUnreadCount}
                   hasRumorAttention={hasRumorAttention}
                   onPressRumors={openRumors}
@@ -285,6 +311,7 @@ export function ScreenShell({
               maxWidth: contentMaxWidth,
               paddingHorizontal: horizontalPadding,
               paddingTop: contentTopPadding + (shouldShowTopBar ? 0 : insets.top),
+              paddingBottom: shouldShowBottomNav || scene === "lobby" ? 0 : insets.bottom,
               opacity: contentOpacity,
               transform: [{ translateY: contentY }]
             }
@@ -368,7 +395,8 @@ export function ScreenShell({
               <LiquidGlassPressable
                 selected={navActive === 0}
                 glow={navActive === 0}
-                ambientSweep={navActive === 0}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: navActive === 0 }}
                 radius={glassTokens.radius.md}
                 style={styles.navItemWrap}
                 surfaceStyle={styles.navItem}
@@ -377,7 +405,7 @@ export function ScreenShell({
                 onPress={goStatus}
               >
                 <View style={[styles.navIconWrap, navActive === 0 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="eye-outline" size={navIconSize} color={navActive === 0 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="eye-outline" size={navIconSize} color={navActive === 0 ? colors.secondary : colors.textDim} />
                   {statusAttention ? <View style={styles.navDotDanger} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 0 ? styles.navLabelActive : null]}>Durum</Text>
@@ -385,7 +413,8 @@ export function ScreenShell({
               <LiquidGlassPressable
                 selected={navActive === 1}
                 glow={navActive === 1}
-                ambientSweep={navActive === 1}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: navActive === 1 }}
                 radius={glassTokens.radius.md}
                 style={styles.navItemWrap}
                 surfaceStyle={styles.navItem}
@@ -394,7 +423,7 @@ export function ScreenShell({
                 onPress={() => navigateIfReady("GameLog")}
               >
                 <View style={[styles.navIconWrap, navActive === 1 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="book-outline" size={navIconSize} color={navActive === 1 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="book-outline" size={navIconSize} color={navActive === 1 ? colors.secondary : colors.textDim} />
                   {hasLogAttention ? <View style={styles.navDotInfo} /> : null}
                 </View>
                 <Text style={[styles.navLabel, navActive === 1 ? styles.navLabelActive : null]}>Günlük</Text>
@@ -402,7 +431,8 @@ export function ScreenShell({
               <LiquidGlassPressable
                 selected={navActive === 2}
                 glow={navActive === 2}
-                ambientSweep={navActive === 2}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: navActive === 2 }}
                 radius={glassTokens.radius.md}
                 style={styles.navItemWrap}
                 surfaceStyle={styles.navItem}
@@ -414,7 +444,7 @@ export function ScreenShell({
                 }}
               >
                 <View style={[styles.navIconWrap, navActive === 2 ? styles.navIconWrapActive : null]}>
-                  <Ionicons name="settings-outline" size={navSettingsIconSize} color={navActive === 2 ? colors.secondary : "#6e6d72"} />
+                  <Ionicons name="settings-outline" size={navSettingsIconSize} color={navActive === 2 ? colors.secondary : colors.textDim} />
                 </View>
                 <Text style={[styles.navLabel, navActive === 2 ? styles.navLabelActive : null]}>Ayarlar</Text>
               </LiquidGlassPressable>
@@ -437,7 +467,7 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   opaqueBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.backgroundDeep
   },
   topBar: {
@@ -475,9 +505,9 @@ const styles = StyleSheet.create({
   },
   topLabel: {
     flexShrink: 1,
-    color: colors.primaryBright,
-    fontFamily: typography.serif,
-    fontSize: 14,
+    color: colors.textDim,
+    fontFamily: typography.sansBold,
+    fontSize: 12,
     letterSpacing: 1.4
   },
   content: {
@@ -541,7 +571,7 @@ const styles = StyleSheet.create({
     opacity: 1
   },
   navLabel: {
-    color: "#6e6d72",
+    color: colors.textDim,
     fontFamily: typography.sansMedium,
     fontSize: 11,
     lineHeight: 14,

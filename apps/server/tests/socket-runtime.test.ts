@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Server, Socket } from "socket.io";
-import { SOCKET_EVENTS as E, type RoomStateSnapshot } from "@vampir-koylu/shared";
+import { SOCKET_EVENTS as E, type GameActionAcknowledgement, type RoomStateSnapshot } from "@vampir-koylu/shared";
 import { SocketRuntime } from "../src/socket/socket-runtime.js";
 import { env } from "../src/config/env.js";
 
@@ -14,11 +14,11 @@ function harness() {
   } as unknown as Server;
   const runtime = new SocketRuntime(io);
   function client(id: string, address = id) {
-    const handlers = new Map<string, (payload?: unknown) => void>();
+    const handlers = new Map<string, (payload?: unknown, acknowledge?: (result: GameActionAcknowledgement) => void) => void>();
     const messages: Array<{ event: string; payload: any }> = [];
     const socket = {
       id, handshake: { address },
-      on: (event: string, handler: (payload?: unknown) => void) => handlers.set(event, handler),
+      on: (event: string, handler: (payload?: unknown, acknowledge?: (result: GameActionAcknowledgement) => void) => void) => handlers.set(event, handler),
       emit: (event: string, payload: unknown) => messages.push({ event, payload }),
       join: vi.fn(), leave: vi.fn(),
       disconnect: () => handlers.get("disconnect")?.()
@@ -26,7 +26,7 @@ function harness() {
     sockets.set(id, socket);
     runtime.registerConnection(socket);
     return {
-      send: (event: string, payload?: unknown) => handlers.get(event)?.(payload),
+      send: (event: string, payload?: unknown, acknowledge?: (result: GameActionAcknowledgement) => void) => handlers.get(event)?.(payload, acknowledge),
       last: (event: string) => messages.filter((m) => m.event === event).at(-1)?.payload,
       messages
     };
@@ -57,6 +57,9 @@ describe("SocketRuntime session and room flow", () => {
     expect(state.players[0].isReady).toBe(true);
     expect(state.players[0]).not.toHaveProperty("sessionToken");
     expect(state.players[0]).not.toHaveProperty("deviceId");
+    const acknowledge = vi.fn();
+    host.send(E.GAME_ACTION_SUBMIT, { roomCode: session.roomCode, identity }, acknowledge);
+    expect(acknowledge).toHaveBeenCalledWith({ accepted: false, code: "SOCKET_MISMATCH" });
   });
 
   it("completes a timed multiplayer match, reconnects, and resets to a playable lobby", () => {
@@ -79,6 +82,8 @@ describe("SocketRuntime session and room flow", () => {
     const vampireId = clients[vampireIndex].last(E.ROOM_JOIN).playerId;
     const detectiveIndex = clients.findIndex((_, i) => h.broadcasts.some((b) => b.target === `socket-${i}` && b.event === E.GAME_PRIVATE_ROLE && b.payload.role === "Detective"));
     const detectiveId = clients[detectiveIndex].last(E.ROOM_JOIN).playerId;
+    const doctorIndex = clients.findIndex((_, i) => h.broadcasts.some((b) => b.target === `socket-${i}` && b.event === E.GAME_PRIVATE_ROLE && b.payload.role === "Doctor"));
+    const doctorId = clients[doctorIndex].last(E.ROOM_JOIN).playerId;
     let restoredDetective = false;
     clients[0].send("disconnect");
     expect(state().hostPlayerId).not.toBe(clients[0].last(E.ROOM_JOIN).playerId);
@@ -89,10 +94,12 @@ describe("SocketRuntime session and room flow", () => {
       const current = phase();
       if (current.phase === "VampireVote") {
         const target = state().players.find((p) => p.isAlive && p.playerId !== vampireId && p.playerId !== detectiveId)!;
+        const acknowledge = vi.fn();
         clients[vampireIndex].send(E.GAME_ACTION_SUBMIT, {
           roomCode, identity: identities[vampireIndex], actionType: "vampire-target",
           targetPlayerId: target.playerId, phase: current.phase, round: current.round
-        });
+        }, acknowledge);
+        expect(acknowledge).toHaveBeenCalledWith({ accepted: true });
       }
       if (current.phase === "DetectiveInspect" && current.round === 1) {
         const submit = (targetPlayerId: string) => clients[detectiveIndex].send(E.GAME_ACTION_SUBMIT, {
@@ -103,12 +110,26 @@ describe("SocketRuntime session and room flow", () => {
         submit(vampireId);
         expect(h.broadcasts.filter((b) => b.event === E.GAME_PRIVATE_ROLE && b.payload.detectiveInspectedPlayerIds).at(-1)?.payload.detectiveInspectedPlayerIds).toEqual([]);
       }
+      if (current.phase === "DoctorProtect" && current.round === 1) {
+        clients[doctorIndex].send(E.GAME_ACTION_SUBMIT, {
+          roomCode, identity: identities[doctorIndex], actionType: "doctor-protect",
+          targetPlayerId: doctorId, phase: current.phase, round: current.round
+        });
+        const protection = h.broadcasts.filter((b) => b.event === E.GAME_PRIVATE_ROLE && "doctorLastProtection" in b.payload).at(-1)!;
+        expect(protection.target).toBe(doctorIndex === 0 ? "socket-reconnected" : `socket-${doctorIndex}`);
+        expect(protection.payload.doctorLastProtection).toBeNull();
+      }
       if (current.phase === "DayStart" && !restoredDetective) {
         clients[detectiveIndex].send("disconnect");
         clients[detectiveIndex] = h.client("detective-reconnected");
         clients[detectiveIndex].send(E.ROOM_JOIN, { roomCode, identity: identities[detectiveIndex] });
         expect(clients[detectiveIndex].last(E.GAME_PRIVATE_ROLE).detectiveInspectedPlayerIds).toEqual([vampireId]);
         expect(clients[detectiveIndex].last(E.GAME_PRIVATE_RESULT)).toMatchObject({ detectiveTargetPlayerId: vampireId, detectiveResult: "Vampire" });
+        clients[doctorIndex].send("disconnect");
+        clients[doctorIndex] = h.client("doctor-reconnected");
+        clients[doctorIndex].send(E.ROOM_JOIN, { roomCode, identity: identities[doctorIndex] });
+        expect(clients[doctorIndex].last(E.GAME_PRIVATE_ROLE).doctorLastProtection).toEqual({ targetPlayerId: doctorId, round: 1 });
+        expect(h.broadcasts.filter((b) => b.target === roomCode).some((b) => "doctorLastProtection" in b.payload)).toBe(false);
         restoredDetective = true;
       }
       expect(current.phaseEndsAt).not.toBeNull();
@@ -141,5 +162,42 @@ describe("SocketRuntime session and room flow", () => {
     h.runtime.tick();
     next.send(E.ROOM_JOIN, {});
     expect(next.last(E.ERROR_EVENT).code).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects a delayed first ballot during the same round's revote", () => {
+    vi.useFakeTimers();
+    const h = harness();
+    const clients = Array.from({ length: 4 }, (_, i) => h.client(`voter-${i}`));
+    clients[0].send(E.ROOM_CREATE, { identity: { deviceId: "device-0" }, nickname: "Host", gameMode: "SafeFirstNight" });
+    const roomCode = clients[0].last(E.ROOM_JOIN).roomCode;
+    clients.slice(1).forEach((client, index) => {
+      client.send(E.ROOM_JOIN, { roomCode, identity: { deviceId: `device-${index + 1}` }, nickname: `Voter ${index + 1}` });
+    });
+    const identities = clients.map((client, i) => ({ deviceId: `device-${i}`, playerSessionToken: client.last(E.ROOM_JOIN).playerSessionToken }));
+    clients.forEach((client, i) => client.send(E.ROOM_READY_TOGGLE, { roomCode, identity: identities[i], isReady: true }));
+    clients[0].send(E.ROOM_START, { roomCode, identity: identities[0], gameMode: "SafeFirstNight" });
+    const phase = () => h.broadcasts.filter((b) => b.event === E.GAME_PHASE).at(-1)!.payload;
+    const advance = () => {
+      vi.setSystemTime(phase().phaseEndsAt + 1);
+      h.runtime.tick();
+    };
+    for (let step = 0; step < 12 && phase().phase !== "DayVote"; step++) advance();
+    expect(phase()).toMatchObject({ phase: "DayVote", round: 1, tieCountInRound: 0 });
+    const vote = (actorIndex: number, targetIndex: number, tieCountInRound: number) => {
+      const acknowledge = vi.fn();
+      clients[actorIndex].send(E.GAME_ACTION_SUBMIT, {
+        roomCode, identity: identities[actorIndex], actionType: "day-vote",
+        targetPlayerId: clients[targetIndex].last(E.ROOM_JOIN).playerId,
+        phase: "DayVote", round: 1, tieCountInRound
+      }, acknowledge);
+      return acknowledge;
+    };
+    [2, 2, 0, 0].forEach((target, actor) => expect(vote(actor, target, 0)).toHaveBeenCalledWith({ accepted: true }));
+    advance();
+    expect(phase()).toMatchObject({ phase: "DayDiscussion", round: 1, tieCountInRound: 1 });
+    advance();
+    expect(phase().phase).toBe("DayVote");
+    expect(vote(1, 0, 0)).toHaveBeenCalledWith({ accepted: false, code: "STALE_ACTION" });
+    expect(vote(1, 0, 1)).toHaveBeenCalledWith({ accepted: true });
   });
 });

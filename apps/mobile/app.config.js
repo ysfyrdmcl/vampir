@@ -41,7 +41,11 @@ module.exports = {
     scheme: "vampirkoylu",
     icon: "./src/assets/app/icon.png",
     userInterfaceStyle: "dark",
-    plugins: [["expo-build-properties", { android: { usesCleartextTraffic: allowLocalHttp } }]],
+    plugins: [
+      ["expo-build-properties", { android: { usesCleartextTraffic: allowLocalHttp } }],
+      "expo-font",
+      "expo-status-bar"
+    ],
     splash: {
       image: "./src/assets/cards/card_back_default.png",
       resizeMode: "contain",

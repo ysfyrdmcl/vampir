@@ -71,7 +71,7 @@ export const ROLE_DEFINITIONS: Record<RoleDefinitionId, RoleDefinition> = {
     id: "Doctor",
     name: "Doktor",
     team: "Village",
-    minPlayers: 6,
+    minPlayers: 5,
     phase: "night",
     isBeginnerFriendly: true,
     implemented: true,

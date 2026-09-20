@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { TargetReticleSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
 interface AnimatedTargetReticleProps {
@@ -22,12 +24,17 @@ function AnimatedTargetReticleBase({
   active = true,
   style
 }: AnimatedTargetReticleProps) {
-  const progress = useSharedValue(active ? 0 : 0);
+  const motionEnabled = useMotionEnabled();
+  const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      progress.value = active ? 0.6 : 0;
+      return;
+    }
     if (!active) {
       progress.value = withTiming(0, { duration: 160 });
-      return;
+      return () => cancelAnimation(progress);
     }
     progress.value = withRepeat(
       withSequence(
@@ -37,7 +44,8 @@ function AnimatedTargetReticleBase({
       -1,
       true
     );
-  }, [active, progress]);
+    return () => cancelAnimation(progress);
+  }, [active, motionEnabled, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: 0.35 + progress.value * 0.5,

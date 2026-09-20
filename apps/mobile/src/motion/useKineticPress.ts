@@ -1,6 +1,7 @@
-import { useCallback } from "react";
-import { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useCallback, useEffect } from "react";
+import { cancelAnimation, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { motionTokens } from "./motion-tokens";
+import { useMotionActive } from "./MotionPreferences";
 
 interface UseKineticPressOptions {
   disabled?: boolean;
@@ -11,9 +12,18 @@ export function useKineticPress({ disabled = false, depth = "soft" }: UseKinetic
   const pressed = useSharedValue(0);
   const selected = useSharedValue(0);
   const strong = depth === "strong";
+  const active = useMotionActive();
+
+  useEffect(() => {
+    if (disabled || !active) pressed.value = 0;
+  }, [active, disabled, pressed]);
+
+  useEffect(() => () => {
+    cancelAnimation(pressed);
+    cancelAnimation(selected);
+  }, [pressed, selected]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: disabled ? 0.58 : 1,
     transform: [
       { translateY: pressed.value * (strong ? 2 : 1.25) },
       { scale: 1 - pressed.value * (strong ? 0.025 : 0.016) + selected.value * 0.01 }
@@ -46,7 +56,7 @@ export function useKineticPress({ disabled = false, depth = "soft" }: UseKinetic
         if (!disabled) pressed.value = withSpring(1, motionTokens.spring.press);
       },
       onPressOut: () => {
-        if (!disabled) pressed.value = withSpring(0, motionTokens.spring.glass);
+        pressed.value = disabled ? 0 : withSpring(0, motionTokens.spring.glass);
       }
     },
     setSelected

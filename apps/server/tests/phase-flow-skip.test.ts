@@ -232,6 +232,81 @@ describe("phase skip when role absent or dead", () => {
         round: 1
       })
     ).toThrow("TARGET_NOT_IN_REVOTE");
+    room.game.rules.noLynchEnabled = true;
+    expect(() => engine.submitAction(room, "a", {
+      roomCode: room.roomCode,
+      actionType: "day-vote",
+      targetPlayerId: "__NO_LYNCH__",
+      phase: "DayVote",
+      round: 1
+    })).toThrow("TARGET_NOT_IN_REVOTE");
+  });
+
+  it("completes an endless revote tied between a player and no-lynch", () => {
+    const room = makeRoom({
+      players: [makePlayer("a", "Villager"), makePlayer("b", "Villager"), makePlayer("c", "Villager"), makePlayer("v", "Vampire")],
+      phase: "DayVote",
+      rolePreset: "beginner",
+      rules: { noLynchEnabled: true }
+    });
+    room.game.phaseDurations.dayVote = 0;
+    const vote = (actorPlayerId: string, targetPlayerId: string) => engine.submitAction(room, actorPlayerId, {
+      roomCode: room.roomCode, actionType: "day-vote", targetPlayerId, phase: "DayVote", round: 1
+    });
+    vote("a", "__NO_LYNCH__");
+    vote("b", "__NO_LYNCH__");
+    vote("c", "a");
+    vote("v", "a");
+    engine.assertManualAdvanceAllowed(room);
+    engine.advancePhase(room);
+    expect(room.game.phase).toBe("DayDiscussion");
+    expect(room.game.revoteCandidateIds).toEqual(["__NO_LYNCH__", "a"]);
+    engine.advancePhase(room);
+    expect(room.game.phaseEndsAt).toBeNull();
+    vote("a", "__NO_LYNCH__");
+    vote("b", "a");
+    vote("c", "a");
+    vote("v", "a");
+    expect(() => engine.assertManualAdvanceAllowed(room)).not.toThrow();
+    engine.advancePhase(room);
+    expect(room.game.phase).toBe("ExecutionResolve");
+    expect(room.game.lastDayVoteSummary?.executedPlayerId).toBe("a");
+  });
+
+  it("does not require a revote action when the actor has no legal target", () => {
+    const room = makeRoom({
+      players: [makePlayer("a", "Villager"), makePlayer("b", "Villager"), makePlayer("v", "Vampire")],
+      phase: "DayVote",
+      rolePreset: "beginner",
+      rules: { noLynchEnabled: true }
+    });
+    room.game.tieCountInRound = 1;
+    room.game.revoteCandidateIds = ["a", "b"];
+    room.game.guardProtectedPlayerId = "b";
+    room.game.actions = ["b", "v"].map((actorPlayerId) => ({
+      actorPlayerId, actionType: "day-vote", targetPlayerId: "a", round: 1
+    }));
+    expect(() => engine.assertManualAdvanceAllowed(room)).not.toThrow();
+  });
+
+  it("resolves a random no-lynch tie choice without a phantom execution", () => {
+    const room = makeRoom({
+      players: [makePlayer("a", "Villager"), makePlayer("b", "Villager"), makePlayer("c", "Villager"), makePlayer("v", "Vampire")],
+      phase: "DayVote",
+      rolePreset: "beginner",
+      rules: { noLynchEnabled: true, tiePolicy: "RevoteThenRandomExecution" }
+    });
+    room.game.tieCountInRound = 1;
+    room.game.revoteCandidateIds = ["__NO_LYNCH__", "a"];
+    room.game.actions = room.players.map((p, index) => ({
+      actorPlayerId: p.playerId, actionType: "day-vote", targetPlayerId: index < 2 ? "__NO_LYNCH__" : "a", round: 1
+    }));
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    engine.advancePhase(room);
+    expect(room.game.phase).toBe("WinCheck");
+    expect(room.game.lastDayVoteSummary).toMatchObject({ executedPlayerId: null, noLynchWon: true });
+    expect(room.players.every((p) => p.isAlive)).toBe(true);
+    expect(room.game.tieCountInRound).toBe(0);
   });
 
   it("VampireVote -> DoctorProtect when Doctor alive but Detective absent", () => {

@@ -6,6 +6,7 @@ import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from "r
 import type { SvgProps } from "react-native-svg";
 import { GothicDividerSvg, MoonCrestSvg, VampirLogoMarkSvg, VillageSilhouetteSvg, roleSvgIconMap } from "../assets/svg";
 import { AnimatedBats, AnimatedCandleFlame, AnimatedMist, FloatingSparks } from "../animations/svg";
+import { useMotionEnabled } from "../motion";
 import { colors } from "../theme/colors";
 import { getResponsiveMetrics, scaledSize } from "../theme/layout";
 import { spacing } from "../theme/spacing";
@@ -22,6 +23,7 @@ const ROLE_SIGILS: { key: string; Icon: ComponentType<SvgProps>; x: number; y: n
 ];
 
 export function BootSplash() {
+  const motionEnabled = useMotionEnabled();
   const { width, height } = useWindowDimensions();
   const layout = useMemo(() => getResponsiveMetrics(width, height), [height, width]);
   const compact = layout.isCompactHeight;
@@ -34,20 +36,29 @@ export function BootSplash() {
   const ritual = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    if (!motionEnabled) {
+      entrance.setValue(1);
+      ritual.setValue(1);
+      pulse.setValue(0);
+      return;
+    }
+    const intro = Animated.parallel([
       Animated.timing(entrance, {
         toValue: 1,
         duration: 560,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
+        useNativeDriver: true,
+        isInteraction: false
       }),
       Animated.timing(ritual, {
         toValue: 1,
         duration: 980,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
+        useNativeDriver: true,
+        isInteraction: false
       })
-    ]).start();
+    ]);
+    intro.start();
 
     const breathing = Animated.loop(
       Animated.sequence([
@@ -55,19 +66,24 @@ export function BootSplash() {
           toValue: 1,
           duration: 1250,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true
+          useNativeDriver: true,
+          isInteraction: false
         }),
         Animated.timing(pulse, {
           toValue: 0,
           duration: 1250,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true
+          useNativeDriver: true,
+          isInteraction: false
         })
       ])
     );
     breathing.start();
-    return () => breathing.stop();
-  }, [entrance, pulse, ritual]);
+    return () => {
+      intro.stop();
+      breathing.stop();
+    };
+  }, [entrance, motionEnabled, pulse, ritual]);
 
   const stageEntranceStyle = {
     opacity: entrance,
@@ -256,7 +272,7 @@ const styles = StyleSheet.create({
     overflow: "visible"
   },
   stageAura: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(8,8,12,0.42)",
     borderWidth: 1,
     borderColor: "rgba(255,232,178,0.12)",

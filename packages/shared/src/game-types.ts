@@ -123,6 +123,7 @@ export interface GameStatePrivateDelta {
   detectiveResult?: "Vampire" | "NotVampire";
   /** Dedektifin bu oyunda daha önce sorguladığı oyuncu kimlikleri (yeniden sorgu yok). */
   detectiveInspectedPlayerIds?: string[];
+  doctorLastProtection?: { targetPlayerId: string; round: number } | null;
   vampirePlayerIds?: string[];
   isActionAllowed?: boolean;
   reason?: string;
@@ -205,6 +206,8 @@ export interface ActionSubmission {
   phase: GamePhase;
   round: number;
 }
+
+export type GameActionAcknowledgement = { accepted: true } | { accepted: false; code: string };
 
 export type BotSpeechTone = "calm" | "sharp" | "neutral" | "playful";
 

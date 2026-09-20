@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-20",
+  "profile": "preview with embedded release JS, localhost-only QA server",
+  "snapshot": "/private/tmp/vampir-android-preview.ROUME3",
+  "sourceComparison": {
+    "mobileAndSharedFiles": 217,
+    "mismatches": []
+  },
+  "ios": {
+    "configuration": "Release",
+    "destination": "arm64 iOS Simulator",
+    "toolchain": "Xcode 27.0",
+    "buildResult": "BUILD SUCCEEDED",
+    "signed": false,
+    "appPath": "/private/tmp/vampir-ios-release/Build/Products/Release-iphonesimulator/VampirKoylu.app",
+    "bundleIdentifier": "com.vampirkoylu.game",
+    "version": "0.1.0",
+    "minimumOS": "16.4",
+    "embeddedBundleSHA256": "ca3003ffce1eed4ee58b879b356afe5e7cee0be014a6333162305c35758cf94b",
+    "runtime": "iPhone 17 Pro Max / iOS 26.4 Simulator",
+    "launch": "Home rendered and connected to local Socket.IO server without Metro",
+    "screenshot": "ios-release.png",
+    "runtimeNotes": "Initial native SVG layout/load event and unused background delegate warnings; no fatal exception observed during startup.",
+    "recovery": {
+      "result": "Local server stopped and restarted: disconnect warning displayed, automatic reconnection restored green connected state without user input.",
+      "disconnectedScreenshot": "ios-release-disconnected.png",
+      "reconnectedScreenshot": "ios-release-reconnected.png"
+    }
+  },
+  "limitations": [
+    "No physical device frame-time/heat/battery measurements",
+    "No touch end-to-end match: Device Hub CUA access times out",
+    "Local preview packages are not App Store/Play Store signed distribution artifacts"
+  ],
+  "android": {
+    "configuration": "Release",
+    "profile": "preview",
+    "buildResult": "BUILD SUCCESSFUL in 7m 51s; 754 actionable tasks executed",
+    "toolchain": {
+      "jdk": "17.0.18",
+      "gradle": "9.3.1",
+      "ndk": "27.1.12297006"
+    },
+    "apkPath": "/private/tmp/vampir-android-preview.ROUME3/apps/mobile/android/app/build/outputs/apk/release/app-release.apk",
+    "apkSHA256": "a78869602ca4a1445362a4f73be638e486498704737864e728a6abf702ed3993",
+    "package": "com.vampirkoylu.game",
+    "version": "0.1.0",
+    "versionCode": 1,
+    "minimumSDK": 24,
+    "targetSDK": 36,
+    "abi": [
+      "arm64-v8a"
+    ],
+    "signature": "Verified APK v2 signature; template Android Debug certificate; internal testing only",
+    "debuggable": false,
+    "embeddedHermesBytecode": true,
+    "serverURL": "http://127.0.0.1:3000",
+    "runtime": "Netisp_API_35 / Android 15 ARM64 emulator",
+    "launch": "Home rendered and connected to local Socket.IO server without Metro",
+    "screenshot": "android-release.png",
+    "runtimeNotes": "No AndroidRuntime or ReactNativeJS error entries in recent startup logcat; app process alive after screenshot.",
+    "recovery": {
+      "result": "Local server stopped and restarted: disconnect warning displayed, automatic reconnection restored green connected state without user input.",
+      "disconnectedScreenshot": "android-release-disconnected.png",
+      "reconnectedScreenshot": "android-release-reconnected.png"
+    },
+    "activityManagerColdStartMs": 328,
+    "activityManagerTimingNote": "Emulator am start timing, not a physical-device time-to-interactive benchmark.",
+    "displayNote": "Clipped status-bar icons reproduce in Android Settings; emulator/SystemUI issue, not specific to Vampir. Baseline: android-system-statusbar.png."
+  }
+}

@@ -133,5 +133,6 @@ export const actionSubmitSchema = z.object({
     "WinCheck",
     "GameOver"
   ]),
-  round: z.number().int().positive()
+  round: z.number().int().positive(),
+  tieCountInRound: z.number().int().min(0).max(1).default(0)
 });

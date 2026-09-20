@@ -25,14 +25,14 @@ type IconName = keyof typeof Ionicons.glyphMap;
 export function RoleGuideScreen({ navigation, route }: Props) {
   const roomState = useGameStore((s) => s.roomState);
   const playerCount = roomState?.players.length ?? 0;
-  const rolePreset = useGameStore((s) => s.rolePreset);
+  const rolePreset = useGameStore((s) => s.roomState?.rolePreset ?? s.rolePreset);
   const baseActiveRoleIds = getActiveRoleIdsForRoom(playerCount || 4, rolePreset);
   const withMayor: RoleGuideId[] =
-    roomState?.rules?.mayorEnabled && (playerCount || 0) >= 9
+    rolePreset === "socialChaos" && roomState?.rules?.mayorEnabled && playerCount >= 9
       ? [...new Set<RoleGuideId>([...baseActiveRoleIds, "Mayor"])]
       : baseActiveRoleIds;
   const activeRoleIds: RoleGuideId[] =
-    roomState?.rules?.loversEnabled && (playerCount || 0) >= 9
+    roomState?.rules?.loversEnabled && playerCount >= 9
       ? [...new Set<RoleGuideId>([...withMayor, "Lover"])]
       : withMayor;
   const focusActiveOnly = route.params?.focusActiveOnly ?? false;
@@ -65,12 +65,12 @@ export function RoleGuideScreen({ navigation, route }: Props) {
           <RuleTile
             icon="ribbon-outline"
             label="Başkanlık"
-            value={roomState?.rules?.mayorEnabled ? "Aktif, başkan oyu daha güçlü." : "Oda kuralına göre kapalı."}
+            value={activeRoleIds.includes("Mayor") ? "Aktif, başkanın gündüz oyu 2 sayılır." : "Bu oda kurulumunda devre dışı."}
           />
           <RuleTile
             icon="heart-outline"
             label="Aşıklar"
-            value={roomState?.rules?.loversEnabled ? "Aktif, bağ ölümü zincirleyebilir." : "Oda kuralına göre kapalı."}
+            value={activeRoleIds.includes("Lover") ? "Aktif, bağlı oyuncular birlikte elenir." : "Bu oda kurulumunda devre dışı."}
           />
         </View>
 
@@ -104,7 +104,7 @@ export function RoleGuideScreen({ navigation, route }: Props) {
             <RoleRow
               key={role.id}
               role={role}
-              isActive={activeRoleIds.includes(role.id)}
+              isActive={isFromLobby && activeRoleIds.includes(role.id)}
               showActiveState={isFromLobby}
               onPress={() => navigation.navigate("RoleCard", { roleId: role.id, source: isFromLobby ? "lobby" : "menu" })}
             />
@@ -140,7 +140,7 @@ function RuleTile({ icon, label, value }: { icon: IconName; label: string; value
       </View>
       <View style={styles.ruleCopy}>
         <Text style={styles.ruleLabel}>{label}</Text>
-        <Text style={styles.ruleValue} numberOfLines={2}>{value}</Text>
+        <Text style={styles.ruleValue}>{value}</Text>
       </View>
     </LiquidGlassSurface>
   );
@@ -298,7 +298,8 @@ const styles = StyleSheet.create({
     gap: 8
   },
   ruleTile: {
-    width: "48.8%",
+    flexBasis: "47%",
+    flexGrow: 1,
     minHeight: 82
   },
   ruleTileContent: {

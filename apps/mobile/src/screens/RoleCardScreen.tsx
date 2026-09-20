@@ -114,7 +114,7 @@ function roleIcon(roleId: RoleGuideId): IconName {
 }
 
 function roleAccent(roleId: RoleGuideId): string {
-  if (roleId === "Vampire") return colors.primaryBright;
+  if (roleId === "Vampire") return colors.danger;
   if (roleId === "Detective") return "#d5a932";
   if (roleId === "Doctor") return "#7ecab5";
   if (roleId === "Hunter") return "#e88f4d";

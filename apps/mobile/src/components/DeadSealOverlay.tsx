@@ -22,7 +22,7 @@ export function DeadSealOverlay({ visible, label = "ELENDİ" }: DeadSealOverlayP
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   },

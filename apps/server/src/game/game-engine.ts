@@ -16,6 +16,7 @@ import { calculateWinner } from "./win-condition.js";
 import { pickRandom } from "../utils/random.js";
 
 const MIN_NIGHT_START_PRESENTATION_SECONDS = 10;
+const NO_LYNCH_TARGET = "__NO_LYNCH__";
 
 export class GameEngine {
   startGame(room: RoomState): GameStatePrivateDelta[] {
@@ -283,6 +284,14 @@ export class GameEngine {
         if (voteResult.tiedTopCandidates.length > 1 && room.game.tieCountInRound === 1) {
           if (room.game.rules.tiePolicy === "RevoteThenRandomExecution") {
             const randomTargetId = pickRandom(voteResult.tiedTopCandidates);
+            if (randomTargetId === NO_LYNCH_TARGET) {
+              room.game.lastDayVoteSummary.noLynchWon = true;
+              room.game.lastEliminationSummary = null;
+              room.game.tieCountInRound = 0;
+              room.game.revoteCandidateIds = [];
+              room.game.actions = [];
+              return "WinCheck";
+            }
             if (randomTargetId) {
               const randomExecuted = room.players.find((p) => p.playerId === randomTargetId);
               if (randomExecuted) {
@@ -397,8 +406,13 @@ export class GameEngine {
     }
 
     if (submission.targetPlayerId) {
-      if (submission.actionType === "day-vote" && submission.targetPlayerId === "__NO_LYNCH__") {
-        if (room.game.tieCountInRound > 0) throw new Error("TARGET_NOT_IN_REVOTE");
+      if (submission.actionType === "day-vote" && room.game.tieCountInRound > 0) {
+        const revoteCandidateIds = room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? [];
+        if (!revoteCandidateIds.includes(submission.targetPlayerId)) {
+          throw new Error("TARGET_NOT_IN_REVOTE");
+        }
+      }
+      if (submission.actionType === "day-vote" && submission.targetPlayerId === NO_LYNCH_TARGET) {
         if (!room.game.rules.noLynchEnabled) throw new Error("NO_LYNCH_DISABLED");
         return;
       }
@@ -410,12 +424,6 @@ export class GameEngine {
       }
       if (submission.actionType === "day-vote" && room.game.guardProtectedPlayerId && submission.targetPlayerId === room.game.guardProtectedPlayerId) {
         throw new Error("TARGET_PROTECTED_BY_GUARD");
-      }
-      if (submission.actionType === "day-vote" && room.game.tieCountInRound > 0) {
-        const revoteCandidateIds = room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? [];
-        if (!revoteCandidateIds.includes(submission.targetPlayerId)) {
-          throw new Error("TARGET_NOT_IN_REVOTE");
-        }
       }
       const target = room.players.find((p) => p.playerId === submission.targetPlayerId);
       if (!target || !target.isAlive) throw new Error("INVALID_TARGET");
@@ -503,8 +511,16 @@ export class GameEngine {
         return actor.isAlive && aliveOthers.length > 0;
       case "DayVote": {
         if (!actor.isAlive) return false;
-        const legalTargets = aliveOthers.filter((p) => p.playerId !== room.game.guardProtectedPlayerId);
-        return legalTargets.length > 0 || room.game.rules.noLynchEnabled;
+        const revoteCandidateIds = room.game.tieCountInRound > 0
+          ? room.game.revoteCandidateIds ?? room.game.lastDayVoteSummary?.tiedTopCandidates ?? []
+          : null;
+        const legalTargets = aliveOthers.filter((p) =>
+          p.playerId !== room.game.guardProtectedPlayerId &&
+          (!revoteCandidateIds || revoteCandidateIds.includes(p.playerId))
+        );
+        const noLynchAllowed = room.game.rules.noLynchEnabled &&
+          (!revoteCandidateIds || revoteCandidateIds.includes(NO_LYNCH_TARGET));
+        return legalTargets.length > 0 || noLynchAllowed;
       }
       case "HunterLastBreath":
         return actor.role === "Hunter" &&

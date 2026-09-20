@@ -16,6 +16,7 @@ import { useLogFeedStore } from "../logging/log-feed-store";
 import { useGameStore } from "../store/game-store";
 import { typography } from "../theme/typography";
 import { toRoleLabel } from "../utils/role-label";
+import { useMotionEnabled } from "../motion/MotionPreferences";
 
 interface PhaseTransitionOverlayProps {
   phase: GamePhase | null;
@@ -340,6 +341,7 @@ function eventTransition(event: GameResultEvent, players: PlayerNameLookup[], ro
 }
 
 export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
+  const motionEnabled = useMotionEnabled();
   const opacity = useRef(new Animated.Value(0)).current;
   const round = useGameStore((s) => s.gameState?.round ?? null);
   const phaseEndsAt = useGameStore((s) => s.gameState?.phaseEndsAt ?? null);
@@ -361,8 +363,17 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
   const activeAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const finishing = useRef(false);
   const resetScope = useRef<string | null>(null);
+  const nextFrame = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (startTimer.current) clearTimeout(startTimer.current);
+    if (nextFrame.current !== null) cancelAnimationFrame(nextFrame.current);
+    activeAnimation.current?.stop();
+  }, []);
 
   function clearOverlayQueue() {
+    if (nextFrame.current !== null) cancelAnimationFrame(nextFrame.current);
+    nextFrame.current = null;
     startTimer.current && clearTimeout(startTimer.current);
     startTimer.current = null;
     activeAnimation.current?.stop();
@@ -486,7 +497,8 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     if (transition.resultEventId && activeResultEvent?.id === transition.resultEventId) {
       dismissActiveResultEvent();
     }
-    requestAnimationFrame(() => {
+    nextFrame.current = requestAnimationFrame(() => {
+      nextFrame.current = null;
       finishing.current = false;
       startNextQueuedTransition();
     });
@@ -513,13 +525,15 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     const animation = Animated.sequence([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: OVERLAY_FADE_IN_MS,
+        duration: motionEnabled ? OVERLAY_FADE_IN_MS : 0,
+        isInteraction: false,
         useNativeDriver: true
       }),
       Animated.delay(Math.max(0, visibleMs - OVERLAY_FADE_IN_MS - OVERLAY_FADE_OUT_MS)),
       Animated.timing(opacity, {
         toValue: 0,
-        duration: OVERLAY_FADE_OUT_MS,
+        duration: motionEnabled ? OVERLAY_FADE_OUT_MS : 0,
+        isInteraction: false,
         useNativeDriver: true
       })
     ]);
@@ -612,12 +626,15 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
     const transition = activeTransition;
     activeAnimation.current?.stop();
     activeAnimation.current = null;
-    Animated.timing(opacity, {
+    const animation = Animated.timing(opacity, {
       toValue: 0,
-      duration: 260,
+      duration: motionEnabled ? 260 : 0,
+      isInteraction: false,
       useNativeDriver: true
-    }).start(() => {
-      completeTransition(transition);
+    });
+    activeAnimation.current = animation;
+    animation.start(({ finished }) => {
+      if (finished) completeTransition(transition);
     });
   };
 
@@ -656,7 +673,7 @@ export function PhaseTransitionOverlay({ phase }: PhaseTransitionOverlayProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(4,4,6,0.42)",
@@ -665,12 +682,12 @@ const styles = StyleSheet.create({
     overflow: "visible"
   },
   pressable: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   },
   debugOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 99999,
     elevation: 99999,
     alignItems: "center",

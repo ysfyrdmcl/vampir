@@ -6,11 +6,14 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "react": "19.2.3"
+  },
   "scripts": {
     "postinstall": "npm run build:shared",
     "build:shared": "npm run build -w packages/shared",
     "dev:server": "npm run build:shared && npm run dev -w apps/server",
-    "dev:mobile": "npm run build:shared && npm run dev -w apps/mobile",
+    "dev:mobile": "npm run build:shared && npm run dev -w apps/mobile --",
     "build:server": "npm run build:shared && npm run build -w apps/server",
     "start:server": "npm run start -w apps/server",
     "check": "npm run build:server && tsc --noEmit -p apps/mobile/tsconfig.json && npm test -w apps/server"

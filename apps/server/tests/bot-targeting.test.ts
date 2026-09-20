@@ -202,6 +202,9 @@ describe("legalTargetsForBot", () => {
       }
     });
     expect(legalTargetsForBot(room, "DayVote", "b1")).toEqual(["h1"]);
+    room.game.revoteCandidateIds = ["h1", "__NO_LYNCH__"];
+    expect(legalTargetsForBot(room, "DayVote", "b1")).toEqual(["h1", "__NO_LYNCH__"]);
+    expect(legalTargetsForBot(room, "DayVote", "h1")).toEqual(["__NO_LYNCH__"]);
   });
 
   it("MayorElection legal targets exclude the voting actor", () => {

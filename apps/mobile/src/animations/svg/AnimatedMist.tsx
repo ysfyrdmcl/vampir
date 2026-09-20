@@ -1,6 +1,7 @@
 import { memo, useEffect } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -8,6 +9,7 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 import { MistLayerSvg } from "../../assets/svg";
+import { useMotionEnabled } from "../../motion/MotionPreferences";
 import { svgMotion } from "../motionTokens";
 import { decorativeViewAccessibilityProps } from "./decorativeProps";
 
@@ -26,15 +28,22 @@ function AnimatedMistBase({
   reverse = false,
   style
 }: AnimatedMistProps) {
+  const motionEnabled = useMotionEnabled();
   const drift = useSharedValue(0);
 
   useEffect(() => {
+    if (!motionEnabled) {
+      drift.value = 0.5;
+      return;
+    }
+    drift.value = 0;
     drift.value = withRepeat(
       withTiming(1, { duration: durationMs, easing: Easing.inOut(Easing.sin) }),
       -1,
       true
     );
-  }, [drift, durationMs]);
+    return () => cancelAnimation(drift);
+  }, [drift, durationMs, motionEnabled]);
 
   const frontStyle = useAnimatedStyle(() => ({
     opacity,
@@ -67,7 +76,7 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   layer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center"
   }

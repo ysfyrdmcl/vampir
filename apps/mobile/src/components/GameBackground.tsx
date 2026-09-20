@@ -1,10 +1,11 @@
 import type { ImageSourcePropType } from "react-native";
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedBats, AnimatedMist, RedVignettePulse } from "../animations/svg";
 import { uiStandard } from "../ui/ui-standard";
 import { colors } from "../theme/colors";
+import { useMotionEnabled } from "../motion/MotionPreferences";
 
 export type GameBackgroundVariant =
   | "home"
@@ -47,8 +48,9 @@ interface GameBackgroundProps {
   mode?: "game" | "solid" | "none";
 }
 
-export function GameBackground({ variant, backdropScale, mode = "game" }: GameBackgroundProps) {
+export const GameBackground = memo(function GameBackground({ variant, backdropScale, mode = "game" }: GameBackgroundProps) {
   const drift = useRef(new Animated.Value(0)).current;
+  const motionEnabled = useMotionEnabled();
   const showNightAtmosphere =
     mode !== "none" && (variant === "night" || variant === "vampire" || variant === "detective" || variant === "doctor");
   const showBats = mode !== "none" && (variant === "night" || variant === "vampire");
@@ -56,15 +58,16 @@ export function GameBackground({ variant, backdropScale, mode = "game" }: GameBa
 
   useEffect(() => {
     drift.setValue(0);
+    if (!motionEnabled || mode === "none") return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(drift, { toValue: 1, duration: 9000, useNativeDriver: true }),
-        Animated.timing(drift, { toValue: 0, duration: 9000, useNativeDriver: true })
+        Animated.timing(drift, { toValue: 1, duration: 9000, useNativeDriver: true, isInteraction: false }),
+        Animated.timing(drift, { toValue: 0, duration: 9000, useNativeDriver: true, isInteraction: false })
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [drift, variant]);
+  }, [drift, variant, motionEnabled, mode]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -109,25 +112,25 @@ export function GameBackground({ variant, backdropScale, mode = "game" }: GameBa
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   opaqueBase: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.backgroundDeep
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.22
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   tint: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   textureLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: uiStandard.fx.textureOpacity
   },
   ambientDrift: {

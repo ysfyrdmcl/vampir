@@ -1,0 +1,146 @@
+[
+  {
+    "kind": "tie-result",
+    "phase": "DayDiscussion",
+    "summary": {
+      "entries": [
+        {
+          "playerId": "__NO_LYNCH__",
+          "votes": 2
+        },
+        {
+          "playerId": "p_d814a2610b84d72843586cec6778eac7130d16091dda1474",
+          "votes": 2
+        }
+      ],
+      "executedPlayerId": null,
+      "tiedTopCandidates": [
+        "__NO_LYNCH__",
+        "p_d814a2610b84d72843586cec6778eac7130d16091dda1474"
+      ],
+      "revoteCandidateIds": [
+        "__NO_LYNCH__",
+        "p_d814a2610b84d72843586cec6778eac7130d16091dda1474"
+      ],
+      "noLynchWon": false
+    },
+    "event": {
+      "id": "result:QJK7P8:1:tie:__NO_LYNCH__-p_d814a2610b84d72843586cec6778eac7130d16091dda1474:DayDiscussion",
+      "kind": "tie",
+      "title": "Oylar Eşitlendi",
+      "message": "Oylar eşitlendi: __NO_LYNCH__, QA Host. Yeni oylama sadece bu adaylar arasında yapılacak.",
+      "phase": "DayDiscussion",
+      "round": 1,
+      "playerIds": [
+        "__NO_LYNCH__",
+        "p_d814a2610b84d72843586cec6778eac7130d16091dda1474"
+      ]
+    }
+  },
+  {
+    "kind": "no-lynch-revote",
+    "reply": {
+      "error": {
+        "code": "TARGET_NOT_IN_REVOTE"
+      }
+    }
+  },
+  {
+    "kind": "self-revote",
+    "reply": {
+      "error": {
+        "code": "INVALID_TARGET"
+      }
+    }
+  },
+  {
+    "kind": "manual-deadlock",
+    "reply": {
+      "error": {
+        "code": "PHASE_ACTIONS_PENDING"
+      }
+    },
+    "phase": "DayVote",
+    "phaseEndsAt": null
+  },
+  {
+    "kind": "complete-match",
+    "expected": "Villagers",
+    "status": "GameOver",
+    "phase": "GameOver",
+    "winner": "Villagers",
+    "players": [
+      {
+        "name": "QA Host",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 1",
+        "role": "Vampire",
+        "alive": false
+      },
+      {
+        "name": "QA Player 2",
+        "role": "Villager",
+        "alive": true
+      },
+      {
+        "name": "QA Player 3",
+        "role": "Villager",
+        "alive": true
+      }
+    ]
+  },
+  {
+    "kind": "rematch-reset",
+    "status": "Lobby",
+    "allUnready": true,
+    "rolesCleared": true
+  },
+  {
+    "kind": "rematch-start",
+    "phase": "RoleReveal",
+    "round": 1
+  },
+  {
+    "kind": "complete-match",
+    "expected": "Vampires",
+    "status": "GameOver",
+    "phase": "GameOver",
+    "winner": "Vampires",
+    "players": [
+      {
+        "name": "QA Host",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 1",
+        "role": "Vampire",
+        "alive": true
+      },
+      {
+        "name": "QA Player 2",
+        "role": "Villager",
+        "alive": false
+      },
+      {
+        "name": "QA Player 3",
+        "role": "Villager",
+        "alive": true
+      }
+    ]
+  },
+  {
+    "kind": "rematch-reset",
+    "status": "Lobby",
+    "allUnready": true,
+    "rolesCleared": true
+  },
+  {
+    "kind": "rematch-start",
+    "phase": "RoleReveal",
+    "round": 1
+  }
+]

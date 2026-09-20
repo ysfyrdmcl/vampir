@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { GameOverTransition } from "../animations";
 import type { RootStackParamList } from "../app/navigation/routes";
 import { ConfirmActionSheet } from "../components/ConfirmActionSheet";
-import { DeadSealOverlay } from "../components/DeadSealOverlay";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { RoleBadge } from "../components/RoleBadge";
 import { ScreenShell } from "../components/ScreenShell";
@@ -68,7 +67,7 @@ export function GameOverScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenShell scene="gameover" bottomNavActiveIndex={0} headerTitle="" suppressTransientBotSpeech>
+    <ScreenShell scene="gameover" bottomNavActiveIndex={0} showTopBar={false} suppressTransientBotSpeech>
       {leavingFinal ? (
         <View style={styles.loadingWrap}>
           <View style={styles.loadingIcon}>
@@ -93,7 +92,7 @@ export function GameOverScreen({ navigation }: Props) {
         <View style={[styles.winnerCard, isVampireWin ? styles.winnerCardVampire : styles.winnerCardVillager]}>
           <GameOverTransition key={winner} winner={winner} />
           <View style={[styles.winnerIconWrap, isVampireWin ? styles.winnerIconVampire : styles.winnerIconVillager]}>
-            <Ionicons name={winnerIcon} size={34} color={isVampireWin ? colors.primaryBright : colors.secondary} />
+            <Ionicons name={winnerIcon} size={34} color={isVampireWin ? colors.danger : colors.secondary} />
           </View>
           <Text style={[styles.winner, isVampireWin ? styles.vampire : styles.villager]}>{winnerTitle}</Text>
           <Text style={styles.winnerDesc}>{winnerDescription}</Text>
@@ -130,7 +129,6 @@ export function GameOverScreen({ navigation }: Props) {
                 </View>
                 <RoleBadge role={player.role} />
                 <TeamBadge role={player.role} />
-                <DeadSealOverlay visible={!player.isAlive} />
               </View>
             );
           })}
@@ -279,7 +277,7 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   vampire: {
-    color: colors.primaryBright
+    color: colors.danger
   },
   villager: {
     color: colors.secondary
@@ -311,7 +309,8 @@ const styles = StyleSheet.create({
   },
   roleCard: {
     position: "relative",
-    width: "48%",
+    flexBasis: "47%",
+    flexGrow: 1,
     borderWidth: 1,
     borderRadius: 12,
     padding: spacing.md,
@@ -326,16 +325,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(14,14,15,0.78)"
   },
   roleCardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
     gap: 8
   },
   roleCardName: {
     color: colors.text,
     fontFamily: typography.serifSemi,
     fontSize: 17,
-    flex: 1
+    width: "100%"
   },
   summaryList: {
     borderWidth: 1,

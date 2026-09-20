@@ -62,7 +62,7 @@ export function legalTargetsForBot(
       const pool = aliveOthers(actorPlayerId)
         .filter((id) => !blocked || id !== blocked)
         .filter((id) => revoteCandidateSet.size === 0 || revoteCandidateSet.has(id));
-      if (room.game.rules.noLynchEnabled && revoteCandidateSet.size === 0) {
+      if (room.game.rules.noLynchEnabled && (revoteCandidateSet.size === 0 || revoteCandidateSet.has(NO_LYNCH_TARGET))) {
         return [...pool, NO_LYNCH_TARGET];
       }
       return pool;

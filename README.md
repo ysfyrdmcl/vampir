@@ -24,20 +24,20 @@ Backend server:
 npm run dev:server
 ```
 
-Mobil client:
+Mobil client (Expo Go SDK 57):
 
 ```bash
 # iOS simulator icin
-EXPO_PUBLIC_SOCKET_URL=http://127.0.0.1:3000 npm run dev:mobile
+EXPO_PUBLIC_SOCKET_URL=http://127.0.0.1:3000 npm run dev:mobile -- --go
 
 # Android emulator icin
-EXPO_PUBLIC_SOCKET_URL=http://10.0.2.2:3000 npm run dev:mobile
+EXPO_PUBLIC_SOCKET_URL=http://10.0.2.2:3000 npm run dev:mobile -- --go
 ```
 
 Fiziksel cihazla testte `EXPO_PUBLIC_SOCKET_URL` degerini backend'in LAN adresiyle ver:
 
 ```bash
-EXPO_PUBLIC_SOCKET_URL=http://192.168.x.x:3000 npm run dev:mobile
+EXPO_PUBLIC_SOCKET_URL=http://192.168.x.x:3000 npm run dev:mobile -- --go --lan
 ```
 
 ## Oynanabilir test sürümü
