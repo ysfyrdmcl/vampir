@@ -6,6 +6,12 @@ Monorepo:
 - `apps/server`: Fastify + Socket.IO backend
 - `packages/shared`: Ortak tipler ve socket event isimleri
 
+## Lisans ve görseller
+
+Bu depo kaynak incelemesi amacıyla yayımlanır. Kod, görseller, logolar ve dokümantasyon için açık kaynak veya ticari yeniden kullanım lisansı verilmemiştir. Kullanım koşulları [LICENSE](LICENSE) dosyasındadır; GitHub'ın hizmet koşulları ve yürürlükteki hukuktan doğan haklar saklıdır.
+
+Üçüncü taraf bileşenlerin kendi lisansları geçerlidir. [Görsel kaynak kaydı](apps/mobile/src/assets/ASSET_LICENSE_LOG.md), depoda kayıtlı üretim ve kaynak bilgilerini açıklar; bağımsız bir hak doğrulaması veya görseller için yeniden kullanım izni değildir.
+
 ## Baslangic
 
 ```bash

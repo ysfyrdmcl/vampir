@@ -1,5 +1,11 @@
 # Asset License Log
 
+## Publication and reuse policy
+
+The repository's [LICENSE](../../../../LICENSE) grants no open-source or public reuse license for project artwork. Third-party rights and licenses remain separate.
+
+This log records the source and generation descriptions already present in the project. It is not an independent rights-clearance certificate. The `commercialUseAllowed` field below describes permission granted by this repository, not the terms of a generation service or a verified claim of ownership. No unverified asset has been marked as legally cleared.
+
 Each entry below tracks SVG assets currently present in `apps/mobile/src/assets/svg`.
 
 ## brand/moon-crest.svg
@@ -9,8 +15,8 @@ filePath: apps/mobile/src/assets/svg/brand/moon-crest.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/brand/moon-crest.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/brand/moon-crest.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -22,8 +28,8 @@ filePath: apps/mobile/src/assets/svg/brand/vampir-logo-mark.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/brand/vampir-logo-mark.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/brand/vampir-logo-mark.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -35,8 +41,8 @@ filePath: apps/mobile/src/assets/svg/brand/village-silhouette.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/brand/village-silhouette.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/brand/village-silhouette.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -48,8 +54,8 @@ filePath: apps/mobile/src/assets/svg/phase/night-moon.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/night-moon.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/night-moon.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -61,8 +67,8 @@ filePath: apps/mobile/src/assets/svg/phase/day-sun.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/day-sun.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/day-sun.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -74,8 +80,8 @@ filePath: apps/mobile/src/assets/svg/phase/vote-scale.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/vote-scale.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/vote-scale.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -87,8 +93,8 @@ filePath: apps/mobile/src/assets/svg/phase/execution-seal.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/execution-seal.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/execution-seal.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -100,8 +106,8 @@ filePath: apps/mobile/src/assets/svg/phase/game-over-vampire.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/game-over-vampire.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/game-over-vampire.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -113,8 +119,8 @@ filePath: apps/mobile/src/assets/svg/phase/game-over-villager.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/phase/game-over-villager.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/phase/game-over-villager.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -126,8 +132,8 @@ filePath: apps/mobile/src/assets/svg/effects/bat.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/bat.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/bat.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -139,8 +145,8 @@ filePath: apps/mobile/src/assets/svg/effects/mist-layer.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/mist-layer.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/mist-layer.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -152,8 +158,8 @@ filePath: apps/mobile/src/assets/svg/effects/blood-drop.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/blood-drop.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/blood-drop.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -165,8 +171,8 @@ filePath: apps/mobile/src/assets/svg/effects/candle-flame.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/candle-flame.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/candle-flame.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -178,8 +184,8 @@ filePath: apps/mobile/src/assets/svg/effects/gold-spark.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/gold-spark.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/gold-spark.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -191,8 +197,8 @@ filePath: apps/mobile/src/assets/svg/effects/red-vignette-shape.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/red-vignette-shape.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/red-vignette-shape.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -204,8 +210,8 @@ filePath: apps/mobile/src/assets/svg/effects/shield-glow.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/effects/shield-glow.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/effects/shield-glow.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -217,8 +223,8 @@ filePath: apps/mobile/src/assets/svg/roles/vampire-icon.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/vampire-icon.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/vampire-icon.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -230,8 +236,8 @@ filePath: apps/mobile/src/assets/svg/roles/villager-icon.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/villager-icon.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/villager-icon.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -243,8 +249,8 @@ filePath: apps/mobile/src/assets/svg/roles/detective-eye.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/detective-eye.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/detective-eye.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -256,8 +262,8 @@ filePath: apps/mobile/src/assets/svg/roles/doctor-cross.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/doctor-cross.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/doctor-cross.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -269,8 +275,8 @@ filePath: apps/mobile/src/assets/svg/roles/mayor-crown.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/mayor-crown.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/mayor-crown.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -282,8 +288,8 @@ filePath: apps/mobile/src/assets/svg/roles/hunter-mark.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/hunter-mark.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/hunter-mark.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -295,8 +301,8 @@ filePath: apps/mobile/src/assets/svg/roles/guard-shield.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/guard-shield.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/guard-shield.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -308,8 +314,8 @@ filePath: apps/mobile/src/assets/svg/roles/lover-icon.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/roles/lover-icon.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/roles/lover-icon.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -321,8 +327,8 @@ filePath: apps/mobile/src/assets/svg/ui/gothic-divider.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/ui/gothic-divider.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/ui/gothic-divider.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -334,8 +340,8 @@ filePath: apps/mobile/src/assets/svg/ui/parchment-corner.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/ui/parchment-corner.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/ui/parchment-corner.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
@@ -347,8 +353,8 @@ filePath: apps/mobile/src/assets/svg/ui/target-reticle.svg
 tool: ChatGPT generated SVG asset
 promptSource: user-directed SVG effect integration plan
 createdAt: 2026-05-12
-licensePlan: project owner to confirm
-commercialUseAllowed: project owner to confirm
+licensePlan: see repository LICENSE; no public reuse license granted
+commercialUseAllowed: not granted by this repository
 originalExportPath: apps/mobile/src/assets/svg/ui/target-reticle.svg
 finalOptimizedPath: apps/mobile/src/assets/svg/ui/target-reticle.svg
 notes: Existing project asset; not regenerated or optimized in this pass.
