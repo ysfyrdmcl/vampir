@@ -15,5 +15,24 @@ yarn-error.log*
 .env.*
 !.env.example
 
-apps/server/logs/bot-memory-embeddings.json
-apps/server/logs/bot-memory-embeddings.json.tmp
+# Local runtime logs, player data, and bot memories
+/apps/server/logs/
+
+# Private development conversations and research
+/chatgecmisi/
+/.lazyweb/
+/geliştirme.md
+/geliştirmechatgpt.md
+/mobil.md
+/Untitled
+
+# Private keys and mobile signing credentials
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
